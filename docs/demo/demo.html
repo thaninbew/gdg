@@ -178,8 +178,8 @@ function loopback(raw){if(!raw)return "";try{var u=new URL(raw);
 var Q=new URLSearchParams(location.search),REFUSED=[];
 function param(name,def){var raw=Q.get(name);if(raw===null)return def;var ok=loopback(raw);if(!ok)REFUSED.push(name);return ok}
 var API=param("api",""),API_DOWN=false;
-// The customer step embeds the existing /submit page from the web app (pnpm dev). Same loopback rule.
-var APP=param("app","http://localhost:3000"),REAL=false;
+// Hosted at /walkthrough/, the app uses this origin. Standalone files still default to localhost:3000.
+var APP=param("app",/^\/walkthrough\//.test(location.pathname)?location.origin:"http://localhost:3000"),REAL=false;
 // Optional engineer app (Toffy's /tickets inbox). Same loopback rule; only used when given and reachable.
 var ENG=param("engineer",""),ENG_OK=false;
 // Landing's Auto-answer link (#mine) opens /submit prefilled with its supported sample. /submit fills only; it never sends.

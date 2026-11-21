@@ -15,3 +15,7 @@ All data is sample data, and nothing is sent unless you opt in with a local URL.
 Query parameters on `index.html` are carried into the walkthrough links. Everything uses a light theme.
 
 The live `/submit` and `/console` are separate runs. Each triages its own ticket, and the walkthrough never presents them as the same request. Carrying one request from `/submit` into `/console` depends on thaninbew/gdg#36 (Open in console). Once that lands, the customer page can open the same ticket in the console without a second triage.
+
+## Run it from the app (one server)
+
+With the web app running (`cd web && pnpm dev`), open `http://localhost:3000/walkthrough/` and click **Get a demo**. The app serves these same files from `docs/demo`, and the walkthrough uses the app on its own origin, so no second server or `?app=` is needed. The steps are Support, Console, Factory Run and Factory Finding (1/4 to 4/4). For real triage, also run the API on `:8000`. Opening the files directly, or serving this folder separately, still works as before, with the app defaulting to `http://localhost:3000`.
