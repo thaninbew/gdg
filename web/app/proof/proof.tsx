@@ -5,6 +5,7 @@ import { CircleSlashIcon, FlaskConicalIcon, RotateCcwIcon } from "lucide-react"
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Wordmark } from "@/components/sentinel/logo"
@@ -24,11 +25,18 @@ type Results = {
   retrieval: { same_queue_top5: Value }
   redteam: {
     attacks_total: number
-    benign_total: number
     attacks_through: { ours_strict: Value; ours_delivered: Value; plain_rag: Value }
-    benign_false_blocks: { ours: Value; plain_rag: Value }
+    benign_total: number
+    benign_false_blocks: {
+      ours_frozen: Value
+      ours_round2: Value
+      ours_round2_provisional?: boolean
+      plain_rag: Value
+    }
+    escalations_total: number
+    missed_escalations: { plain_rag: Value }
   }
-  latency: { median_seconds_per_ticket: Value }
+  latency: { mean_seconds_per_ticket: Value; max_seconds_per_ticket: Value }
 }
 
 type State = { status: "loading" } | { status: "error"; detail: string } | { status: "done"; results: Results }
@@ -50,11 +58,13 @@ function Metric({
   value,
   format,
   suffix,
+  children,
 }: {
   label: string
   value: Value | undefined
   format: (v: number) => string
   suffix?: string
+  children?: React.ReactNode
 }) {
   const ready = typeof value === "number"
   return (
@@ -72,6 +82,9 @@ function Metric({
           <span className="pb-1 text-2xl font-medium text-muted-foreground">Pending</span>
         )}
       </dd>
+      {children && (
+        <dd className="flex flex-wrap items-center gap-2 text-base text-muted-foreground">{children}</dd>
+      )}
     </div>
   )
 }
@@ -230,6 +243,8 @@ export function Proof() {
 function ResultsView({ r }: { r: Results }) {
   const attacks = `/ ${r.redteam.attacks_total}`
   const benign = `/ ${r.redteam.benign_total}`
+  const blocks = r.redteam.benign_false_blocks
+  const missed = r.redteam.missed_escalations?.plain_rag
   return (
     <>
       <Section title="Triage" note="macro-F1">
@@ -242,7 +257,7 @@ function ResultsView({ r }: { r: Results }) {
       </Section>
 
       <Section title="Red team" note="lower is better">
-        <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
+        <div className="grid gap-8 lg:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-4">
             <h3 className="text-base font-semibold">Attacks through</h3>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
@@ -258,9 +273,20 @@ function ResultsView({ r }: { r: Results }) {
           </div>
           <div className="flex min-w-0 flex-col gap-4">
             <h3 className="text-base font-semibold">Benign blocked</h3>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-8">
-              <Metric label="Ours" value={r.redteam.benign_false_blocks.ours} format={count} suffix={benign} />
-              <Metric label="Plain RAG" value={r.redteam.benign_false_blocks.plain_rag} format={count} suffix={benign} />
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
+              <Metric label="Ours, frozen run" value={blocks.ours_frozen} format={count} suffix={benign} />
+              <Metric label="Ours, round 2" value={blocks.ours_round2} format={count} suffix={benign}>
+                <span>Tuned after, on the same set</span>
+                {blocks.ours_round2_provisional && <Badge variant="outline">Provisional</Badge>}
+              </Metric>
+              <Metric label="Plain RAG" value={blocks.plain_rag} format={count} suffix={benign}>
+                {typeof missed === "number" && (
+                  <span>
+                    Missed <span className="font-mono tabular-nums">{missed} / {r.redteam.escalations_total}</span>{" "}
+                    escalations
+                  </span>
+                )}
+              </Metric>
             </dl>
           </div>
         </div>
@@ -273,8 +299,9 @@ function ResultsView({ r }: { r: Results }) {
           </dl>
         </Section>
         <Section title="Latency">
-          <dl>
-            <Metric label="Median per ticket" value={r.latency.median_seconds_per_ticket} format={seconds} />
+          <dl className="grid grid-cols-2 gap-x-6">
+            <Metric label="Mean per ticket" value={r.latency.mean_seconds_per_ticket} format={seconds} />
+            <Metric label="Max" value={r.latency.max_seconds_per_ticket} format={seconds} />
           </dl>
         </Section>
       </div>

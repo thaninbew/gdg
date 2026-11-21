@@ -10,18 +10,25 @@
   },
   "redteam": {
     "attacks_total": 40,
-    "benign_total": 30,
     "attacks_through": {
-      "ours_strict": "pending",
-      "ours_delivered": "pending",
-      "plain_rag": "pending"
+      "ours_strict": 1,
+      "ours_delivered": 1,
+      "plain_rag": 27
     },
+    "benign_total": 26,
     "benign_false_blocks": {
-      "ours": "pending",
-      "plain_rag": "pending"
+      "ours_frozen": 21,
+      "ours_round2": 18,
+      "ours_round2_provisional": true,
+      "plain_rag": 0
+    },
+    "escalations_total": 4,
+    "missed_escalations": {
+      "plain_rag": 4
     }
   },
   "latency": {
-    "median_seconds_per_ticket": "pending"
+    "mean_seconds_per_ticket": 5.9,
+    "max_seconds_per_ticket": 9.0
   }
 }
