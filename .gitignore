@@ -7,9 +7,9 @@ __pycache__/
 dist/
 build/
 
-.venv/
-__pycache__/
 data/*.parquet
 retrieval/chroma/
 triage/models.joblib
-.DS_Store
+
+# Vendor UI screenshots for the design brief: local reference only, never publish
+docs/ui-references/img/
