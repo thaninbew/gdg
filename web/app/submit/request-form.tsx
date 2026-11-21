@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { CircleCheckIcon, FlaskConicalIcon, SendIcon, UserRoundIcon } from "lucide-react"
 
-import { ConfidenceMeter } from "@/components/sentinel/confidence"
+import { CONFIDENCE_BANDS, ConfidenceMeter } from "@/components/sentinel/confidence"
 import { Wordmark } from "@/components/sentinel/logo"
 import { PriorityBadge, TicketId } from "@/components/sentinel/status"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -60,7 +60,7 @@ function status(o: Outcome) {
   if (o.kind === "action" || o.kind === "answer") return { label: "Answered", variant: "success" as const }
   if (o.kind === "urgent") return { label: "Urgent", variant: "critical" as const }
   if (o.kind === "review") return { label: "In review", variant: "outline" as const }
-  return { label: o.team, variant: "info" as const }
+  return { label: o.team, variant: "outline" as const }
 }
 
 export function RequestForm() {
@@ -143,7 +143,7 @@ export function RequestForm() {
           <div className="ml-auto flex min-w-0 items-center gap-2">
             <span className="hidden min-w-0 truncate text-[0.8125rem] sm:inline">{account.org}</span>
             {account.criticalCare ? (
-              <Badge variant="info" className="hidden sm:inline-flex">
+              <Badge variant="outline" className="hidden sm:inline-flex">
                 Critical care
               </Badge>
             ) : null}
@@ -382,6 +382,9 @@ export function RequestForm() {
                       <span className="flex items-center gap-2">
                         <TicketId id={m.id} className="text-muted-foreground" />
                         <Badge variant={v.variant} className="ml-auto max-w-40 truncate">
+                          {v.variant === "outline" ? (
+                            <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-(image:--ai-gradient)" />
+                          ) : null}
                           {v.label}
                         </Badge>
                       </span>
@@ -400,6 +403,10 @@ export function RequestForm() {
   )
 }
 
+// Gradient bar for Confident/Likely; Ambiguous keeps the meter's warning color.
+const GRADIENT_METER = (v: number) =>
+  v >= CONFIDENCE_BANDS.likely ? "[&_[data-slot=progress-indicator]]:bg-(image:--ai-gradient)" : undefined
+
 function ClassRows({ type, typeConf, queue, queueConf, priority }: Classification) {
   return (
     <dl className="mt-3 flex flex-col gap-3 text-[0.8125rem]">
@@ -407,14 +414,14 @@ function ClassRows({ type, typeConf, queue, queueConf, priority }: Classificatio
         <dt className="text-xs text-muted-foreground">Type</dt>
         <dd className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate font-medium">{type}</span>
-          <ConfidenceMeter value={typeConf} label="Type" />
+          <ConfidenceMeter value={typeConf} label="Type" className={GRADIENT_METER(typeConf)} />
         </dd>
       </div>
       <div className="flex flex-col gap-1">
         <dt className="text-xs text-muted-foreground">Queue</dt>
         <dd className="flex items-center justify-between gap-2">
           <span className="min-w-0 font-medium">{queue}</span>
-          <ConfidenceMeter value={queueConf} label="Queue" />
+          <ConfidenceMeter value={queueConf} label="Queue" className={GRADIENT_METER(queueConf)} />
         </dd>
       </div>
       <div className="flex flex-col gap-1">

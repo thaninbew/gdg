@@ -123,12 +123,12 @@ export function Answer({ sentences, sample = false }: { sentences: { text: strin
 
 export function Handoff({ team, reason }: { team: string; reason: string }) {
   return (
-    <div className="rounded-lg bg-info-tint p-4 text-info-fg">
+    <div className="ai-surface rounded-xl p-4">
       <div className="flex items-center gap-2">
-        <UsersRoundIcon className="size-4 shrink-0" aria-hidden="true" />
+        <UsersRoundIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <p className="text-sm font-semibold">With our {team} team</p>
       </div>
-      <p className="mt-1 ml-6 text-[0.8125rem]">{reason} Replies show up in My requests.</p>
+      <p className="mt-1 ml-6 text-[0.8125rem] text-muted-foreground">{reason} Replies show up in My requests.</p>
     </div>
   )
 }
