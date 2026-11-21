@@ -76,13 +76,16 @@ function status(o: Outcome) {
 
 export function RequestForm() {
   const updates = useCustomerUpdates()
-  const presenter = useSearchParams().get("presenter") === "1"
+  const search = useSearchParams()
+  const presenter = search.get("presenter") === "1"
+  // Opt-in prefill for links such as the landing page: /submit?sample=<id>. Fills the form only; never sends.
+  const [prefill] = useState(() => SAMPLES.find((s) => s.id === search.get("sample")) ?? null)
   const { ticket, setTicket } = usePresenterTicket()
-  const [accountId, setAccountId] = useState<AccountId>("weber")
-  const [sampleId, setSampleId] = useState<string | null>(null)
-  const [topic, setTopic] = useState<Topic | null>(null)
-  const [title, setTitle] = useState("")
-  const [text, setText] = useState("")
+  const [accountId, setAccountId] = useState<AccountId>(prefill?.account ?? "weber")
+  const [sampleId, setSampleId] = useState<string | null>(prefill?.id ?? null)
+  const [topic, setTopic] = useState<Topic | null>(prefill?.topic ?? null)
+  const [title, setTitle] = useState(prefill?.subject ?? "")
+  const [text, setText] = useState(prefill?.text ?? "")
   const [answer, setAnswer] = useState("")
   const [done, setDone] = useState<Done | null>(null)
   const [sending, setSending] = useState(false)
@@ -160,6 +163,15 @@ export function RequestForm() {
     setMine((m) => [entry, ...m.filter((x) => x.id !== d.id)])
   }
 
+  // Fills the form only; nothing is sent until Send request.
+  function loadSample(s: (typeof SAMPLES)[number]) {
+    setAccountId(s.account)
+    setSampleId(s.id)
+    setTopic(s.topic)
+    reset(s.text)
+    setTitle(s.subject ?? "")
+  }
+
   function reset(t = "") {
     if (presenter) setTicket(null)
     setTitle("")
@@ -193,12 +205,7 @@ export function RequestForm() {
                 {SAMPLES.map((s) => (
                   <DropdownMenuItem
                     key={s.id}
-                    onSelect={() => {
-                      setAccountId(s.account)
-                      setSampleId(s.id)
-                      setTopic(s.topic)
-                      reset(s.text)
-                    }}
+                    onSelect={() => loadSample(s)}
                   >
                     {s.label}
                   </DropdownMenuItem>
@@ -220,6 +227,19 @@ export function RequestForm() {
             <h1 className="text-xl font-semibold">New request</h1>
             {presenter ? <Badge variant="outline">Presenter mode · Use sample data</Badge> : null}
           </div>
+          {!sending && !done ? (
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Try a demo request">
+              <span className="text-xs text-muted-foreground">Try</span>
+              {FEATURED.map(({ id, label }) => {
+                const s = SAMPLES.find((x) => x.id === id)
+                return s ? (
+                  <Button key={id} type="button" variant="outline" size="sm" onClick={() => loadSample(s)} aria-pressed={sampleId === id}>
+                    {label}
+                  </Button>
+                ) : null
+              })}
+            </div>
+          ) : null}
           {sending ? (
             <section
               aria-busy="true"
@@ -256,7 +276,7 @@ export function RequestForm() {
                 </Alert>
               ) : null}
               <div role="status">
-                <OutcomeCard outcome={done.outcome} />
+                <OutcomeCard outcome={done.outcome} checked={preTriaged(done.via)} />
               </div>
               {presenter && !presenterTicket ? (
                 <p role="status" className="text-sm text-muted-foreground">No pipeline result is available to hand off.</p>
@@ -402,7 +422,9 @@ export function RequestForm() {
                   ? done.via.mock.includes("triage")
                     ? "Mock"
                     : "Pipeline"
-                  : backend === "online"
+                  : done?.via.kind === "local"
+                    ? "Local rules"
+                    : backend === "online"
                     ? "Pipeline"
                     : "Local rules"}
               </Badge>
@@ -563,15 +585,28 @@ function localPause() {
   return new Promise((done) => setTimeout(done, reduced ? 0 : 600))
 }
 
+// Curated demo situations shown above the composer.
+const FEATURED = [
+  { id: "settings-access", label: "Settings access" },
+  { id: "outage", label: "Hospital VPN outage" },
+  { id: "csv-export", label: "CSV export bug" },
+  { id: "signout", label: "Keeps signing out" },
+] as const
+
+function preTriaged(via: Via) {
+  return via.kind === "pipeline" && via.mock.length === 0
+}
+
 function firstLine(text: string) {
   return text.split("\n")[0]
 }
 
-function OutcomeCard({ outcome }: { outcome: Outcome }) {
+// `checked`: every pipeline stage ran for real, so the request was pre-triaged before the handoff.
+function OutcomeCard({ outcome, checked = false }: { outcome: Outcome; checked?: boolean }) {
   if (outcome.kind === "urgent") return <Urgent reasons={outcome.reasons} />
   if (outcome.kind === "action") return <Breakdown invoice={outcome.invoice} previous={outcome.previous} />
   if (outcome.kind === "answer") return <Answer sentences={outcome.sentences} sample={outcome.sample} />
-  if (outcome.kind === "handoff") return <Handoff team={outcome.team} reason={outcome.reason} />
+  if (outcome.kind === "handoff") return <Handoff team={outcome.team} reason={outcome.reason} checked={checked} />
   return <Review />
 }
 
@@ -607,7 +642,7 @@ function RequestDetail({ request: r }: { request: Mine }) {
         ) : null}
         <section className="flex flex-col gap-1.5">
           <h3 className="text-xs text-muted-foreground">Update</h3>
-          <OutcomeCard outcome={r.outcome} />
+          <OutcomeCard outcome={r.outcome} checked={preTriaged(r.via)} />
           <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {r.via.kind === "pipeline" ? (
               <>
