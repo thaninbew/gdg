@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AISurface, AIMark } from "@/components/sentinel/ai"
+import { Logo, Wordmark } from "@/components/sentinel/logo"
 import { ConfidenceMeter } from "@/components/sentinel/confidence"
 import { EscalationStatus, PriorityBadge, TicketId } from "@/components/sentinel/status"
 import { autoDraftBilling, escalatedOutage } from "@/lib/mock"
@@ -39,8 +40,8 @@ export default function DesignPage() {
     <div className="min-h-svh bg-canvas">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4">
-          <AIMark />
-          <h1 className="text-base font-semibold">SentinelDesk design system</h1>
+          <Wordmark />
+          <h1 className="text-sm text-muted-foreground">Design system</h1>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/references" className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
               References <ArrowRightIcon className="size-3.5" aria-hidden="true" />
@@ -51,6 +52,31 @@ export default function DesignPage() {
       </header>
 
       <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8">
+        <Section title="Brand">
+          <Panel className="flex flex-wrap items-end gap-8">
+            <div className="flex flex-col items-center gap-2">
+              <Wordmark className="scale-125" />
+              <span className="font-mono text-xs text-muted-foreground">Wordmark</span>
+            </div>
+            <div className="flex items-end gap-4">
+              {[64, 32, 24, 16].map((px) => (
+                <div key={px} className="flex flex-col items-center gap-2">
+                  <Logo size={px} label={`Logo ${px}px`} />
+                  <span className="font-mono text-xs text-muted-foreground">{px}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <Logo variant="mark" className="h-10" />
+              <span className="font-mono text-xs text-muted-foreground">mark</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <AIMark />
+              <span className="font-mono text-xs text-muted-foreground">AI output</span>
+            </div>
+          </Panel>
+        </Section>
+
         <Section title="Color">
           <Panel className="grid gap-5">
             {SWATCHES.map(({ group, items }) => (

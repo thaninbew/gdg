@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-label="SentinelDesk">
+  <defs>
+    <linearGradient id="sd-beam" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50">
+      <stop offset="0" stop-color="#f0644a"/>
+      <stop offset="0.35" stop-color="#d9468f"/>
+      <stop offset="0.7" stop-color="#8a5cf5"/>
+      <stop offset="1" stop-color="#3478f6"/>
+    </linearGradient>
+    <linearGradient id="sd-fade-g" gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="0" y2="50">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.6"/>
+    </linearGradient>
+    <mask id="sd-fade"><rect width="64" height="64" fill="url(#sd-fade-g)"/></mask>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#sd-beam)" mask="url(#sd-fade)"/>
+  <path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="#15151c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="17" cy="33" r="2.7" fill="#15151c"/>
+  <path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="#15151c" stroke="#15151c" stroke-width="1.6" stroke-linejoin="round"/>
+  <rect x="13" y="46" width="14" height="4" rx="2" fill="#15151c"/>
+  <path d="M10 51.5 H54" stroke="#15151c" stroke-width="3.6" stroke-linecap="round"/>
+</svg>

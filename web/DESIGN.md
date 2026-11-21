@@ -16,6 +16,22 @@ the charts from C (Ops Observatory) and the font from A (Command Center).
 3. **Color means something.** Neutrals do the layout; color appears only for status and AI output.
 4. **Show the evidence.** Every AI claim links to the past ticket it came from.
 
+## Brand
+
+**Logo: the architect desk lamp.** The lamp is solid ink; its light is the AI gradient. Read it
+as "a desk that sheds light on every answer".
+
+| Use | Asset |
+|---|---|
+| In the app | `<Logo />` (tile, inverts with the theme), `<Logo variant="mark" />` (lamp only, `currentColor`), `<Wordmark />` (tile + "SentinelDesk") from `components/sentinel/logo` |
+| Favicon | `app/icon.svg` (dark tile; Next.js serves it automatically) |
+| Slides, docs, Devpost | `public/brand/logo-light.svg` (white tile), `logo-dark.svg` (black tile), `mark.svg` |
+
+- Tile background is only black or white. Never put the gradient on the tile or the lamp body.
+- The beam is the only gradient in the logo; don't recolor, rotate or animate it.
+- Minimum size 16px. Keep clear space of a quarter of the tile width around it.
+- The logo is the brand. `AIMark` (gradient tile with a pen) only marks AI-generated content.
+
 ## Stack
 
 **Next.js (App Router) + shadcn/ui + Tailwind CSS v4.** Not plain CSS.
@@ -136,7 +152,8 @@ Ours (`components/sentinel`):
 | `TicketId` | Monospace ticket ID |
 | `EscalationStatus` | Auto-draft ready vs escalate, with reasons |
 | `ConfidenceMeter` | Bar and Confident/Likely/Ambiguous tier (raw % only with `showValue`) |
-| `AIMark`, `AISurface` | Our AI mark and the card for model output; `generating` animates the strip |
+| `Logo`, `Wordmark` | Brand mark (see Brand) |
+| `AIMark`, `AISurface` | Marks AI output and frames it; `generating` animates the strip |
 
 Build a custom component only when shadcn has nothing that fits, and add it to this table.
 
