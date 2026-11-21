@@ -1,9 +1,9 @@
 {
   "triage": {
-    "type_macro_f1": 0.791,
-    "queue_macro_f1": 0.798,
-    "priority_macro_f1": 0.666,
-    "high_priority_incident_recall": 0.877
+    "type_macro_f1": 0.827,
+    "queue_macro_f1": 0.806,
+    "priority_macro_f1": 0.693,
+    "high_priority_incident_recall": 0.905
   },
   "retrieval": {
     "same_queue_top5": 0.706
