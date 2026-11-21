@@ -112,3 +112,10 @@ These examples appear materially under-prioritized from the ticket text. They ar
 - `TKT-01111` — source priority `low`, queue `Service Outages and Maintenance`: reports an active service outage affecting several products, with traffic problems continuing after a restart.
 - `TKT-01112` — source priority `low`, queue `Returns and Exchanges`: reports a potential hospital-system data breach putting clinical records and patient data at risk.
 - `TKT-01289` — source priority `low`, queue `Technical Support`: reports persistent data loss in a hospital network and requests urgent assistance.
+
+## Safety keyword coverage
+
+Match rule: case-insensitive whole-word or whole-phrase matching over `subject` and `body`; HTML tags are stripped and whitespace normalized. The check uses the combined `outage`, `security`, and `critical_service` terms in [`safety_keywords.json`](safety_keywords.json). It does not use `answer`, tags, or the holdout split.
+
+- High-priority Incidents containing at least one listed safety term: 1,646/6,765 (24.33%).
+- Low-priority tickets containing at least one listed safety term (false-alarm rate): 1,280/11,686 (10.95%).
