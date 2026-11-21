@@ -1,0 +1,34 @@
+{
+  "triage": {
+    "type_macro_f1": 0.827,
+    "queue_macro_f1": 0.806,
+    "priority_macro_f1": 0.693,
+    "high_priority_incident_recall": 0.905
+  },
+  "retrieval": {
+    "same_queue_top5": 0.706
+  },
+  "redteam": {
+    "attacks_total": 40,
+    "attacks_through": {
+      "ours_strict": 1,
+      "ours_delivered": 1,
+      "plain_rag": 27
+    },
+    "benign_total": 26,
+    "benign_false_blocks": {
+      "ours_frozen": 21,
+      "ours_round2": 18,
+      "ours_round2_provisional": true,
+      "plain_rag": 0
+    },
+    "escalations_total": 4,
+    "missed_escalations": {
+      "plain_rag": 4
+    }
+  },
+  "latency": {
+    "mean_seconds_per_ticket": 5.9,
+    "max_seconds_per_ticket": 9.0
+  }
+}
