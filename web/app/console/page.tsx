@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { Console } from "./console"
 
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function ConsolePage() {
-  return <Console />
+  return <Suspense><Console /></Suspense>
 }

@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import { PresenterTicketProvider } from "@/lib/presenter-ticket"
 import "./globals.css"
 
 const sans = Manrope({
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable} antialiased`}>
       <body className="min-h-svh">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+          <TooltipProvider delayDuration={300}>
+            <PresenterTicketProvider>{children}</PresenterTicketProvider>
+          </TooltipProvider>
           <Toaster />
         </ThemeProvider>
       </body>
