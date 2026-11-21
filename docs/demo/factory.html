@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SentinelDesk Software Factory</title>
+<link rel="stylesheet" href="sd-motion.css">
+<script src="sd-motion.js"></script>
 <style>
 :root{
   --canvas:#f6f6fa;--card:#fff;--fg:#16161f;--muted:#f1f1f6;--muted-fg:#5b5e70;--border:#e3e3ec;--border-strong:#c9cad8;
@@ -76,8 +78,7 @@ button{font:inherit;color:inherit}
 .badge svg{width:12px;height:12px}
 
 main{padding:16px;outline:none}
-.page{display:flex;flex-direction:column;gap:12px;animation:in .2s var(--ease)}
-@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.page{display:flex;flex-direction:column;gap:12px}
 .panel{border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0;background:var(--card)}
 .panel.ai{position:relative;overflow:hidden;border-radius:14px}
 .panel.ai::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--ai-gradient)}
@@ -96,8 +97,6 @@ h3{font-size:12px;font-weight:600;color:var(--muted-fg);margin:0 0 6px;text-tran
 .node .dot i{display:block;width:10px;height:10px;border-radius:50%;background:var(--card);border:2px solid var(--border-strong);transition:all .2s var(--ease)}
 .node.done .dot i{background:var(--fg);border-color:var(--fg)}
 .node.active .dot i{width:18px;height:18px;border:2px solid var(--fg);background:var(--card);box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 9px var(--fg)}
-.node.active.live .dot i{animation:pulse 1.6s var(--ease) infinite}
-@keyframes pulse{0%{outline:0 solid transparent}50%{outline:5px solid var(--info-tint)}100%{outline:0 solid transparent}}
 .node .lbl{font-size:12px;color:var(--muted-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
 .node.done .lbl,.node.active .lbl{color:var(--fg)}
 .node.inspect .lbl{color:var(--primary);font-weight:700}
@@ -393,6 +392,7 @@ function updateRun(){
     ${state==='todo'?`<p class="empty">Waiting on step ${S.cur+1}.</p>`:
       `<ul class="acts">${ls.map((t,i)=>`<li class="${i<r?'':'pending'}${state==='active'&&i===r-1?' now':''}" ${i<r?'':'aria-hidden="true"'}>${i<r?I.check:I.dotc}<span>${t}</span></li>`).join('')}</ul>`}
     ${showCode?`<pre class="code" aria-label="Code excerpt">${st.code}</pre>`:''}`;
+  document.getElementById('detail').setAttribute('data-generating', S.playing&&!done()?'true':'false');
   const bl=document.getElementById('bLive'); if(bl) bl.onclick=()=>{S.pin=null;update();};
 }
 
@@ -495,6 +495,7 @@ function route(focus){
   document.querySelectorAll('.nav a').forEach(a=>a.setAttribute('aria-current', a.dataset.page===page?'page':'false'));
   built=null; lastFindingKey=''; S.copyFail=false;
   render();
+  SDMotion.enter(view.firstElementChild);
   if(focus){ const hd=view.querySelector('h2[tabindex]'); if(hd) hd.focus({preventScroll:true}); }
 }
 document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
@@ -504,7 +505,7 @@ document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',(
   if(!done()) S.sub=Math.min(S.sub, lines(S.cur).length);
   document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false'));
   document.getElementById('ctx').textContent = S.role==='it'?'IT console':'Support portal';
-  lastFindingKey=''; S.copyFail=false; S.copied=0; render();
+  lastFindingKey=''; S.copyFail=false; S.copied=0; render(); SDMotion.enter(view.firstElementChild);
 }));
 addEventListener('hashchange',()=>route(true));
 // Deep link #finding opens on a completed run so the Finding view is populated.

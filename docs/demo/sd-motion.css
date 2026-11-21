@@ -1,0 +1,58 @@
+/* SentinelDesk motion layer. Drop-in for the guided demo, landing and Software Factory.
+   Rules come from web/DESIGN.md "Motion": hover 100-150ms colors/opacity, panels 200ms
+   ease-standard, entrances under 300ms, no stagger, no lifts, no perpetual motion except an
+   AI surface strip while something is generating. Pair with sd-motion.js. */
+:root{
+  --sd-ease:cubic-bezier(.2,0,0,1);       /* web --ease-standard */
+  --sd-ease-exit:cubic-bezier(.3,0,1,1);  /* web --ease-exit */
+  --sd-step:200ms;                        /* panel / step change */
+  --sd-fly:320ms;                         /* ticket ID continuity */
+  --sd-arrive:900ms;                      /* one-shot row tint after a handoff or return */
+  --sd-sky:700ms;                         /* ambient hero sky fade */
+}
+
+/* The one entrance. Same values as the Factory's existing `in` keyframe so both read alike. */
+@keyframes sd-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.sd-enter{animation:sd-in var(--sd-step) var(--sd-ease) both}
+
+/* Ticket ID ghost used for continuity. Never interactive, never announced. */
+.sd-ghost{position:fixed;margin:0;z-index:2147483000;pointer-events:none;transform-origin:0 0;white-space:nowrap;will-change:transform}
+[data-sd-flying]{opacity:0!important}
+
+/* One-shot tint on the row that just received the ticket (handoff or return from detail). */
+@keyframes sd-arrive{from{background-color:var(--info-t,#eceffe)}}
+[data-sd-arrive]{animation:sd-arrive var(--sd-arrive) var(--sd-ease)}
+
+/* Pending result: keep the heading and SAMPLE tag readable, show shaped skeleton lines. */
+[data-sd-pending]{position:relative}
+[data-sd-pending]>:not(h2){opacity:0}
+[data-sd-pending]::after{content:"";position:absolute;left:14px;right:30%;top:44px;height:56px;border-radius:4px;
+  background:repeating-linear-gradient(to bottom,var(--sk,#e6e6ee) 0 8px,transparent 8px 20px)}
+.sd-resolve{animation:sd-in var(--sd-step) var(--sd-ease) both}
+
+/* AI strip sweep, only while generating (demo pending state, Factory run while playing). */
+@keyframes sd-sweep{from{background-position:0% 0}to{background-position:100% 0}}
+[data-generating="true"]::before{background-size:200% 100%!important;animation:sd-sweep 1.8s var(--sd-ease) infinite alternate}
+
+/* Role chip and presenter strip: color crossfade only. */
+.role{transition:background-color 150ms var(--sd-ease),color 150ms var(--sd-ease)}
+
+/* Live region for resolved states. */
+.sd-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Landing hero: sky settles in behind the copy; copy and product enter together, once. */
+@keyframes sd-sky{from{opacity:0}to{opacity:1}}
+.sd-hero .sky canvas{animation:sd-sky var(--sd-sky) var(--sd-ease) both}
+.sd-hero .copy,.sd-hero .stagewrap{animation:sd-in 280ms var(--sd-ease) both}
+
+/* Page-to-page (landing -> demo -> factory): root crossfade where the browser supports it.
+   Needs http(s) same-origin; file:// skips it silently. */
+@view-transition{navigation:auto}
+::view-transition-old(root),::view-transition-new(root){animation-duration:180ms;animation-timing-function:var(--sd-ease)}
+
+@media (prefers-reduced-motion:reduce){
+  @view-transition{navigation:none}
+  .sd-enter,.sd-resolve,[data-sd-arrive],.sd-hero .sky canvas,.sd-hero .copy,.sd-hero .stagewrap{animation:none!important}
+  [data-generating="true"]::before{animation:none!important}
+  .role{transition:none}
+}

@@ -1,8 +1,8 @@
 # SentinelDesk demo walkthrough
 
-Standalone preview, not an app route. Open `index.html` in a browser (or serve this folder) and click **Start demo**.
+Standalone preview, not an app route. Open `index.html` in a browser (or serve this folder) and click **Get a demo**.
 
-- `index.html`: landing and title.
+- `index.html`: landing and title, with replayable capability examples below the hero.
 - `demo.html`: guided five-minute flow. Customer intake, My requests and request detail, engineer inbox and detail, then optional dashboard and Software Factory. Step deep links use `demo.html#intake`, `#mine`, `#inbox`, `#detail`, `#dash`, `#run` and `#finding`.
 - `factory.html`: Software Factory Run and Finding views, embedded by `demo.html`.
 
