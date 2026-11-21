@@ -216,6 +216,7 @@ select.sel{appearance:none;-webkit-appearance:none;cursor:pointer;background-ima
 .cite-pop .b{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .cite-pop blockquote{margin:0;border-left:2px solid var(--info);padding-left:10px;color:var(--muted-fg);line-height:1.5;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .mbar{display:none}
+.lang-sel{width:auto;height:28px;padding:0 26px 0 8px;font-size:12px}
 /* Top bar: navigation, palette and theme across the top instead of a sidebar. */
 :root{--topbar:52px}
 .app{display:flex;flex-direction:column;min-height:100vh}
@@ -612,12 +613,12 @@ const DE = {
 };
 const deReason = r => { for (const [re, de] of DE.reason) if (re.test(r)) return r.replace(re, de); return r; };
 // Simulated answers to operator questions, grounded only in the ticket and its precedents.
-function respond(c, s, q, lang = "en"){
+function respond(c, s, q, lang = "en", target = lang){
   const t = q.toLowerCase(), o = outcome(c, s), r = reasons(c, s), P = c.precedents, de = lang === "de";
   if (isTranslate(q))
     return TRANSLATION[c.ticket_id] ? (de ? `Hier ist die Nachricht des Kunden auf Englisch: "${TRANSLATION[c.ticket_id]}"` : `Here's the customer's message in English: "${TRANSLATION[c.ticket_id]}"`)
       : (de ? "Die Nachricht des Kunden ist bereits auf Englisch." : "The customer's message is already in English.");
-  if (onlySwitch(q)) return de ? "Alles klar, ich antworte ab jetzt auf Deutsch." : "Okay, I'll answer in English from now on.";
+  if (onlySwitch(q)) return de ? `Alles klar, ich antworte ab jetzt auf ${target === "de" ? "Deutsch" : "Englisch"}.` : `Okay, I'll answer in ${target === "de" ? "German" : "English"} from now on.`;
   if (/summar|tl;?dr|gist|what is this|what's this about|zusammenfass|worum geht/.test(t))
     return de ? `${c.triage.language === "de" ? "Deutschsprachiges" : "Englischsprachiges"} Ticket (${DE.type[s.triage.type] || s.triage.type}) für ${s.triage.queue}, Priorität ${DE.prio[s.triage.priority]}. Der Kunde schreibt: „${firstSentence(c.body)}“`
       : `${c.triage.language === "de" ? "German" : "English"} ${s.triage.type.toLowerCase()} for ${s.triage.queue}, priority ${s.triage.priority}. ${c.note}`;
@@ -639,7 +640,20 @@ function respond(c, s, q, lang = "en"){
 }
 const SUGGEST = {en:["Why this route?", "What worked before?", "What should I ask the customer?"], de:["Warum diese Zuordnung?", "Was hat früher geholfen?", "Was soll ich den Kunden fragen?"]};
 const suggestFor = (c, lang) => [...SUGGEST[lang], c.triage.language === "de" ? "Translate to English" : (lang === "de" ? "Zusammenfassen" : "Summarize")];
-const langLabel = cv => `<span class="muted" style="font-size:12px" aria-live="polite">${cv && cv.lang === "de" ? "Replies in German" : "Replies in English"}</span>`;
+// Reply language picker for a conversation. "ticket" = the panel on a ticket, "copilot" = the Copilot page.
+// Every answer is kept in English and German so switching the language rewrites the whole thread.
+const answerBoth = (c, s, q, target) => ({en: respond(c, s, q, "en", target), de: respond(c, s, q, "de", target)});
+const answerText = (m, lang) => typeof m.a === "string" ? m.a : m.a[lang] || m.a.en;
+// Chat-panel text in the conversation's language; the rest of the console stays English.
+const CHAT_UI = {
+  title:["Ask the copilot","Copilot fragen"], newchat:["New chat","Neuer Chat"], cont:["Continue in Copilot","Im Copilot fortsetzen"],
+  qlabel:["Question about this ticket","Frage zu diesem Ticket"], msg:["Message","Nachricht"], ask:["Ask","Fragen"], del:["Delete","Löschen"],
+  delconv:["Delete this conversation","Diese Unterhaltung löschen"], open:["Open in Copilot","Im Copilot öffnen"], about:["About ticket","Zum Ticket"],
+  empty:["Ask anything about {id}. Answers come only from the ticket and its past tickets.","Fragen Sie alles zu {id}. Antworten stützen sich nur auf das Ticket und frühere Tickets."],
+};
+const tx = (cv, k) => CHAT_UI[k][cv && cv.lang === "de" ? 1 : 0];
+const langSelect = (cv, ctx) => `<label class="sr" for="lang-${ctx}">Reply language</label><select id="lang-${ctx}" class="sel lang-sel" data-lang-for="${ctx}" title="Reply language">
+  <option value="en" ${!cv || cv.lang !== "de" ? "selected" : ""}>English</option><option value="de" ${cv && cv.lang === "de" ? "selected" : ""}>Deutsch</option></select>`;
 // Map a typed clarification answer onto the closest option, like the model would.
 const SYN = {refund:/money back|reimburs|chargeback|credit|erstatt|geld zurück/, explanation:/explain|why|understand|breakdown|clarif|erklär/,
   team:/everyone|whole|all of|colleagues|several|many|kolleg|alle/, user:/just (him|her|me|them)|only (him|her|me|them|one)|single|nur/, outlook:/outlook/, apple:/iphone|ios|apple/};
@@ -715,11 +729,11 @@ function renderTicket(side = false){
         ${s.answers.length ? `<div class="answered">${s.answers.map((a,i) => `<p class="qlabel">${esc(a.question)}</p><p class="chipa">${esc(a.label)}</p><p class="lead" ${i===last && g.busy ? 'id="ans-last"' : ""}>${i===last && g.busy ? skeleton(2) : cited(a.reply, c)}</p>`).join("")}</div>` : ""}
       </section>
       ${outHTML}
-      <section class="ai" aria-label="Ask the copilot">${aiHead("Ask the copilot", `${conv && conv.messages.length ? langLabel(conv) : ""}${conv && conv.messages.length ? `<button class="btn ghost sm" data-act="newchat">${I.plus}New chat</button><button class="btn ghost sm" data-act="delchat" aria-label="Delete this conversation" title="Delete">${I.trash}</button>` : ""}<button class="btn ghost sm" data-act="expand-chat" aria-label="Open in Copilot" title="Open in Copilot">${I.expand}</button>${mock}`)}
+      <section class="ai" aria-label="${tx(conv, "title")}">${aiHead(tx(conv, "title"), `${langSelect(conv, "ticket")}${conv && conv.messages.length ? `<button class="btn ghost sm" data-act="newchat">${I.plus}${tx(conv, "newchat")}</button><button class="btn ghost sm" data-act="delchat" aria-label="${tx(conv, "delconv")}" title="${tx(conv, "del")}">${I.trash}</button>` : ""}<button class="btn ghost sm" data-act="expand-chat" aria-label="${tx(conv, "open")}" title="${tx(conv, "open")}">${I.expand}</button>${mock}`)}
         ${conv && conv.messages.length ? messagesHTML(conv, c, true) : ""}
-        ${conv && conv.messages.length ? (conv.messages.at(-1).done ? `<div class="handoff"><button class="btn sm" data-act="expand-chat">${I.expand}Continue in Copilot</button></div>` : "") : `
+        ${conv && conv.messages.length ? (conv.messages.at(-1).done ? `<div class="handoff"><button class="btn sm" data-act="expand-chat">${I.expand}${tx(conv, "cont")}</button></div>` : "") : `
         <div class="opts">${chatSuggest.map(x => `<button class="btn outline sm" data-ask="${esc(x)}">${esc(x)}</button>`).join("")}</div>
-        <form class="free" id="askform"><div style="flex:1;min-width:0"><label for="askq">Question about this ticket</label><input id="askq" autocomplete="off"></div><button class="btn secondary" type="submit">Ask</button></form>`}
+        <form class="free" id="askform"><div style="flex:1;min-width:0"><label for="askq">${tx(conv, "qlabel")}</label><input id="askq" autocomplete="off"></div><button class="btn secondary" type="submit">${tx(conv, "ask")}</button></form>`}
       </section>
       <footer class="lat" aria-label="Pipeline latency">${[["Triage","triage_ms"],["Retrieval","retrieval_ms"],["Gate","gate_ms"],["Draft","draft_ms"]].map(([l,k]) => `<span>${l} <b>${t[k] ? t[k]+" ms" : "skipped"}</b></span>`).join("")}<span>Total <b>${(t.total_ms/1000).toFixed(1)} s</b></span>${mock}</footer>
     </div>
@@ -773,10 +787,10 @@ function freeAnswer(c, text){
 function ask(c, q){
   const conv = activeConvo(c.ticket_id) || newConvo(c.ticket_id);
   conv.lang = nextLang(conv.lang, q);
-  const m = {q, a: respond(c, S[c.ticket_id], q, conv.lang), done:false};
+  const m = {q, a: answerBoth(c, S[c.ticket_id], q, conv.lang), done:false};
   conv.messages.push(m); conv.updated = nowLabel(); render();
   const i = conv.messages.length - 1;
-  wait(500).then(() => stream(`msg-${conv.id}-${i}`, m.a, c, () => { m.done = true; render(); }, 22, false));
+  wait(500).then(() => stream(`msg-${conv.id}-${i}`, answerText(m, conv.lang), c, () => { m.done = true; render(); }, 22, false));
 }
 document.addEventListener("click", e => {
   if (!inTicket()) return;
@@ -804,6 +818,12 @@ document.addEventListener("click", e => {
   })[b.dataset.act]?.();
 });
 document.addEventListener("change", e => {
+  const ls = e.target.closest("select[data-lang-for]");
+  if (ls) {
+    const cv = ls.dataset.langFor === "copilot" ? convById(route.convo) : (activeConvo(route.id) || newConvo(route.id));
+    if (cv) { cv.lang = ls.value; render(); }
+    return;
+  }
   const sel = e.target.closest("select[data-field]"); if (!sel || !inTicket()) return;
   const c = byId(route.id), s = S[c.ticket_id], f = sel.dataset.field;
   s.triage[f] = sel.value; s.fields[f] = sel.value === c.triage[f] ? "accepted" : "changed"; render();
@@ -832,12 +852,12 @@ const convById = id => CONVOS.find(x => x.id === id);
 const activeConvo = tid => ACTIVE[tid] ? convById(ACTIVE[tid]) : null;
 const convTitle = cv => cv.messages[0]?.q || "New conversation";
 function messagesHTML(cv, c, compact){
-  return cv.messages.map((m,i) => `<div class="qa"><p class="chipa" style="align-self:flex-end">${esc(m.q)}</p><p class="lead" style="white-space:pre-line" ${!m.done ? `id="msg-${cv.id}-${i}"` : ""}>${m.done ? cited(m.a, c) : skeleton(2)}</p></div>`).join("");
+  return cv.messages.map((m,i) => `<div class="qa"><p class="chipa" style="align-self:flex-end">${esc(m.q)}</p><p class="lead" style="white-space:pre-line" ${!m.done ? `id="msg-${cv.id}-${i}"` : ""}>${m.done ? cited(answerText(m, cv.lang), c) : skeleton(2)}</p></div>`).join("");
 }
 // Demo history so the Copilot page isn't empty on first open (answers come from the same responder).
 [["TKT-17628","Why this route?","08:21"],["TKT-54875","Translate to English","09:44"],["TKT-38613","What worked before?","08:52"]].forEach(([tid,q,when]) => {
-  const c = byId(tid), cv = newConvo(tid, when); cv.messages.push({q, a: respond(c, S[tid], q), done:true}); ACTIVE[tid] = null;
-  if (tid === "TKT-54875") { const q2 = "Antworte bitte auf Deutsch: was hat früher geholfen?"; cv.lang = nextLang(cv.lang, q2); cv.messages.push({q:q2, a: respond(c, S[tid], q2, cv.lang), done:true}); }
+  const c = byId(tid), cv = newConvo(tid, when); cv.messages.push({q, a: answerBoth(c, S[tid], q, "en"), done:true}); ACTIVE[tid] = null;
+  if (tid === "TKT-54875") { const q2 = "Antworte bitte auf Deutsch: was hat früher geholfen?"; cv.lang = nextLang(cv.lang, q2); cv.messages.push({q:q2, a: answerBoth(c, S[tid], q2, cv.lang), done:true}); }
 });
 CONVOS.sort((a,b) => b.updated.localeCompare(a.updated));
 
@@ -861,13 +881,13 @@ function renderCopilot(){
       ${route.find ? finderHTML() : cv ? `<div class="cp-head">
           <div style="min-width:0"><h2>${esc(convTitle(cv))}</h2>
           ${cv.messages.length ? `<button class="more" data-cp="ticket">${I.back.replace("m12 19-7-7 7-7M19 12H5","M5 12h14M12 5l7 7-7 7")}${cv.ticketId}: ${esc(c.subject)}</button>`
-            : `<label class="muted" style="font-size:12px" for="cp-ticket">About ticket</label> <select id="cp-ticket" class="sel" style="width:auto;max-width:100%">${sorted().map(t => `<option value="${t.ticket_id}" ${t.ticket_id===cv.ticketId?"selected":""}>${t.ticket_id}: ${esc(t.subject)}</option>`).join("")}</select>`}</div>
-          <div style="display:flex;gap:8px;margin-left:auto">${cv.messages.length ? `<button class="btn ghost sm" data-cp="delete">${I.trash}Delete</button>` : ""}${mock}</div>
+            : `<label class="muted" style="font-size:12px" for="cp-ticket">${tx(cv, "about")}</label> <select id="cp-ticket" class="sel" style="width:auto;max-width:100%">${sorted().map(t => `<option value="${t.ticket_id}" ${t.ticket_id===cv.ticketId?"selected":""}>${t.ticket_id}: ${esc(t.subject)}</option>`).join("")}</select>`}</div>
+          <div style="display:flex;gap:8px;margin-left:auto">${cv.messages.length ? `<button class="btn ghost sm" data-cp="delete">${I.trash}${tx(cv, "del")}</button>` : ""}${mock}</div>
         </div>
-        <div class="ai cp-ai">${aiHead("Ask the copilot", `${langLabel(cv)}<span class="muted" style="font-size:12px">${MODEL}</span>`)}
-          ${cv.messages.length ? messagesHTML(cv, c) : `<p class="muted" style="margin:0">Ask anything about ${cv.ticketId}. Answers come only from the ticket and its past tickets.</p>`}
+        <div class="ai cp-ai">${aiHead(tx(cv, "title"), `${langSelect(cv, "copilot")}<span class="muted" style="font-size:12px">${MODEL}</span>`)}
+          ${cv.messages.length ? messagesHTML(cv, c) : `<p class="muted" style="margin:0">${tx(cv, "empty").replace("{id}", cv.ticketId)}</p>`}
           <div class="opts">${suggest.map(x => `<button class="btn outline sm" data-cpask="${esc(x)}">${esc(x)}</button>`).join("")}</div>
-          <form class="free" id="cpform"><div style="flex:1;min-width:0"><label for="cpq">Message</label><input id="cpq" autocomplete="off"></div><button class="btn secondary" type="submit">Ask</button></form>
+          <form class="free" id="cpform"><div style="flex:1;min-width:0"><label for="cpq">${tx(cv, "msg")}</label><input id="cpq" autocomplete="off"></div><button class="btn secondary" type="submit">${tx(cv, "ask")}</button></form>
         </div>` : `<div class="empty"><span>No conversation selected.</span><button class="btn" data-cp="new">${I.plus}New chat</button></div>`}
     </section>
   </div>`;
@@ -887,11 +907,11 @@ function deleteConvos(list, label){
 }
 function cpAsk(cv, q){
   cv.lang = nextLang(cv.lang, q);
-  const c = byId(cv.ticketId), m = {q, a: respond(c, S[cv.ticketId], q, cv.lang), done:false};
+  const c = byId(cv.ticketId), m = {q, a: answerBoth(c, S[cv.ticketId], q, cv.lang), done:false};
   cv.messages.push(m); cv.updated = nowLabel(); ACTIVE[cv.ticketId] = cv.id;
   CONVOS.splice(CONVOS.indexOf(cv), 1); CONVOS.unshift(cv); render();
   const i = cv.messages.length - 1;
-  wait(500).then(() => stream(`msg-${cv.id}-${i}`, m.a, c, () => { m.done = true; render(); }, 22, false));
+  wait(500).then(() => stream(`msg-${cv.id}-${i}`, answerText(m, cv.lang), c, () => { m.done = true; render(); }, 22, false));
 }
 document.addEventListener("click", e => {
   if (route.page !== "copilot") return;
