@@ -1,0 +1,109 @@
+/*
+ * Direction A · Command Center. Palette "Harbor Signal": the four Gemini hues pulled
+ * cooler and slightly desaturated (coral, amber, sea-teal, indigo). Scoped to .dir-a so
+ * shadcn components inside the wrapper re-theme; nothing outside this folder changes.
+ */
+
+.dir-a {
+  --font-google-sans: var(--font-dir-a-manrope), system-ui, sans-serif;
+
+  --gemini-red: #d9574d;
+  --gemini-yellow: #d9962c;
+  --gemini-green: #26937a;
+  --gemini-blue: #3d55c4;
+  --ai-gradient: var(--gemini-gradient);
+  --gemini-gradient: linear-gradient(
+    120deg,
+    var(--gemini-red) 0%,
+    var(--gemini-yellow) 30%,
+    var(--gemini-green) 56%,
+    var(--gemini-blue) 82%
+  );
+
+  --background: #ffffff;
+  --canvas: #f4f5f7;
+  --foreground: #161a22;
+  --card: #ffffff;
+  --card-foreground: #161a22;
+  --popover: #ffffff;
+  --popover-foreground: #161a22;
+  --primary: #3d55c4;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
+  --secondary-foreground: #161a22;
+  --muted: #f0f2f5;
+  --muted-foreground: #596171;
+  --accent: #edf0f4;
+  --accent-foreground: #161a22;
+  --destructive: #b03a32;
+  --border: #e3e6eb;
+  --input: #d0d5dd;
+  --ring: #3d55c4;
+
+  --critical: #d9574d;
+  --critical-fg: #b03a32;
+  --critical-tint: #fbeceb;
+  --warning: #d9962c;
+  --warning-fg: #835409;
+  --warning-tint: #fbf2df;
+  --success: #26937a;
+  --success-fg: #17705a;
+  --success-tint: #e3f3ee;
+  --info: #3d55c4;
+  --info-fg: #3349b0;
+  --info-tint: #eceffb;
+
+  --chart-1: #3d55c4;
+  --chart-2: #26937a;
+  --chart-3: #d9962c;
+  --chart-4: #d9574d;
+  --chart-5: #8a93a3;
+
+}
+
+.dark .dir-a,
+.dir-a.dark {
+  --gemini-red: #ef7d72;
+  --gemini-yellow: #e5b452;
+  --gemini-green: #4cc19f;
+  --gemini-blue: #93a5ff;
+
+  --background: #10131a;
+  --canvas: #0b0d11;
+  --foreground: #e6e9ef;
+  --card: #141821;
+  --card-foreground: #e6e9ef;
+  --popover: #1b2029;
+  --popover-foreground: #e6e9ef;
+  --primary: #93a5ff;
+  --primary-foreground: #0c1330;
+  --secondary: #1f242e;
+  --secondary-foreground: #e6e9ef;
+  --muted: #1b2029;
+  --muted-foreground: #9aa3b2;
+  --accent: #222833;
+  --accent-foreground: #e6e9ef;
+  --destructive: #ff9f95;
+  --border: #262c37;
+  --input: #343b48;
+  --ring: #93a5ff;
+
+  --critical: #ef7d72;
+  --critical-fg: #ff9f95;
+  --critical-tint: #3a1d1c;
+  --warning: #e5b452;
+  --warning-fg: #f0c977;
+  --warning-tint: #33280f;
+  --success: #4cc19f;
+  --success-fg: #6fd6b7;
+  --success-tint: #0f2d26;
+  --info: #93a5ff;
+  --info-fg: #aebcff;
+  --info-tint: #1a2246;
+
+  --chart-1: #93a5ff;
+  --chart-2: #4cc19f;
+  --chart-3: #e5b452;
+  --chart-4: #ef7d72;
+  --chart-5: #6b7483;
+}

@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
-import { CopyIcon } from "lucide-react"
+import Link from "next/link"
+import { ArrowRightIcon, CopyIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { AISurface, GeminiMark } from "@/components/sentinel/gemini"
+import { AISurface, AIMark } from "@/components/sentinel/ai"
 import { ConfidenceMeter } from "@/components/sentinel/confidence"
 import { EscalationStatus, PriorityBadge, TicketId } from "@/components/sentinel/status"
 import { autoDraftBilling, escalatedOutage } from "@/lib/mock"
@@ -13,7 +14,7 @@ import { autoDraftBilling, escalatedOutage } from "@/lib/mock"
 export const metadata: Metadata = { title: "Design system · SentinelDesk" }
 
 const SWATCHES = [
-  { group: "Gemini", items: ["gemini-red", "gemini-yellow", "gemini-green", "gemini-blue"] },
+  { group: "AI", items: ["ai-coral", "ai-rose", "ai-violet", "ai-blue"] },
   { group: "Status", items: ["critical", "warning", "success", "info"] },
   { group: "Tints", items: ["critical-tint", "warning-tint", "success-tint", "info-tint"] },
   { group: "Neutral", items: ["canvas", "card", "muted", "border", "muted-foreground", "foreground"] },
@@ -38,9 +39,12 @@ export default function DesignPage() {
     <div className="min-h-svh bg-canvas">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4">
-          <GeminiMark className="size-5" />
+          <AIMark />
           <h1 className="text-base font-semibold">SentinelDesk design system</h1>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/references" className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+              References <ArrowRightIcon className="size-3.5" aria-hidden="true" />
+            </Link>
             <ThemeToggle />
           </div>
         </div>
@@ -69,8 +73,8 @@ export default function DesignPage() {
             <div className="grid gap-2 sm:grid-cols-[96px_1fr] sm:items-center">
               <p className="text-xs text-muted-foreground">AI only</p>
               <div className="flex items-center gap-3">
-                <span className="h-8 w-48 rounded-md" style={{ background: "var(--gemini-gradient)" }} />
-                <span className="font-mono text-xs">gemini-gradient</span>
+                <span className="h-8 w-48 rounded-md" style={{ background: "var(--ai-gradient)" }} />
+                <span className="font-mono text-xs">ai-gradient</span>
               </div>
             </div>
           </Panel>
@@ -78,7 +82,7 @@ export default function DesignPage() {
 
         <Section title="Type">
           <Panel className="grid gap-3">
-            <p className="text-xl font-semibold">Page title · Google Sans Flex 20 semibold</p>
+            <p className="text-xl font-semibold">Page title · Manrope 20 semibold</p>
             <p className="text-sm font-medium">Panel title · 14 medium</p>
             <p className="text-sm">Body · 14 regular. Since 08:10 our whole clinic cannot connect to the VPN.</p>
             <p className="text-[0.8125rem] text-muted-foreground">Metadata · 13 muted · Technical Support · 2 min ago</p>
@@ -119,10 +123,10 @@ export default function DesignPage() {
           </div>
         </Section>
 
-        <Section title="Gemini output">
+        <Section title="AI output">
           <div className="grid gap-4 md:grid-cols-2">
             <AISurface
-              title="Draft reply · German"
+              title="Draft reply"
               action={
                 <Button variant="ghost" size="icon-sm" aria-label="Copy draft">
                   <CopyIcon aria-hidden="true" />

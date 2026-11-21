@@ -1,0 +1,143 @@
+/*
+ * Direction C · Ops Observatory. Palette "Night Watch": the four Gemini hues each turned a step
+ * toward a neighbour, so they read as ours rather than Google's:
+ *   Ember (red toward coral), Saffron (yellow toward amber), Jade (green toward teal),
+ *   Iris (blue toward violet).
+ * Meaning stays as DESIGN.md: ember = critical, saffron = caution, jade = safe, iris = action.
+ * Priority series form an ordinal ramp: hue (ember > saffron > jade) plus fill weight (.dc-prio-*).
+ * Scoped to .dir-c so shadcn components and charts inside the page re-theme.
+ */
+
+.dir-c {
+  --font-google-sans: var(--font-dirc-sans);
+  --font-google-sans-code: var(--font-dirc-mono);
+
+  --nw-ember: #dc4a3d;
+  --nw-saffron: #b98208;
+  --nw-jade: #139870;
+  --nw-iris: #5560e6;
+  --nw-slate: #8a91a2;
+
+  --gemini-red: var(--nw-ember);
+  --gemini-yellow: var(--nw-saffron);
+  --gemini-green: var(--nw-jade);
+  --gemini-blue: var(--nw-iris);
+  /* Our twist on the AI gradient: runs iris to ember, the reverse of Gemini's order. */
+  --ai-gradient: var(--gemini-gradient);
+  --gemini-gradient: linear-gradient(110deg, #5560e6 0%, #139870 38%, #d9a019 68%, #dc4a3d 100%);
+
+  --background: #ffffff;
+  --canvas: #f4f5f8;
+  --foreground: #171922;
+  --card: #ffffff;
+  --card-foreground: #171922;
+  --popover: #ffffff;
+  --popover-foreground: #171922;
+  --primary: #4651d9;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
+  --secondary-foreground: #171922;
+  --muted: #f0f1f5;
+  --muted-foreground: #5a6070;
+  --accent: #eceef3;
+  --accent-foreground: #171922;
+  --destructive: #b3302a;
+  --border: #e3e5eb;
+  --input: #cfd3dc;
+  --ring: #4651d9;
+
+  --critical: var(--nw-ember);
+  --critical-fg: #b3302a;
+  --critical-tint: #fdeceb;
+  --warning: #d9a019;
+  --warning-fg: #875800;
+  --warning-tint: #fcf3dc;
+  --success: var(--nw-jade);
+  --success-fg: #0b7656;
+  --success-tint: #e2f4ec;
+  --info: var(--nw-iris);
+  --info-fg: #3c46c2;
+  --info-tint: #ecedfe;
+
+  --chart-1: var(--nw-iris);
+  --chart-2: var(--nw-jade);
+  --chart-3: var(--nw-saffron);
+  --chart-4: var(--nw-ember);
+  --chart-5: var(--nw-slate);
+
+  /* Priority ramp */
+  --prio-high: var(--nw-ember);
+  --prio-medium: var(--nw-saffron);
+  --prio-low: var(--nw-jade);
+
+  /* Latency stages: a sequential slate ramp, with iris reserved for the Gemini draft stage. */
+  --lat-triage: #a9afbd;
+  --lat-retrieval: #7d8496;
+  --lat-gate: #565d6e;
+  --lat-draft: var(--nw-iris);
+
+  --grid: #e9ebf0;
+}
+
+.dark .dir-c,
+.dir-c.dark {
+  --nw-ember: #f47a6b;
+  --nw-saffron: #efbe55;
+  --nw-jade: #44c89e;
+  --nw-iris: #8f97ff;
+  --nw-slate: #6f7688;
+
+  --gemini-gradient: linear-gradient(110deg, #8f97ff 0%, #44c89e 38%, #efbe55 68%, #f47a6b 100%);
+
+  --background: #0d0f14;
+  --canvas: #0a0b10;
+  --foreground: #e6e8ef;
+  --card: #12141b;
+  --card-foreground: #e6e8ef;
+  --popover: #181b24;
+  --popover-foreground: #e6e8ef;
+  --primary: #8f97ff;
+  --primary-foreground: #0b0d26;
+  --secondary: #1b1e28;
+  --secondary-foreground: #e6e8ef;
+  --muted: #191c25;
+  --muted-foreground: #959cad;
+  --accent: #1f2330;
+  --accent-foreground: #e6e8ef;
+  --destructive: #ff9f93;
+  --border: #242835;
+  --input: #323747;
+  --ring: #8f97ff;
+
+  --critical: var(--nw-ember);
+  --critical-fg: #ff9f93;
+  --critical-tint: #3a1a17;
+  --warning: var(--nw-saffron);
+  --warning-fg: #f4cf74;
+  --warning-tint: #33280f;
+  --success: var(--nw-jade);
+  --success-fg: #6fdcb6;
+  --success-tint: #0f2e24;
+  --info: var(--nw-iris);
+  --info-fg: #b4b9ff;
+  --info-tint: #1d2046;
+
+  --lat-triage: #4a5061;
+  --lat-retrieval: #697084;
+  --lat-gate: #9aa1b2;
+
+  --grid: #1c1f2a;
+}
+
+.dir-c {
+  font-feature-settings: "tnum" 1;
+}
+
+/* Datadog-style chart chrome: hairline grid, small mono ticks. */
+.dir-c [data-slot="chart"] .recharts-cartesian-grid line {
+  stroke: var(--grid);
+}
+.dir-c [data-slot="chart"] .recharts-cartesian-axis-tick text {
+  font-family: var(--font-dirc-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+}

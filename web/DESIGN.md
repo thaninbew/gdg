@@ -1,84 +1,126 @@
 # SentinelDesk design system
 
-Read this before building a page. Tokens live in `app/globals.css`; components in
-`components/ui` (shadcn) and `components/sentinel` (ours). Visual references with
-screenshots: `../docs/ui-references.md`.
+The one source of truth for how SentinelDesk looks and behaves. Read it before building a page.
 
-**Direction:** PagerDuty-clean layout (quiet neutrals, dense lists, one detail
-panel) with Linear-style triage intelligence (AI suggestions you accept or
-override). Gemini's four colors carry meaning, never decoration.
+- Live reference: `/design` (tokens and components), `/references` (four rough explorations)
+- Tokens: `app/globals.css` · Components: `components/ui` (shadcn) and `components/sentinel` (ours)
+- AI agents: use the `sentinel-ui` skill in `/.claude/skills/sentinel-ui` (Codex: `/.agents/skills`)
+
+## Direction
+
+**Calm, sparse and evidence-first.** The overall look comes from reference D (Copilot Canvas),
+the charts from C (Ops Observatory) and the font from A (Command Center).
+
+1. **Less text.** If a number, badge or icon can say it, don't write a sentence. See "Copy" below.
+2. **Whitespace over borders.** Group with spacing first, a 1px border second, never a shadow.
+3. **Color means something.** Neutrals do the layout; color appears only for status and AI output.
+4. **Show the evidence.** Every AI claim links to the past ticket it came from.
 
 ## Stack
 
+**Next.js (App Router) + shadcn/ui + Tailwind CSS v4.** Not plain CSS.
+
 | Need | Use |
 |---|---|
-| Components | shadcn/ui (Radix), already in `components/ui`. Add more with `pnpm dlx shadcn@latest add <name>` |
-| Icons | `lucide-react` only. No emoji or text glyphs as icons |
-| Charts | shadcn `chart` (Recharts). Wrap in `ChartContainer`, colors from `--chart-*` or status tokens |
-| Fonts | Google Sans Flex (UI), Google Sans Code (ticket IDs, numbers, latency) |
-| Theme | `next-themes`, light default plus dark. Every token has both |
-| Data | `lib/types.ts` mirrors `shared/contracts.py` and `pipeline.run()`. `lib/mock.ts` has fixtures |
+| Styling | Tailwind utilities in JSX. Plain CSS only for tokens and the `ai-surface` utility in `globals.css`. No CSS modules, no `style={}` except truly dynamic values |
+| Components | shadcn/ui (Radix) in `components/ui`. Add more with `pnpm dlx shadcn@latest add <name>`. You own the code; edit variants there instead of wrapping |
+| Icons | `lucide-react` only. No emoji, no text glyphs as icons |
+| Charts | shadcn `chart` (Recharts) inside `ChartContainer`. Patterns: `app/references/c/charts.tsx` |
+| Fonts | Manrope (UI), Google Sans Code (ticket IDs, numbers, latency) |
+| Theme | `next-themes`, light and dark. Every token has both values |
+| Data | `lib/types.ts` mirrors `shared/contracts.py` and `pipeline.run()`. Fixtures in `lib/mock.ts` |
 
-## Color
+## Copy
 
-Neutrals do the layout work. Color appears only where it means something.
+Clutter is the main risk for this product: tickets, drafts and evidence are already a lot of text.
 
-| Meaning | Gemini hue | Tokens (Tailwind) | Use for |
-|---|---|---|---|
-| Critical | red | `bg-critical-tint text-critical-fg`, `bg-critical` | High priority, escalate, invalid citation |
-| Caution | yellow | `bg-warning-tint text-warning-fg`, `bg-warning` | Medium priority, low confidence, uncited sentence |
-| Safe | green | `bg-success-tint text-success-fg`, `bg-success` | Low priority, auto-draft ready, supported sentence |
-| Action / info | blue | `bg-primary`, `bg-info-tint text-info-fg` | Primary buttons, links, focus, selection |
-| AI generated | gradient | `gemini-edge`, `gemini-text`, `<GeminiMark />` | Only content Gemini produced |
+- Labels are 1–3 words. Buttons are a verb plus an object: "Approve and send", "Page on-call".
+- No helper paragraphs, no "This panel shows…" sentences, no restating what a badge already says.
+- Numbers over words for counts and time: `1.6 s`, `3 precedents`, not sentences.
+- Confidence shows as a tier, not a raw score: Confident (≥0.85), Likely (≥0.70), Ambiguous
+  (<0.70, ask a clarifying question). `ConfidenceMeter` does this; `showValue` only on eval views.
+- Escalation reasons: one short line each, at most three visible; the rest behind "More".
+- Long content (ticket body, past answers, incident brief) is truncated to 2–3 lines with an expand.
+- Secondary detail goes in a hover card, tooltip or tab, not on the page by default.
+- One empty-state sentence and one action. No marketing copy anywhere.
 
-- Page background `bg-canvas`, panels `bg-card` with `border`. No shadows except popovers.
-- Text: `text-foreground`, secondary `text-muted-foreground`. Never lighter than that for text.
-- Status always pairs color with an icon or label. `PriorityBadge` does this for you.
+## Color ("Dusk")
+
+| Meaning | Tokens (Tailwind) | Use for |
+|---|---|---|
+| Critical (red) | `bg-critical-tint text-critical-fg`, `bg-critical` | High priority, escalate, invalid citation |
+| Caution (amber) | `bg-warning-tint text-warning-fg`, `bg-warning` | Medium priority, low confidence, unsupported sentence |
+| Safe (green) | `bg-success-tint text-success-fg`, `bg-success` | Low priority, auto-draft ready, supported sentence |
+| Action / info (blue) | `bg-primary`, `bg-info-tint text-info-fg` | Primary buttons, links, focus, selection |
+| AI (gradient) | `ai-surface`, `<AIMark />`, `bg-(image:--ai-gradient)` | Only content the model generated |
+
+- AI gradient runs coral → rose → violet → blue (`--ai-coral|rose|violet|blue`). It appears only as
+  the 3px strip and soft glow of `ai-surface` and in `AIMark`. Never on text, buttons or status.
+- Page background `bg-canvas`; panels `bg-card` with `border`. Popovers are the only shadows.
+- Text: `text-foreground`; secondary `text-muted-foreground`. Never lighter for text.
+- Status always pairs color with an icon or label (`PriorityBadge` does this).
 - Badge variants: `critical`, `warning`, `success`, `info`, plus shadcn's own.
-- Charts: priority series use `var(--critical)`, `var(--warning)`, `var(--success)`.
-  Other series use `--chart-1..5` (blue, green, yellow, red, slate).
-- Raw `--gemini-*` hues are for charts and the gradient. Never use them for text.
+- All text pairs pass WCAG AA (4.5:1) in both themes. Check new pairs with `pnpm check:contrast`.
 
 ## Type and spacing
 
-- Base UI text 14px (`text-sm`); dense metadata 13px (`text-[0.8125rem]`); labels 12px (`text-xs`).
-- Headings: page `text-xl font-semibold`, panel `text-sm font-medium`. No oversized hero type.
-- Ticket IDs, percentages, milliseconds: `font-mono`. Numbers are tabular by default.
-- Spacing scale: 1, 1.5, 2, 3, 4, 6, 8 (Tailwind units). Panel padding `p-4`, row height 36–40px.
-- Radius: `rounded-md` for controls and badges, `rounded-lg` for panels.
+- Base 14px (`text-sm`); dense metadata 13px (`text-[0.8125rem]`); labels 12px (`text-xs`).
+- AI reply text may go to 15px (`text-[0.9375rem] leading-relaxed`) for readability.
+- Headings: page `text-xl font-semibold`, panel `text-sm font-semibold`. No hero-size type.
+- IDs, percentages, milliseconds: `font-mono`. Numbers are tabular by default.
+- Spacing scale: 1, 1.5, 2, 3, 4, 5, 6, 8. Panel padding `p-4`/`p-5`, list rows 36–40px.
+- Radius: `rounded-md` controls and badges, `rounded-lg` panels, `rounded-xl` AI surfaces.
 
 ## Layout
 
-- Console pages: list on the left, detail panel on the right (PagerDuty). Detail panel order:
-  status, triage fields, Gemini draft or incident brief, precedents, latency.
-- Put the next action in the first viewport. Use `min-w-0` on flex and grid children that hold text.
-- Below 768px, stack the detail panel under the list; never scroll the page sideways.
+Planned pages (see `web/README.md` for scope) and the reference each should start from:
+
+| Page | Start from |
+|---|---|
+| Triage inbox `/tickets` | A's queue layout, B's keyboard triage and suggestion chips |
+| Ticket detail `/tickets/[id]` | D's canvas: ticket, grounded reply or clarifying question, evidence rail |
+| Operations dashboard `/dashboard` | C's charts and KPI tiles; chart selections open the inbox filtered |
+
+- The AI reply (or clarifying question, or escalation reason) and its evidence are the visual center.
+- Put the next action (approve, escalate) in the first viewport; on phones, a fixed bottom bar.
+- `min-w-0` on flex and grid children that hold text. Never scroll the page sideways.
+- Below 768px, stack panels in reading order: status, ticket, AI reply, evidence.
+
+## Charts (from reference C)
+
+- `ChartContainer` + Recharts, colors from tokens: priority series `var(--prio-high|medium|low)`,
+  other series `var(--chart-1..5)`.
+- Thin lines (1.5px), low-opacity area fills (high 0.34, medium 0.18, low 0.10), dashed muted
+  gridlines, no chart borders, compact legend, `ChartTooltipContent` tooltips.
+- Annotate the moment that matters (an outage burst) with one `ReferenceArea` and a 2-word label.
+- Time range with a `ToggleGroup` (1h / 24h / 7d). KPI tiles: one number, one sparkline, no prose.
+- Disable Recharts' entrance animation (`isAnimationActive={false}`); charts should not bounce.
 
 ## Motion
 
 - Hover and press: 100–150ms, colors or opacity only (`transition-colors duration-150`).
 - Panels, popovers, tabs: 200ms with `ease-standard`. Entrances under 300ms.
 - No staggered entrances, hover lifts, bouncing or perpetual motion.
-- Only one thing animates continuously: a Gemini surface while a request is in flight
-  (`data-generating="true"` on `gemini-edge`). It stops when the response lands.
-- Loading uses `Skeleton` in the shape of the final content, not spinners.
-- `prefers-reduced-motion` is handled globally; never remove state feedback to honor it.
+- The only continuous animation: an `ai-surface` with `data-generating="true"` while a model
+  request is in flight. It stops when the response lands.
+- Loading uses `Skeleton` shaped like the final content, not spinners.
+- `prefers-reduced-motion` is handled globally; keep state feedback when honoring it.
 
-## States (every data panel needs all of them)
+## States (every data panel needs all four)
 
 | State | Pattern |
 |---|---|
-| Loading | `Skeleton` matching the final layout; Gemini surface shows the edge sweep |
-| Empty | shadcn `Empty` with one sentence and one action |
-| Error | `Alert variant="destructive"` with what failed and a retry |
-| Mock data | If `sources[stage] !== "real"`, show a small `outline` badge "Mock" on that panel |
+| Loading | `Skeleton` matching the final layout; AI surface shows the strip sweep |
+| Empty | shadcn `Empty`: one sentence, one action |
+| Error | `Alert variant="destructive"`: what failed, plus Retry |
+| Mock data | If `sources[stage] !== "real"`, a small `outline` badge "Mock" on that panel |
 
 ## Accessibility
 
-- Every input has a label. Icon-only buttons need `aria-label`.
-- Visible `focus-visible` ring on every control (shadcn default, keep it).
-- Contrast: text 4.5:1, UI boundaries 3:1, on the surface where it appears.
-- Escalation and errors announce via `role="status"` or `role="alert"`.
+- Every input has a label; icon-only buttons have `aria-label`.
+- Keep shadcn's `focus-visible` ring on every control.
+- Escalations and errors announce via `role="status"` or `role="alert"`.
+- Check keyboard order, focus and 390px width in the browser before calling a page done.
 
 ## Components
 
@@ -93,17 +135,26 @@ Ours (`components/sentinel`):
 | `PriorityBadge` | Priority with color and signal icon |
 | `TicketId` | Monospace ticket ID |
 | `EscalationStatus` | Auto-draft ready vs escalate, with reasons |
-| `ConfidenceMeter` | Bar, percent and High/Medium/Low band |
-| `GeminiMark`, `AISurface` | Marks and frames Gemini output; `generating` animates the edge |
+| `ConfidenceMeter` | Bar and Confident/Likely/Ambiguous tier (raw % only with `showValue`) |
+| `AIMark`, `AISurface` | Our AI mark and the card for model output; `generating` animates the strip |
 
-Coming next: `AISuggestion` (Linear-style accept or override), `GroundedReply` (per-sentence
-support with citation chips), `PrecedentList` (used vs found), `LatencyBreakdown`,
-`OutageBanner`, charts (`VolumeChart`, `CalibrationChart`, `RiskDial`) and a live
-style guide at `/design`.
+Build a custom component only when shadcn has nothing that fits, and add it to this table.
 
-Build a new custom component only when shadcn has nothing that fits, and add it to this table.
+## References (`/references`)
+
+Four quick explorations built in parallel. **They are not finished or fully scoped**: each has its
+own palette, invented copy and placeholder data, and some patterns there break the rules above
+(too much text in places). Use them for patterns, then rebuild on these tokens and components.
+
+| Ref | Borrow | Key file |
+|---|---|---|
+| D · Copilot Canvas | Overall look, AI gradient, grounded reply with sentence support and citation cards | `app/references/d/canvas.tsx` |
+| C · Ops Observatory | Volume chart, calibration, risk dial, KPI sparklines, latency by stage | `app/references/c/charts.tsx` |
+| A · Command Center | Queue + detail + AI panel layout, Manrope | `app/references/a/command-center.tsx` |
+| B · Triage Inbox | Keyboard triage (J/K, A, E), accept or override suggestions | `app/references/b/detail.tsx` |
 
 ## TODO
 
-- [ ] Replace the sparkle in `GeminiMark` with our own mark. Lucide's `Sparkle` with the
-  gradient reads too close to Google's Gemini logo, and we should not borrow it.
+- [ ] Promote C's charts into `components/charts` on the global tokens.
+- [ ] Promote D's grounded reply (sentence support + citation chips) into `components/sentinel`.
+- [ ] Delete a reference once its patterns live in shared components.
