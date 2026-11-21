@@ -182,6 +182,8 @@ var API=param("api","");
 var APP=param("app","http://localhost:3000"),REAL=false;
 // Optional engineer app (Toffy's /tickets inbox). Same loopback rule; only used when given and reachable.
 var ENG=param("engineer",""),ENG_OK=false;
+// Landing's Auto-answer link (#mine) opens /submit prefilled with its supported sample. /submit fills only; it never sends.
+var SUPPORT_QS="";
 var I={
   back:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
   chev:'<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
@@ -264,7 +266,7 @@ function render(focusSel){
   var prev=stage.dataset.pane;stage.dataset.pane=pane;
   [].forEach.call(stage.children,function(el){el.hidden=el.dataset.pane!==pane});
   var el=stage.querySelector('[data-pane="'+pane+'"]');
-  if(st.src&&!el.firstChild)el.innerHTML='<iframe src="'+esc(st.origin==="eng"?ENG:APP)+st.src+'" title="'+esc(st.title)+'"></iframe>';
+  if(st.src&&!el.firstChild)el.innerHTML='<iframe src="'+esc(st.origin==="eng"?ENG:APP)+st.src+(st.k==="support"?SUPPORT_QS:"")+'" title="'+esc(st.title)+'"></iframe>';
   if(pane==="factory"){var f=el.firstChild;
     if(!f)el.innerHTML='<iframe src="factory.html#'+st.k+'" title="Software Factory, sample run"></iframe>';
     else if(f.contentWindow&&f.contentWindow.location.hash!=="#"+st.k){var keep=document.activeElement;f.contentWindow.location.hash=st.k;
@@ -291,6 +293,7 @@ function go(k,focusSel){var i=idx(k);if(i<0)return;S.i=i;S.open=false;render(foc
 var TO_LIVE={intake:"support",ask:"support",mine:"support",inbox:"console",detail:"console",urgent:"console",dash:"console"},
     TO_SAMPLE={support:"intake",console:"inbox",dash:"inbox"};
 function enter(k){
+  if(REAL&&k==="mine"&&!document.querySelector('[data-pane="support"] iframe'))SUPPORT_QS="?sample=settings-access";
   if(ENG_OK&&(k==="console"||k==="inbox"||k==="detail"||k==="urgent"))k="tickets";
   if(!ENG_OK&&k==="tickets")k=REAL?"console":"inbox";
   if(REAL&&TO_LIVE[k])k=TO_LIVE[k];if(!REAL&&TO_SAMPLE[k])k=TO_SAMPLE[k];
