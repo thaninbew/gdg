@@ -177,11 +177,13 @@ function loopback(raw){if(!raw)return "";try{var u=new URL(raw);
   return u.origin}catch(e){return ""}}
 var Q=new URLSearchParams(location.search),REFUSED=[];
 function param(name,def){var raw=Q.get(name);if(raw===null)return def;var ok=loopback(raw);if(!ok)REFUSED.push(name);return ok}
-var API=param("api","");
+var API=param("api",""),API_DOWN=false;
 // The customer step embeds the existing /submit page from the web app (pnpm dev). Same loopback rule.
 var APP=param("app","http://localhost:3000"),REAL=false;
 // Optional engineer app (Toffy's /tickets inbox). Same loopback rule; only used when given and reachable.
 var ENG=param("engineer",""),ENG_OK=false;
+// Landing's Auto-answer link (#mine) opens /submit prefilled with its supported sample. /submit fills only; it never sends.
+var SUPPORT_QS="";
 var I={
   back:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
   chev:'<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
@@ -264,7 +266,7 @@ function render(focusSel){
   var prev=stage.dataset.pane;stage.dataset.pane=pane;
   [].forEach.call(stage.children,function(el){el.hidden=el.dataset.pane!==pane});
   var el=stage.querySelector('[data-pane="'+pane+'"]');
-  if(st.src&&!el.firstChild)el.innerHTML='<iframe src="'+esc(st.origin==="eng"?ENG:APP)+st.src+'" title="'+esc(st.title)+'"></iframe>';
+  if(st.src&&!el.firstChild)el.innerHTML='<iframe src="'+esc(st.origin==="eng"?ENG:APP)+st.src+(st.k==="support"?SUPPORT_QS:"")+'" title="'+esc(st.title)+'"></iframe>';
   if(pane==="factory"){var f=el.firstChild;
     if(!f)el.innerHTML='<iframe src="factory.html#'+st.k+'" title="Software Factory, sample run"></iframe>';
     else if(f.contentWindow&&f.contentWindow.location.hash!=="#"+st.k){var keep=document.activeElement;f.contentWindow.location.hash=st.k;
@@ -273,14 +275,14 @@ function render(focusSel){
   if(prev!==pane&&pane!=="app")SDMotion.enter(el);
   var pend=S.pend;S.pend=false;
   if(pane==="app")SDMotion.swap(app,chrome(st),{key:st.k,role:st.role,ticket:st.k==="detail"?tid():myId(),view:st.k==="mine"&&S.open?myId():"",pending:pend});
-  document.getElementById("loc").textContent=st.loc+(st.k==="detail"?" · "+tid():st.k==="mine"&&S.open?" · "+myId():"");
+  document.getElementById("loc").textContent=st.loc+(st.k==="detail"?" · "+tid():st.k==="mine"&&S.open?" · "+myId():"")+(REAL&&pane==="app"?" · sample":"");
   document.getElementById("num").textContent=(S.i+1)+"/"+STEPS.length;
   var nextBtn=document.getElementById("next");
   nextBtn.firstChild.textContent=S.i===STEPS.length-1?"Finish":"Next";
   nextBtn.disabled=st.k==="ask"&&!submitted();
   // Identify sample data once, in the bar. Real pages carry their own Mock badges; Factory marks itself "Demo run".
   var tag=pane==="app"?(API?'<span class="livetag">API</span><span class="mono">'+esc(API)+'/triage</span>':'<span class="simtag">SAMPLE DATA</span>'):'';
-  document.getElementById("foot").innerHTML=(ENG&&!ENG_OK?'<span class="warn" role="status">Engineer app not reachable</span>':'')+(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': loopback http only</span>':'')+tag;
+  document.getElementById("foot").innerHTML=(API_DOWN?'<span class="warn" role="status">API not reachable</span>':'')+(ENG&&!ENG_OK?'<span class="warn" role="status">Engineer app not reachable</span>':'')+(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': loopback http only</span>':'')+tag;
   var ta=document.getElementById("txt");if(ta)ta.addEventListener("input",function(){S.text=ta.value});
   if(location.hash.slice(1)!==st.k)history.replaceState(null,"","#"+st.k);
   if(focusSel){var f2=app.querySelector(focusSel);if(f2)f2.focus()}
@@ -291,9 +293,12 @@ function go(k,focusSel){var i=idx(k);if(i<0)return;S.i=i;S.open=false;render(foc
 var TO_LIVE={intake:"support",ask:"support",mine:"support",inbox:"console",detail:"console",urgent:"console",dash:"console"},
     TO_SAMPLE={support:"intake",console:"inbox",dash:"inbox"};
 function enter(k){
+  if(REAL&&k==="mine"&&!document.querySelector('[data-pane="support"] iframe'))SUPPORT_QS="?sample=settings-access";
   if(ENG_OK&&(k==="console"||k==="inbox"||k==="detail"||k==="urgent"))k="tickets";
-  if(!ENG_OK&&k==="tickets")k=REAL?"console":"inbox";
-  if(REAL&&TO_LIVE[k])k=TO_LIVE[k];if(!REAL&&TO_SAMPLE[k])k=TO_SAMPLE[k];
+  var engDown=ENG&&!ENG_OK;
+  if(!ENG_OK&&k==="tickets")k=REAL&&!engDown?"console":"inbox";
+  if(engDown&&k==="console")k="inbox";
+  if(REAL&&TO_LIVE[k]&&!(engDown&&/^(inbox|detail|urgent|dash)$/.test(k)))k=TO_LIVE[k];if(!REAL&&TO_SAMPLE[k])k=TO_SAMPLE[k];
   if(k==="urgent"){S.urgent=true;k="detail"}var i=idx(k);if(i<0)i=0;if(i>=idx("mine")&&!submitted()){S.sent=true;S.pick=D.options[0]}S.i=i;S.open=false;render()}
 function next(){
   var k=step().k;
@@ -305,10 +310,13 @@ function back(){if(S.i===0){location.href="index.html";return}var k=step().k;if(
 
 function triage(){
   S.api={state:"loading",res:null,err:""};go("mine");S.open=true;render();
-  fetch(API+"/triage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:"",body:S.text})})
+  var ac=new AbortController(),to=setTimeout(function(){ac.abort()},8000);
+  fetch(API+"/triage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:"",body:S.text}),signal:ac.signal})
     .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j&&j.detail?j.detail:"HTTP "+r.status);return j})})
     .then(function(j){S.api={state:"ok",res:j,err:""};render()})
-    .catch(function(e){S.api={state:"error",res:null,err:String(e.message||e)};render()});
+    // Unreachable or slow API: show the labelled sample answer instead of a blocking error.
+    .catch(function(e){clearTimeout(to);if(e&&e.name!=="AbortError"&&!(e instanceof TypeError)){S.api={state:"error",res:null,err:String(e.message||e)};render();return}
+      API="";API_DOWN=true;S.api={state:"idle",res:null,err:""};S.sent=true;S.human=false;S.pick=null;S.open=true;render()});
 }
 
 document.addEventListener("click",function(e){
@@ -342,7 +350,8 @@ function probe(url){if(!url)return Promise.resolve(false);var c=new AbortControl
   return fetch(url,{mode:"no-cors",signal:c.signal}).then(function(){return true},function(){return false}).finally(function(){clearTimeout(t)})}
 Promise.all([probe(APP&&APP+"/submit"),probe(ENG&&ENG+"/tickets")]).then(function(r){
   ENG_OK=r[1];
-  if(r[0]){REAL=true;STEPS.splice(0,5,LIVE_STEPS[0],ENG_OK?ENG_STEP:LIVE_STEPS[1])}
+  // A given but unreachable engineer host falls back to the labelled sample inbox and detail, never to /console.
+  if(r[0]){REAL=true;if(ENG_OK)STEPS.splice(0,5,LIVE_STEPS[0],ENG_STEP);else if(ENG)STEPS.splice(0,3,LIVE_STEPS[0]);else STEPS.splice(0,5,LIVE_STEPS[0],LIVE_STEPS[1])}
   else if(ENG_OK){STEPS.splice(3,2,ENG_STEP)}
   start()});
 </script>
