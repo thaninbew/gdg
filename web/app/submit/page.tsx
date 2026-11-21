@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 
-import { SupportRequest } from "./support-request"
+import { RequestForm } from "./request-form"
 
 export const metadata: Metadata = {
   title: "Support · SentinelDesk",
 }
 
 export default function SubmitPage() {
-  return <SupportRequest />
+  return <RequestForm />
 }

@@ -1,6 +1,6 @@
 # Customer `/submit`: backend test handoff
 
-Branch `feat/customer-submit` (PR #21, on hold for design review). Nothing in the frontend calls the backend yet.
+Branch `feat/customer-submit` (PR #21). `/submit` calls the team API through a same-origin proxy, `web/app/submit/backend/route.ts`, which forwards to `SENTINEL_API_URL` (loopback only, default `http://127.0.0.1:8000`). When the API is down, the page falls back to local rules and says so.
 
 ## Open it
 
@@ -15,9 +15,9 @@ Branch `feat/customer-submit` (PR #21, on hold for design review). Nothing in th
 
 | Piece | Status |
 |---|---|
-| `/submit` routing, the one pre-submit question, ticket IDs | **Fixture.** Local rules in `web/app/submit/logic.ts` (`analyze`, `resolve`, `ticketId`) |
+| Live classification panel and the send decision | **Wired to `POST /triage`** (`web/app/submit/pipeline.ts`). Verified against `api/server.py` running with `MOCK=triage,retrieve,gate,draft`; the real classifier, Chroma and Gemma have not been exercised from the page. The page shows a Mock badge whenever `sources` reports a stage as not real |
+| Pre-submit question, ticket IDs, offline fallback | **Local.** `web/app/submit/logic.ts` (`analyze`, `resolve`, `ticketId`) |
 | Invoice breakdown, the precedent `TKT-03990`, simulated paging, the sample product review | **Fixture.** Sample records in `logic.ts`, labelled Mock, Simulated or Sample on screen |
-| `POST /triage` | **Real on `main`, not called by `/submit`.** No request from this branch has reached it |
 | Clarifying-question endpoint | **Missing.** The backend has no clarify call; `/submit` asks fixed template questions |
 | Ticket persistence and ID | **Missing.** `pipeline.run()` returns no ticket ID and stores nothing. `/submit` IDs are a local hash, so the same ID does not yet appear in Toffy's `/tickets/[id]` (his fixtures use other IDs) |
 | Customer to operator link | **Missing between branches.** Only the rough prototype shows it, synthetically |
@@ -56,13 +56,18 @@ curl -s localhost:8000/triage -H 'content-type: application/json' \
 
 An empty body returns 422. `web/lib/types.ts` on `main` does not yet include `key_terms`, the precedent `type`/`queue`/`priority`, or `draft.sentences`.
 
-## Proposed wiring (not implemented)
+## Wiring (implemented in `pipeline.ts`)
 
-1. On **Send request**, `POST /triage` with `subject` set to the starting point or `""`, and `body` set to the text plus the answered detail (for example `Invoice: INV-2026-1104`).
-2. Map the response to the customer outcome:
-   - an outage, security or high-priority reason gives urgent
-   - `!escalate && draft.grounded` gives a suggested fix that cites `cited_ticket_ids`
-   - any other escalation gives a handoff with the first reason
-3. Keep the invoice breakdown local. There is no billing API.
-4. A backend ticket ID and store, so `/submit` and `/tickets/[id]` share one ID.
-5. Optionally, a clarify call that returns at most one short question when type or priority confidence is below 0.70. It only phrases the question; it never decides permissions or actions.
+- While typing (700 ms pause): `POST /triage` with `subject` = Title and `body` = details plus any answered question. The panel shows type, queue and priority.
+- On **Send request**, the latest response decides:
+  - an on-call, outage, security or critical-service reason gives urgent
+  - `!escalate && draft.grounded` gives an answer citing the draft sentences' `source_ticket_id`s
+  - anything else gives a handoff to `triage.queue`
+- The invoice breakdown stays local because there is no billing API.
+
+## Still missing
+
+- A backend ticket ID and store, so `/submit` and `/tickets/[id]` share one ID.
+- A clarify call that returns at most one short question when type or priority confidence is below 0.70. It only phrases the question; it never decides permissions or actions.
+
+Run both: `uv run uvicorn api.server:app --port 8000` and `cd web && pnpm dev`, then open `/submit`.

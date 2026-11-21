@@ -104,6 +104,7 @@ export function invoiceTotals(inv: Invoice) {
 
 export type Precedent = { id: string; subject: string }
 
+
 const PRECEDENTS: Record<string, Precedent> = {
   "TKT-03990": { id: "TKT-03990", subject: "Sign-in loop after password reset" },
 }
@@ -188,8 +189,8 @@ export type Team = "Billing" | "Technical support" | "Customer service" | "Produ
 export type Outcome =
   | { kind: "urgent"; reasons: string[] }
   | { kind: "action"; invoice: Invoice; previous: Invoice | null }
-  | { kind: "answer"; sentences: { text: string; source: Precedent }[] }
-  | { kind: "handoff"; team: Team; reason: string }
+  | { kind: "answer"; sentences: { text: string; source: Precedent | null }[] }
+  | { kind: "handoff"; team: string; reason: string }
   | { kind: "review" }
 
 const TEAM: Record<Topic | "none", Team> = {
