@@ -27,7 +27,10 @@ TARGETS = ["type", "queue", "priority"]
 LANGUAGES = {"en", "de"}
 # Raw dataset has 5 priority levels; the product uses 3.
 PRIORITY_MAP = {"critical": "high", "high": "high", "medium": "medium", "low": "low", "very_low": "low"}
-HP_THRESHOLD = 0.35
+# Call it "high" if P(high) >= this. Lower = catch more outages.
+# 0.31 = highest threshold with >=90% recall on high-priority Incidents in the holdout
+# (macro-F1 0.693, 53% of tickets flagged high). Re-tune after retraining.
+HP_THRESHOLD = 0.31
 # Filler words are dropped from key_terms only (display), not from the model.
 GERMAN_STOP_WORDS = set("""
 aber alle allem allen aller alles als also am an ander andere anderen auch auf aus bei bin bis bist da
@@ -39,7 +42,7 @@ ohne sehr sein seine sich sie sind so solche soll sollte sondern um und uns unse
 unseren unserer unter viel vom von vor war waren was weil welche wenn wer werden wie wieder wir wird
 wo wollen würde zu zum zur über bitte sehr geehrte geehrter damen herren
 """.split())
-STOP_WORDS = ENGLISH_STOP_WORDS | GERMAN_STOP_WORDS  # call it "high" if P(high) >= this. Lower = catch more outages. Tune with eval.
+STOP_WORDS = ENGLISH_STOP_WORDS | GERMAN_STOP_WORDS
 
 
 def ticket_text(subject, body):
