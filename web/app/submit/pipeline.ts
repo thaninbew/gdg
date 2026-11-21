@@ -29,6 +29,43 @@ export function mockStages(r: PipelineResult) {
     .map(([k]) => k)
 }
 
+// The loopback response is JSON. Check the fields the presenter renders before sharing it.
+export function canPresent(value: unknown): value is PipelineResult {
+  const record = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null
+  const number = (v: unknown) => typeof v === "number" && Number.isFinite(v)
+  const strings = (v: unknown) => Array.isArray(v) && v.every((s) => typeof s === "string")
+  if (!record(value)) return false
+  const { triage, precedents, reasons, escalate, draft, timings_ms, sources } = value
+  return (
+    typeof escalate === "boolean" &&
+    strings(reasons) &&
+    record(triage) &&
+    ["type", "queue", "priority", "language"].every((key) => typeof triage[key] === "string") &&
+    ["type_conf", "queue_conf", "priority_conf"].every((key) => number(triage[key])) &&
+    (triage.key_terms === undefined || strings(triage.key_terms)) &&
+    Array.isArray(precedents) &&
+    precedents.every((p) =>
+      record(p) && number(p.similarity) &&
+      ["ticket_id", "subject", "body_snippet", "answer_snippet", "language"].every((key) => typeof p[key] === "string") &&
+      ["type", "queue", "priority"].every((key) => p[key] === undefined || typeof p[key] === "string")
+    ) &&
+    record(draft) &&
+    typeof draft.reply === "string" && typeof draft.grounded === "boolean" &&
+    strings(draft.issues) && strings(draft.cited_ticket_ids) &&
+    (draft.sentences === undefined || (Array.isArray(draft.sentences) && draft.sentences.every((s) =>
+      record(s) && typeof s.text === "string" && typeof s.supported === "boolean" &&
+      (s.source_ticket_id === null || typeof s.source_ticket_id === "string") && number(s.score)
+    ))) &&
+    record(timings_ms) &&
+    ["triage_ms", "retrieval_ms", "gate_ms", "draft_ms", "total_ms"].every((key) => number(timings_ms[key])) &&
+    record(sources) &&
+    ["triage", "retrieve", "gate", "draft"].every((key) => {
+      const source = sources[key]
+      return source === "real" || source === "mock" || source === "error"
+    })
+  )
+}
+
 const URGENT = /on-call|outage|security|critical service/i
 
 // The backend decides. Local rules may only make it stricter (a local outage rule still escalates);

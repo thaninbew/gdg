@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { CircleCheckIcon, FlaskConicalIcon, SendIcon, UserRoundIcon } from "lucide-react"
 
 import { CONFIDENCE_BANDS, ConfidenceMeter } from "@/components/sentinel/confidence"
@@ -23,12 +25,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { PRESENTER_CONSOLE, PRESENTER_SUBMIT, usePresenterTicket, type PresenterTicket } from "@/lib/presenter-ticket"
 import type { Priority } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 import { ACCOUNTS, SAMPLES, analyze, handoff, resolve, ticketId, type AccountId, type Analysis, type Outcome, type Topic } from "./logic"
 import { Answer, Breakdown, Handoff, Review, Urgent } from "./outcomes"
-import { mockStages, probe, toOutcome, triage } from "./pipeline"
+import { canPresent, mockStages, probe, toOutcome, triage } from "./pipeline"
 import { TOPICS } from "./topics"
 
 type Backend = "checking" | "online" | "offline"
@@ -66,6 +69,8 @@ function status(o: Outcome) {
 }
 
 export function RequestForm() {
+  const presenter = useSearchParams().get("presenter") === "1"
+  const { ticket, setTicket } = usePresenterTicket()
   const [accountId, setAccountId] = useState<AccountId>("weber")
   const [sampleId, setSampleId] = useState<string | null>(null)
   const [topic, setTopic] = useState<Topic | null>(null)
@@ -83,6 +88,7 @@ export function RequestForm() {
   }, [done])
   const lastRow = useRef<HTMLButtonElement | null>(null)
   const opened = mine.find((m) => m.id === openId) ?? null
+  const presenterTicket = presenter && ticket && done?.id === ticket.id ? ticket : null
   const [backend, setBackend] = useState<Backend>("checking")
   const account = ACCOUNTS[accountId]
 
@@ -104,6 +110,11 @@ export function RequestForm() {
     if (!a || sending) return
     const id = ticketId(full, accountId, sampleId)
     const ans = q && !person ? matchOption(a, answer) : null
+    // No clarification field in the contract: the answer travels as body context.
+    const request = {
+      subject: title.trim(),
+      body: [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n"),
+    }
     setSending(true)
     let d: Done
     if (person) {
@@ -111,10 +122,8 @@ export function RequestForm() {
       d = { id, outcome: handoff(a.topic, "You asked for a person."), via: { kind: "person" }, cls: null }
       setSending(false)
     } else if (backend === "online") {
-      // No clarification field in the contract: the answer travels as body context.
-      const body = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
       try {
-        const r = await triage(title.trim(), body)
+        const r = await triage(request.subject, request.body)
         d = {
           id,
           outcome: toOutcome(r, a),
@@ -127,6 +136,7 @@ export function RequestForm() {
             priority: r.triage.priority,
           },
         }
+        if (presenter && canPresent(r)) setTicket({ id, request, result: r })
       } catch {
         d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: true }, cls: localClassification(a, topic) }
       } finally {
@@ -138,13 +148,13 @@ export function RequestForm() {
       setSending(false)
     }
     setDone(d)
-    const message = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
     const sentAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    const entry: Mine = { id: d.id, subject: title.trim(), message, sentAt, outcome: d.outcome, via: d.via }
+    const entry: Mine = { id: d.id, subject: request.subject, message: request.body, sentAt, outcome: d.outcome, via: d.via }
     setMine((m) => [entry, ...m.filter((x) => x.id !== d.id)])
   }
 
   function reset(t = "") {
+    if (presenter) setTicket(null)
     setTitle("")
     setText(t)
     setAnswer("")
@@ -186,6 +196,11 @@ export function RequestForm() {
                     {s.label}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuItem asChild>
+                  <Link href={presenter ? "/submit" : PRESENTER_SUBMIT} onClick={() => setTicket(null)}>
+                    {presenter ? "Exit presenter mode" : "Enter presenter mode"}
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -194,7 +209,10 @@ export function RequestForm() {
 
       <main className="mx-auto grid max-w-5xl gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="flex min-w-0 flex-col gap-4">
-          <h1 className="text-xl font-semibold">New request</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-semibold">New request</h1>
+            {presenter ? <Badge variant="outline">Presenter mode · Use sample data</Badge> : null}
+          </div>
           {sending ? (
             <section
               aria-busy="true"
@@ -233,7 +251,15 @@ export function RequestForm() {
               <div role="status">
                 <OutcomeCard outcome={done.outcome} />
               </div>
-              <div>
+              {presenter && !presenterTicket ? (
+                <p role="status" className="text-sm text-muted-foreground">No pipeline result is available to hand off.</p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {presenterTicket ? (
+                  <Button asChild>
+                    <Link href={PRESENTER_CONSOLE}>Open in console</Link>
+                  </Button>
+                ) : null}
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -245,6 +271,7 @@ export function RequestForm() {
                   New request
                 </Button>
               </div>
+              {presenterTicket ? <PresenterDetails ticket={presenterTicket} /> : null}
             </section>
           ) : (
             <form
@@ -443,6 +470,46 @@ export function RequestForm() {
         </SheetContent>
       </Sheet>
     </div>
+  )
+}
+
+function PresenterDetails({ ticket }: { ticket: PresenterTicket }) {
+  const { request, result } = ticket
+  return (
+    <details className="rounded-lg border bg-card p-4 text-sm">
+      <summary className="cursor-pointer font-medium">Request and pipeline evidence</summary>
+      <div className="mt-3 flex flex-col gap-3">
+        <div className="break-words">
+          {request.subject ? <p className="font-medium">{request.subject}</p> : null}
+          <p className="whitespace-pre-wrap">{request.body}</p>
+        </div>
+        {result.reasons.length ? (
+          <div>
+            <h3 className="flex items-center gap-2 font-medium">
+              Pipeline reasons
+              {result.sources.gate !== "real" ? <Badge variant="outline">Mock</Badge> : null}
+            </h3>
+            <ul className="ml-4 list-disc">{result.reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+          </div>
+        ) : null}
+        {result.precedents.length ? (
+          <div>
+            <h3 className="flex items-center gap-2 font-medium">
+              Similar past tickets
+              {result.sources.retrieve !== "real" ? <Badge variant="outline">Mock</Badge> : null}
+            </h3>
+            <ul className="mt-2 space-y-2">
+              {result.precedents.map((precedent) => (
+                <li key={precedent.ticket_id} className="break-words">
+                  <TicketId id={precedent.ticket_id} /> {precedent.subject}
+                  <blockquote className="line-clamp-2 text-muted-foreground">{precedent.answer_snippet}</blockquote>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </details>
   )
 }
 

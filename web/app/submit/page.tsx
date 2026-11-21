@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { RequestForm } from "./request-form"
 
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function SubmitPage() {
-  return <RequestForm />
+  return <Suspense><RequestForm /></Suspense>
 }
