@@ -1,0 +1,259 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * SentinelDesk design tokens. Read DESIGN.md before adding or changing any.
+ * Neutrals carry the layout (PagerDuty-clean). The four Gemini hues carry meaning:
+ *   red = critical / escalate, yellow = caution / partial, green = safe / supported,
+ *   blue = primary action / info. The gradient only marks content Gemini generated.
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --font-sans: var(--font-google-sans);
+  --font-mono: var(--font-google-sans-code);
+  --font-heading: var(--font-google-sans);
+
+  --color-critical: var(--critical);
+  --color-critical-fg: var(--critical-fg);
+  --color-critical-tint: var(--critical-tint);
+  --color-warning: var(--warning);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-tint: var(--warning-tint);
+  --color-success: var(--success);
+  --color-success-fg: var(--success-fg);
+  --color-success-tint: var(--success-tint);
+  --color-info: var(--info);
+  --color-info-fg: var(--info-fg);
+  --color-info-tint: var(--info-tint);
+
+  --color-gemini-red: var(--gemini-red);
+  --color-gemini-yellow: var(--gemini-yellow);
+  --color-gemini-green: var(--gemini-green);
+  --color-gemini-blue: var(--gemini-blue);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Gemini hues, sampled from the Gemini sparkle. Decoration and charts only; use the
+     semantic tokens below for text and status. */
+  --gemini-red: #e8514d;
+  --gemini-yellow: #f2b93b;
+  --gemini-green: #34a868;
+  --gemini-blue: #3d7ff5;
+  --gemini-gradient: linear-gradient(
+    120deg,
+    var(--gemini-red) 0%,
+    var(--gemini-yellow) 28%,
+    var(--gemini-green) 52%,
+    var(--gemini-blue) 78%
+  );
+
+  --background: #ffffff;
+  --canvas: #f6f7f9;
+  --foreground: #15181d;
+  --card: #ffffff;
+  --card-foreground: #15181d;
+  --popover: #ffffff;
+  --popover-foreground: #15181d;
+  --primary: #1a66d6;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f3;
+  --secondary-foreground: #15181d;
+  --muted: #f1f3f5;
+  --muted-foreground: #586170;
+  --accent: #eceff3;
+  --accent-foreground: #15181d;
+  --destructive: #c5221f;
+  --border: #e1e4e9;
+  --input: #cfd4dc;
+  --ring: #1a66d6;
+
+  --critical: #d93025;
+  --critical-fg: #b3261e;
+  --critical-tint: #fdecea;
+  --warning: #f2b93b;
+  --warning-fg: #8a5300;
+  --warning-tint: #fef5dc;
+  --success: #1e8e3e;
+  --success-fg: #137333;
+  --success-tint: #e6f4ea;
+  --info: #1a66d6;
+  --info-fg: #1a5bc4;
+  --info-tint: #e8f0fe;
+
+  --chart-1: var(--gemini-blue);
+  --chart-2: var(--gemini-green);
+  --chart-3: var(--gemini-yellow);
+  --chart-4: var(--gemini-red);
+  --chart-5: #8b95a5;
+
+  --radius: 0.5rem;
+  --sidebar: #f6f7f9;
+  --sidebar-foreground: #15181d;
+  --sidebar-primary: #1a66d6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8ebef;
+  --sidebar-accent-foreground: #15181d;
+  --sidebar-border: #e1e4e9;
+  --sidebar-ring: #1a66d6;
+}
+
+.dark {
+  --gemini-red: #f2665f;
+  --gemini-yellow: #f5c451;
+  --gemini-green: #4cc27e;
+  --gemini-blue: #5b95ff;
+
+  --background: #0f1115;
+  --canvas: #0b0c0f;
+  --foreground: #e8ebef;
+  --card: #15181d;
+  --card-foreground: #e8ebef;
+  --popover: #1a1e24;
+  --popover-foreground: #e8ebef;
+  --primary: #6aa1ff;
+  --primary-foreground: #0a1730;
+  --secondary: #20242b;
+  --secondary-foreground: #e8ebef;
+  --muted: #1c2026;
+  --muted-foreground: #9aa3af;
+  --accent: #232830;
+  --accent-foreground: #e8ebef;
+  --destructive: #ff8a80;
+  --border: #282d35;
+  --input: #353b45;
+  --ring: #6aa1ff;
+
+  --critical: #f2665f;
+  --critical-fg: #ff9a92;
+  --critical-tint: #3a1a19;
+  --warning: #f5c451;
+  --warning-fg: #f7cf6b;
+  --warning-tint: #362a10;
+  --success: #4cc27e;
+  --success-fg: #6fd69a;
+  --success-tint: #12301f;
+  --info: #6aa1ff;
+  --info-fg: #8fb8ff;
+  --info-tint: #142640;
+
+  --chart-5: #6b7483;
+
+  --sidebar: #0b0c0f;
+  --sidebar-foreground: #e8ebef;
+  --sidebar-primary: #6aa1ff;
+  --sidebar-primary-foreground: #0a1730;
+  --sidebar-accent: #1c2026;
+  --sidebar-accent-foreground: #e8ebef;
+  --sidebar-border: #232830;
+  --sidebar-ring: #6aa1ff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 1;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Gemini-generated surface: a neutral panel with a 2px Gemini strip on top. Set
+   data-generating="true" while the model is actually working; the strip sweeps until
+   the response lands. A full gradient border read as an error state, so it stays on top. */
+@utility gemini-edge {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: var(--gemini-gradient);
+    background-size: 200% 100%;
+  }
+  &[data-generating="true"]::before {
+    animation: gemini-sweep 1.8s var(--ease-standard) infinite alternate;
+  }
+}
+
+@utility gemini-text {
+  background: var(--gemini-gradient);
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes gemini-sweep {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
