@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from langdetect import DetectorFactory, detect
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 from sklearn.pipeline import make_pipeline
@@ -24,11 +24,28 @@ DetectorFactory.seed = 0
 DATA = Path(__file__).resolve().parents[1] / "data"
 MODEL_PATH = Path(__file__).parent / "models.joblib"
 TARGETS = ["type", "queue", "priority"]
-HP_THRESHOLD = 0.35  # call it "high" if P(high) >= this. Lower = catch more outages. Tune with eval.
+LANGUAGES = {"en", "de"}
+# Raw dataset has 5 priority levels; the product uses 3.
+PRIORITY_MAP = {"critical": "high", "high": "high", "medium": "medium", "low": "low", "very_low": "low"}
+HP_THRESHOLD = 0.35
+# Filler words are dropped from key_terms only (display), not from the model.
+GERMAN_STOP_WORDS = set("""
+aber alle allem allen aller alles als also am an ander andere anderen auch auf aus bei bin bis bist da
+damit dann das dass dein deine dem den denn der des dich die dies diese diesem diesen dieser dieses dir
+doch dort du durch ein eine einem einen einer eines er es etwas euch euer für gegen hab habe haben hat
+hatte hier hin ich ihm ihn ihnen ihr ihre ihrem ihren ihrer im in ist ja jede jedem jeden jeder jedes
+kann kein keine können könnte man mein meine mich mir mit muss nach nicht nichts noch nun nur ob oder
+ohne sehr sein seine sich sie sind so solche soll sollte sondern um und uns unser unsere unserem
+unseren unserer unter viel vom von vor war waren was weil welche wenn wer werden wie wieder wir wird
+wo wollen würde zu zum zur über bitte sehr geehrte geehrter damen herren
+""".split())
+STOP_WORDS = ENGLISH_STOP_WORDS | GERMAN_STOP_WORDS  # call it "high" if P(high) >= this. Lower = catch more outages. Tune with eval.
 
 
 def ticket_text(subject, body):
-    return f"{subject or ''}\n{body or ''}".strip()
+    text = f"{subject or ''}\n{body or ''}"
+    # some tickets store newlines as a literal backslash-n, which glues "\nich" into the token "nich"
+    return text.replace("\\n", "\n").strip()
 
 
 def build_model():
@@ -49,20 +66,33 @@ def predict_priority(probs, classes, threshold=HP_THRESHOLD):
     return classes[i], float(probs[i])
 
 
+def prepare(df):
+    """Keep English/German tickets and collapse priority to high/medium/low."""
+    df = df[df["language"].isin(LANGUAGES)].copy()
+    df["priority"] = df["priority"].map(PRIORITY_MAP)
+    df["text"] = [ticket_text(s, b) for s, b in zip(df["subject"], df["body"])]
+    return df
+
+
 def train(sample=None):
-    kb = pd.read_parquet(DATA / "kb_train.parquet")
-    test = pd.read_parquet(DATA / "test.parquet")
+    kb = prepare(pd.read_parquet(DATA / "kb_train.parquet"))
+    test = prepare(pd.read_parquet(DATA / "test.parquet"))
     if sample:
         kb = kb.head(sample)
-    X = [ticket_text(s, b) for s, b in zip(kb["subject"], kb["body"])]
-    Xt = [ticket_text(s, b) for s, b in zip(test["subject"], test["body"])]
     models = {}
     for t in TARGETS:
-        print(f"training {t} on {len(X)} tickets ...")
+        # ~21% of tickets have no `type`; train/score only on labelled rows so "nan" is never a class
+        tr, te = kb[kb[t].notna()], test[test[t].notna()]
+        print(f"training {t} on {len(tr)} tickets ...")
         m = build_model()
-        m.fit(X, kb[t].astype(str))
+        m.fit(tr["text"].tolist(), tr[t].astype(str))
         models[t] = m
-        f1 = f1_score(test[t].astype(str), m.predict(Xt), average="macro")
+        if t == "priority":
+            probs = m.predict_proba(te["text"].tolist())
+            pred = [predict_priority(p, m.classes_)[0] for p in probs]
+        else:
+            pred = m.predict(te["text"].tolist())
+        f1 = f1_score(te[t].astype(str), pred, average="macro")
         print(f"  {t}: holdout macro-F1 = {f1:.3f}")
     joblib.dump(models, MODEL_PATH)
     print(f"saved {MODEL_PATH}")
@@ -87,6 +117,24 @@ def detect_language(text):
         return "en"
 
 
+def key_terms(model, text, label, k=5):
+    """The k words in `text` that pushed hardest toward `label`.
+
+    Contribution of word j = tfidf(j) * coef[label, j], with coefficients averaged
+    over the logistic regressions inside the calibrated ensemble.
+    """
+    vec, clf = model.steps[0][1], model.steps[-1][1]
+    lrs = [c.estimator for c in clf.calibrated_classifiers_]
+    ci = list(lrs[0].classes_).index(label)
+    coef = np.mean([lr.coef_[ci] for lr in lrs], axis=0)
+    row = vec.transform([text]).tocoo()
+    names = vec.get_feature_names_out()
+    scored = sorted(((v * coef[j], names[j]) for j, v in zip(row.col, row.data)
+                     if " " not in names[j] and names[j] not in STOP_WORDS
+                     and not names[j].isdigit()), reverse=True)  # single meaningful words
+    return [w for score, w in scored[:k] if score > 0]
+
+
 def triage(subject, body):
     models = _load()
     x = [ticket_text(subject, body)]
@@ -100,6 +148,7 @@ def triage(subject, body):
             i = int(np.argmax(probs))
             label, conf = classes[i], float(probs[i])
         out[t], out[f"{t}_conf"] = str(label), round(conf, 3)
+    out["key_terms"] = key_terms(models["priority"], x[0], out["priority"])
     return TriageResult(**out, language=detect_language(x[0]))
 
 
