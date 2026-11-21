@@ -1,5 +1,7 @@
 // Mirrors shared/contracts.py and the dict returned by pipeline.run().
 // Change shared/contracts.py first (tell the team), then update this file.
+// Fields with a default in contracts.py are optional here so older fixtures still type-check;
+// the live API always sends them.
 
 export type TicketType = "Incident" | "Request" | "Problem" | "Change"
 export type Priority = "high" | "medium" | "low"
@@ -13,6 +15,8 @@ export interface TriageResult {
   priority: Priority
   priority_conf: number
   language: Language
+  /** Words that pushed the priority prediction. */
+  key_terms?: string[]
 }
 
 export interface Precedent {
@@ -21,7 +25,20 @@ export interface Precedent {
   subject: string
   body_snippet: string
   answer_snippet: string
-  language: Language | ""
+  language: Language | (string & {})
+  // Labels of the PAST ticket (kb_train only), used as a second opinion. "" when unknown.
+  type?: TicketType | ""
+  queue?: string
+  priority?: Priority | ""
+}
+
+export interface SentenceCheck {
+  text: string
+  supported: boolean
+  /** Past ticket that backs this sentence; null for courtesy lines with no claim. */
+  source_ticket_id: string | null
+  /** How closely it matches, 0 to 1. */
+  score: number
 }
 
 export interface Draft {
@@ -29,6 +46,7 @@ export interface Draft {
   cited_ticket_ids: string[]
   grounded: boolean
   issues: string[]
+  sentences?: SentenceCheck[]
 }
 
 export type StageSource = "real" | "mock" | "error"
