@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SentinelDesk Demo</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="sd-motion.css">
+<script src="sd-motion.js"></script>
 <style>
 :root{--canvas:#f6f6fa;--fg:#16161f;--card:#fff;--muted:#f1f1f6;--mfg:#5b5e70;--line:#e3e3ec;--sk:#e6e6ee;
 --pri:#3550e0;--prifg:#fff;--info-t:#eceffe;--info-f:#2e45c4;--crit-t:#fdecec;--crit-f:#b42323;--crit:#d93a3a;
@@ -186,7 +188,7 @@ var I={
 };
 // ---- State ----
 var S;
-function fresh(){S={i:0,text:D.text,pick:null,sent:false,human:false,urgent:false,paged:false,open:false,more:false,api:{state:"idle",res:null,err:""}}}
+function fresh(){S={i:0,text:D.text,pick:null,sent:false,human:false,urgent:false,paged:false,open:false,more:false,pend:false,api:{state:"idle",res:null,err:""}}}
 var LOGO='<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bm" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="#f0644a"/><stop offset=".35" stop-color="#d9468f"/><stop offset=".7" stop-color="#8a5cf5"/><stop offset="1" stop-color="#3478f6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="var(--tile)" stroke="var(--line)"/><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#bm)" opacity=".85"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="var(--lamp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="var(--lamp)"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="var(--lamp)" stroke="var(--lamp)" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="var(--lamp)"/><path d="M10 51.5 H54" stroke="var(--lamp)" stroke-width="3.6" stroke-linecap="round"/></svg>';
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function sk(){var o="";for(var i=0;i<arguments.length;i++)o+='<span class="sk w'+arguments[i]+'"></span>';return o}
@@ -224,21 +226,21 @@ ask:function(){var o=D.options.map(function(x){return '<button class="mono'+(S.p
 mine:function(){
   if(!submitted())return '<h1>My requests</h1><div class="panel">No requests yet.<div class="row"><button class="pri" data-a="go" data-v="intake">New request</button></div></div>';
   if(S.open)return R.myreq();
-  return '<h1>My requests</h1><div class="list"><button class="r open" data-a="openreq" aria-label="Open request '+myId()+'"><span class="mono">'+myId()+'</span><span class="subj">'+esc(S.text)+'</span><span style="display:flex;align-items:center;gap:6px">'+status()+I.chev+'</span></button><div class="r skr" aria-hidden="true">'+sk(5)+sk(7)+'<span class="badge b-mut">Closed</span></div></div>'},
+  return '<h1>My requests</h1><div class="list"><button class="r open" data-a="openreq" data-sd-row aria-label="Open request '+myId()+'"><span class="mono" data-sd-ticket="'+myId()+'">'+myId()+'</span><span class="subj">'+esc(S.text)+'</span><span style="display:flex;align-items:center;gap:6px"><span data-sd-status data-sd-pending-label="'+(S.human?'Routing to an engineer':'Checking past cases')+'">'+status()+'</span>'+I.chev+'</span></button><div class="r skr" aria-hidden="true">'+sk(5)+sk(7)+'<span class="badge b-mut">Closed</span></div></div>'},
 // Customer-facing ticket detail: same ID, text, status and answer or handoff as the walkthrough.
-myreq:function(){return '<button class="backlink" data-a="closereq">'+I.back+'Back to My requests</button><div class="dhead"><h1 class="mono">'+myId()+'</h1>'+status()+'</div>'+
+myreq:function(){return '<button class="backlink" data-a="closereq">'+I.back+'Back to My requests</button><div class="dhead"><h1 class="mono" tabindex="-1" data-sd-ticket="'+myId()+'">'+myId()+'</h1>'+status()+'</div>'+
   '<div class="panel"><p class="lbl">You wrote</p>'+esc(S.text)+(S.pick?'<p class="lbl" style="margin-top:8px">'+D.question+' <span class="mono">'+esc(S.pick)+'</span></p>':'')+'</div>'+customerResult()},
 inbox:function(){var mine=handed()?'<span class="badge b-info">Needs engineer</span>':S.api.state==="error"?'<span class="badge b-mut">Not received</span>':'<span class="badge b-ok">Answered</span>';
   return '<h1>Inbox</h1><div class="list">'+
-  '<button class="r" data-a="open" data-v="0"><span class="mono">'+myId()+'</span><span class="subj">'+esc(S.text)+'</span>'+mine+'</button>'+
-  '<button class="r" data-a="open" data-v="1"><span class="mono">'+D.urgent.id+'</span><span class="subj">'+esc(D.urgent.text)+'</span><span class="badge b-crit">Urgent</span></button>'+
+  '<button class="r" data-a="open" data-v="0" data-sd-row><span class="mono" data-sd-ticket="'+myId()+'">'+myId()+'</span><span class="subj">'+esc(S.text)+'</span>'+mine+'</button>'+
+  '<button class="r" data-a="open" data-v="1" data-sd-row><span class="mono" data-sd-ticket="'+D.urgent.id+'">'+D.urgent.id+'</span><span class="subj">'+esc(D.urgent.text)+'</span><span class="badge b-crit">Urgent</span></button>'+
   '<div class="r skr" aria-hidden="true">'+sk(5)+sk(9)+'<span class="badge b-mut">Low</span></div><div class="r skr" aria-hidden="true">'+sk(5)+sk(7)+'<span class="badge b-mut">Low</span></div></div>'},
 detail:function(){var tog='<div class="row" style="margin:0 0 12px"><button class="'+(S.urgent?'':'sel')+'" data-a="case" data-v="0">'+myId()+'</button><button class="'+(S.urgent?'sel':'')+'" data-a="case" data-v="1">'+D.urgent.id+' <span class="badge b-crit">Urgent</span></button></div>';
-  if(S.urgent){var U=D.urgent;return '<h1 class="mono">'+U.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(U.who)+'</p>'+esc(U.text)+'</div><div class="panel ais"><h2>Handoff brief <span class="simtag">SAMPLE</span></h2>'+sk(9,7,5)+'<div class="row"><button class="crit" data-a="page">Page on-call</button></div>'+(S.paged?'<p class="toast" role="status"><span class="simtag">SIMULATED</span> On-call paged. Nothing was sent.</p>':'')+'</div></div><div><div class="panel" role="status"><h2>Why handed off</h2>'+U.reasons.map(function(r){return '<div class="reason">'+r+'</div>'}).join("")+'</div></div></div>'}
-  if(live())return '<div class="dhead"><h1 class="mono">'+myId()+'</h1>'+srcTag()+'</div>'+tog+R.liveDetail();
+  if(S.urgent){var U=D.urgent;return '<h1 class="mono" data-sd-ticket="'+U.id+'">'+U.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(U.who)+'</p>'+esc(U.text)+'</div><div class="panel ais"><h2>Handoff brief <span class="simtag">SAMPLE</span></h2>'+sk(9,7,5)+'<div class="row"><button class="crit" data-a="page">Page on-call</button></div>'+(S.paged?'<p class="toast" role="status"><span class="simtag">SIMULATED</span> On-call paged. Nothing was sent.</p>':'')+'</div></div><div><div class="panel" role="status"><h2>Why handed off</h2>'+U.reasons.map(function(r){return '<div class="reason">'+r+'</div>'}).join("")+'</div></div></div>'}
+  if(live())return '<div class="dhead"><h1 class="mono" data-sd-ticket="'+myId()+'">'+myId()+'</h1>'+srcTag()+'</div>'+tog+R.liveDetail();
   var ans=S.human?'<div class="panel" role="status"><h2>Handoff</h2><div class="reason">Customer asked for a person</div>'+sk(7,5)+'</div>'
    :'<div class="panel ais"><h2>Sent answer <span class="simtag">SAMPLE</span></h2><p class="lbl">Invoice <span class="mono">'+esc(S.pick||D.options[0])+'</span></p><p class="sent">Line items for the selected invoice, with VAT and total.'+cite(D.evidence[0][0])+'</p><p class="sent">The Telehealth add-on is new this cycle.'+cite(D.evidence[1][0])+'</p></div>';
-  return '<h1 class="mono">'+D.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(D.who)+'</p>'+esc(S.text)+(S.pick?'<p class="lbl" style="margin-top:8px">'+D.question+' <span class="mono">'+esc(S.pick)+'</span></p>':'')+'</div>'+ans+'</div><div><div class="panel"><h2>Evidence</h2>'+D.evidence.map(function(e){return '<div class="ev"><span class="mono">'+e[0]+'</span> · '+e[1]+sk(9,5)+'</div>'}).join("")+'</div></div></div>'},
+  return '<h1 class="mono" data-sd-ticket="'+D.id+'">'+D.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(D.who)+'</p>'+esc(S.text)+(S.pick?'<p class="lbl" style="margin-top:8px">'+D.question+' <span class="mono">'+esc(S.pick)+'</span></p>':'')+'</div>'+ans+'</div><div><div class="panel"><h2>Evidence</h2>'+D.evidence.map(function(e){return '<div class="ev"><span class="mono">'+e[0]+'</span> · '+e[1]+sk(9,5)+'</div>'}).join("")+'</div></div></div>'},
 liveDetail:function(){var r=S.api.res,t=r.triage||{},cited=(r.draft&&r.draft.cited_ticket_ids)||[],reasons=r.reasons||[];
   var chips='<div class="chips">'+prio(t.priority)+'<span class="badge b-mut">'+esc(t.type)+'</span><span class="badge b-mut">'+esc(t.queue)+'</span><span class="badge b-mut mono">'+esc(String(t.language||"").toUpperCase())+'</span></div>';
   var shown=S.more?reasons:reasons.slice(0,3);
@@ -258,14 +260,16 @@ function chrome(st){
   if(cust) nav='<nav class="side" aria-label="Help"><button class="'+(st.k!=="mine"?'on':'')+'" data-a="go" data-v="intake">New request</button><button class="'+(st.k==="mine"?'on':'')+'" data-a="go" data-v="mine">My requests</button></nav>';
   else nav='<nav class="side" aria-label="Console"><button class="'+(st.k==="inbox"||st.k==="detail"?'on':'')+'" data-a="go" data-v="inbox">Inbox</button><button class="'+(st.k==="dash"?'on':'')+'" data-a="go" data-v="dash">Dashboard</button><button data-a="go" data-v="run">Software Factory</button></nav>';
   var path=st.path+(st.k==="detail"?tid():st.k==="mine"&&S.open?"/"+myId():"");
-  return '<div class="chrome"><span class="brand"><span style="width:20px;height:20px;display:inline-flex">'+LOGO+'</span>SentinelDesk'+(cust?' Help':' Console')+'</span><span class="phl">Page placeholder</span><span class="url mono">'+path+'</span></div><div class="body">'+nav+'<div class="main">'+R[st.k]()+'</div></div>'}
+  return '<div class="chrome"><span class="brand"><span style="width:20px;height:20px;display:inline-flex">'+LOGO+'</span>SentinelDesk'+(cust?' Help':' Console')+'</span><span class="phl">Page placeholder</span><span class="url mono">'+path+'</span></div><div class="body">'+nav+'<div class="main" data-sd-main>'+R[st.k]()+'</div></div>'}
 
 function render(focusSel){
   var st=step(),app=document.getElementById("app");
   var live=document.getElementById("live"),sup=st.k==="support";
   app.hidden=sup;live.hidden=!sup;
+  if(sup&&live.dataset.shown!=="1"){live.dataset.shown="1";SDMotion.enter(live)}else if(!sup)live.dataset.shown="";
   if(sup&&!live.firstChild)live.innerHTML='<iframe src="'+esc(APP)+'/submit" title="SentinelDesk support, existing /submit page"></iframe>';
-  if(!sup)app.innerHTML=(st.k==="run"||st.k==="finding")?R[st.k]():chrome(st);
+  var fac=st.k==="run"||st.k==="finding",pend=S.pend;S.pend=false;
+  if(!sup)SDMotion.swap(app,fac?R[st.k]():chrome(st),{key:st.k,role:st.role,ticket:fac?"":st.k==="detail"?tid():myId(),view:st.k==="mine"&&S.open?myId():"",pending:pend});
   var r=document.getElementById("role");r.className="role "+st.role;r.textContent=ROLE[st.role]+(st.opt?" · OPTIONAL":"");
   document.getElementById("loc").textContent=st.loc+(st.k==="detail"?" · "+tid():st.k==="mine"&&S.open?" · "+myId():"");
   document.getElementById("num").textContent=(S.i+1)+"/"+STEPS.length;
@@ -273,11 +277,13 @@ function render(focusSel){
   nextBtn.textContent=S.i===STEPS.length-1?"Finish":"Next";
   nextBtn.disabled=st.k==="ask"&&!submitted();
   document.getElementById("dots").innerHTML=STEPS.map(function(_,i){return '<i class="'+(i<=S.i?'on':'')+'"></i>'}).join("");
-  var sw=document.getElementById("switch");
-  if(st.k==="inbox"){sw.hidden=false;sw.textContent=REAL?"Now the engineer's view. Console pages are placeholders with the sample ticket "+myId()+".":"Now the engineer's view, same ticket "+myId()+"."}
-  else if(sup){sw.hidden=false;sw.textContent="Customer's view: the existing /submit page. Send a request, then open it under My requests."}
-  else if(st.k==="intake"){sw.hidden=false;sw.textContent="Customer's view. Edit the request if you like."}
-  else sw.hidden=true;
+  var sw=document.getElementById("switch"),swt="";
+  if(st.k==="inbox")swt=REAL?"Now the engineer's view. Console pages are placeholders with the sample ticket "+myId()+".":"Now the engineer's view, same ticket "+myId()+".";
+  else if(sup)swt="Customer's view: the existing /submit page. Send a request, then open it under My requests.";
+  else if(st.k==="intake")swt="Customer's view. Edit the request if you like.";
+  else if(st.k==="run")swt="New example: SD-4182, a CSV export bug, separate from "+myId()+". Watch the Software Factory trace it to code and hand it to engineering.";
+  else if(st.k==="finding")swt="SD-4182 finding: evidence, proposed fix and the handoff prompt.";
+  if(swt&&(sw.hidden||sw.textContent!==swt)){sw.hidden=false;sw.textContent=swt;SDMotion.enter(sw)}else if(!swt)sw.hidden=true;
   document.getElementById("foot").innerHTML=(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': only http://localhost, 127.0.0.1 or [::1] with an optional port.</span> ':'')+(REAL?'<span class="livetag">APP</span> Customer step is <span class="mono">'+esc(APP)+'/submit</span>. ':'')+(API?'<span class="livetag">API</span> Requests go to <span class="mono">'+esc(API)+'/triage</span>. Other pages use sample data. Nothing is sent to customers.':'<span class="simtag">SAMPLE</span> Placeholder pages with sample data. Nothing is sent. Arrow keys move between steps.');
   var ta=document.getElementById("txt");if(ta)ta.addEventListener("input",function(){S.text=ta.value});
   if(location.hash.slice(1)!==st.k)history.replaceState(null,"","#"+st.k);
@@ -307,9 +313,9 @@ document.addEventListener("click",function(e){
   var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,v=b.dataset.v;
   if(a==="submit"){var ta=document.getElementById("txt");S.text=(ta&&ta.value.trim())||D.text;if(API){triage()}else go("ask")}
   else if(a==="pick"){S.pick=v;render('[data-a="send"]')}
-  else if(a==="send"||a==="skip"){if(a==="skip")S.pick=null;S.sent=true;S.human=false;go("mine",'[data-a="openreq"]')}
-  else if(a==="human"){S.human=true;S.api={state:"idle",res:null,err:""};go("mine",'[data-a="openreq"]')}
-  else if(a==="openreq"){S.open=true;render('[data-a="closereq"]')}
+  else if(a==="send"||a==="skip"){if(a==="skip")S.pick=null;S.sent=true;S.human=false;S.pend=!API;go("mine",'[data-a="openreq"]')}
+  else if(a==="human"){S.human=true;S.pend=true;S.api={state:"idle",res:null,err:""};go("mine",'[data-a="openreq"]')}
+  else if(a==="openreq"){S.open=true;render('.dhead h1')}
   else if(a==="closereq"){S.open=false;render('[data-a="openreq"]')}
   else if(a==="retry")triage();
   else if(a==="usesample"){API="";S.api={state:"idle",res:null,err:""};go("ask")}
