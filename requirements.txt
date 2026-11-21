@@ -1,0 +1,12 @@
+datasets
+pandas
+pyarrow
+numpy
+scikit-learn
+joblib
+langdetect
+sentence-transformers
+chromadb
+ollama
+pydantic
+gradio

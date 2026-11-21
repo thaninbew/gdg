@@ -6,3 +6,10 @@ __pycache__/
 .venv/
 dist/
 build/
+
+.venv/
+__pycache__/
+data/*.parquet
+retrieval/chroma/
+triage/models.joblib
+.DS_Store
