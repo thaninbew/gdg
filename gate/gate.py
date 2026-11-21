@@ -23,6 +23,14 @@ DEFAULT_KEYWORDS = {
                          "krankenhaus", "patienten", "telemedizin"],
 }
 
+# Gemini-remap high is the agreed criticality proxy. These phrases and stems meet
+# the 90% / 25-match cutoff on tickets not already caught by the existing security cues.
+REMAP_HIGH_SECURITY = re.compile(
+    r"\b(?:phishing|security incident|outdated security|access attempts?|"
+    r"unauthori[sz]ed(?: access)?|sicherheitsverletzung\w*|sicherheitslücke\w*|"
+    r"datenschutzverletzung\w*|schwachstell\w*|zugriffsversuch\w*|angriff\w*|"
+    r"unautorisier\w*|access logs|veraltete sicherheitsprotokolle)\b", re.IGNORECASE)
+
 # Commitments the AI must never make on its own (English + German)
 RISKY = re.compile(
     r"refund|reimburs|compensat|lawsuit|legal|lawyer|guarantee|discount|price|pricing|\bSLA\b"
@@ -88,7 +96,9 @@ def gate(triage_result, precedents, subject, body):
         reasons.append(f"Similar past tickets were urgent incidents ({urgent_history} of {len(nearest)})")
 
     # Safety override: the dataset labels some real emergencies as medium/low
-    hits = [t for t in URGENT_TERMS if re.search(rf"\b{re.escape(t)}\b", lowered)]
+    hits = {t for t in URGENT_TERMS if re.search(rf"\b{re.escape(t)}\b", lowered)}
+    hits.update(m.group(0).lower() for m in REMAP_HIGH_SECURITY.finditer(lowered))
+    hits = sorted(hits)
     if hits and not is_hp_incident:
         reasons.append("Mentions an outage, security issue or critical service: " + ", ".join(hits[:3]))
 

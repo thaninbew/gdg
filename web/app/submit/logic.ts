@@ -106,7 +106,8 @@ export type Precedent = { id: string; subject: string }
 
 // ---------- analysis ----------
 
-const SECURITY = /\b(breach(ed)?|hacked|ransomware|compromised|data (loss|leak)|malware)\b/i
+// Keep remap-derived critical terms aligned with gate/gate.py.
+const SECURITY = /\b(breach(ed)?|hacked|ransomware|compromised|data (loss|leak)|malware|phishing|security incident|outdated security|access attempts?|unauthori[sz]ed(?: access)?|sicherheitsverletzung\w*|sicherheitslücke\w*|datenschutzverletzung\w*|schwachstell\w*|zugriffsversuch\w*|angriff\w*|unautorisier\w*|access logs|veraltete sicherheitsprotokolle)\b/i
 const OUTAGE =
   /\b(down|outage|offline|unreachable|can'?t (connect|reach|access|log ?in)|cannot (connect|reach|access|log ?in)|no access|stopped working)\b/i
 const WIDE =
