@@ -15,5 +15,14 @@ export default function TicketsPage({ searchParams }: PageProps<"/tickets">) {
 async function InboxFromParams({ searchParams }: Pick<PageProps<"/tickets">, "searchParams">) {
   const sp = await searchParams
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? null
-  return <Inbox queue={one(sp.queue)} category={one(sp.category)} status={one(sp.status)} />
+  const lang = one(sp.lang)
+  return (
+    <Inbox
+      queue={one(sp.queue)}
+      category={one(sp.category)}
+      status={one(sp.status)}
+      language={lang === "en" || lang === "de" ? lang : null}
+      open={one(sp.open)}
+    />
+  )
 }

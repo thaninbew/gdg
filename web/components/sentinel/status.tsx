@@ -1,7 +1,11 @@
+"use client"
+
 import { SignalHighIcon, SignalLowIcon, SignalMediumIcon, SirenIcon, CircleCheckIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { reasonIn } from "@/lib/copilot"
+import { useI18n } from "@/lib/i18n"
 import type { Priority } from "@/lib/types"
 
 const PRIORITY = {
@@ -12,11 +16,12 @@ const PRIORITY = {
 
 // Color plus a signal-strength icon, so priority never depends on color alone.
 export function PriorityBadge({ priority, className }: { priority: Priority; className?: string }) {
+  const { t } = useI18n()
   const { label, variant, Icon } = PRIORITY[priority]
   return (
     <Badge variant={variant} className={className}>
       <Icon data-icon="inline-start" aria-hidden="true" />
-      {label}
+      {t(label)}
     </Badge>
   )
 }
@@ -27,11 +32,12 @@ export function TicketId({ id, className }: { id: string; className?: string }) 
 
 // The gate decision. Escalations always list their reasons.
 export function EscalationStatus({ escalate, reasons }: { escalate: boolean; reasons: string[] }) {
+  const { t, lang } = useI18n()
   if (!escalate) {
     return (
       <div className="flex items-center gap-2 rounded-lg bg-success-tint px-3 py-2.5 text-success-fg">
         <CircleCheckIcon className="size-4 shrink-0" aria-hidden="true" />
-        <p className="text-sm font-medium">Auto-draft ready</p>
+        <p className="text-sm font-medium">{t("Auto-draft ready")}</p>
       </div>
     )
   }
@@ -39,12 +45,12 @@ export function EscalationStatus({ escalate, reasons }: { escalate: boolean; rea
     <div role="status" className="rounded-lg bg-critical-tint px-3 py-2.5 text-critical-fg">
       <div className="flex items-center gap-2">
         <SirenIcon className="size-4 shrink-0" aria-hidden="true" />
-        <p className="text-sm font-medium">Escalate to on-call engineer</p>
+        <p className="text-sm font-medium">{t("Escalate to on-call engineer")}</p>
       </div>
       {reasons.length ? (
         <ul className="mt-1.5 ml-6 list-disc space-y-0.5 text-[0.8125rem] marker:text-critical/60">
           {reasons.map((r) => (
-            <li key={r}>{r}</li>
+            <li key={r}>{reasonIn(r, lang)}</li>
           ))}
         </ul>
       ) : null}

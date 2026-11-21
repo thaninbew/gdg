@@ -1,4 +1,7 @@
+"use client"
+
 import { Progress } from "@/components/ui/progress"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 // Operators see tiers, not raw scores (0.95 vs 0.98 means nothing to them). Below 0.7 a field is
@@ -25,6 +28,7 @@ export function ConfidenceMeter({
   showValue?: boolean
   className?: string
 }) {
+  const { t } = useI18n()
   const pct = Math.round(value * 100)
   const band = confidenceBand(value)
   const ambiguous = band === "Ambiguous"
@@ -32,8 +36,8 @@ export function ConfidenceMeter({
     <div className={cn("flex min-w-0 items-center gap-2", className)} title={`${pct}%`}>
       <Progress
         value={pct}
-        aria-label={label ? `${label} confidence` : "Confidence"}
-        aria-valuetext={`${band}, ${pct}%`}
+        aria-label={t(label ? `${label} confidence` : "Confidence")}
+        aria-valuetext={`${t(band)}, ${pct}%`}
         className={cn(
           "h-1.5 w-14 shrink-0",
           ambiguous ? "[&>[data-slot=progress-indicator]]:bg-warning" : "[&>[data-slot=progress-indicator]]:bg-info"
@@ -41,7 +45,7 @@ export function ConfidenceMeter({
       />
       {showValue ? <span className="w-9 text-right font-mono text-xs">{pct}%</span> : null}
       <span className={cn("w-[4.5rem] text-xs", ambiguous ? "font-medium text-warning-fg" : "text-muted-foreground")}>
-        {band}
+        {t(band)}
       </span>
     </div>
   )

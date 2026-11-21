@@ -23,17 +23,12 @@ import { PageHeader } from "@/components/sentinel/page-header"
 import { useCases } from "@/lib/case-store"
 import { INCIDENT_SOURCES } from "@/lib/fixtures"
 import { outcome } from "@/lib/gate"
+import { useI18n } from "@/lib/i18n"
 import { KPI_TRENDS, VOLUME, type Range } from "@/lib/ops-mock"
 
 const AXIS = { tickLine: false, axisLine: false, tickMargin: 6 } as const
 const FILL = { high: 0.34, medium: 0.18, low: 0.1 } as const
 const RANGES: Range[] = ["1h", "24h", "7d"]
-
-const priorityConfig = {
-  high: { label: "High", color: "var(--prio-high)" },
-  medium: { label: "Medium", color: "var(--prio-medium)" },
-  low: { label: "Low", color: "var(--prio-low)" },
-} satisfies ChartConfig
 
 const PRIO_SWATCH = { high: "bg-prio-high", medium: "bg-prio-medium", low: "bg-prio-low" } as const
 
@@ -41,25 +36,37 @@ type Lang = "all" | "en" | "de"
 
 export function Dashboard() {
   const router = useRouter()
-  const { cases, state } = useCases()
+  const { cases: all, state } = useCases()
+  const { t } = useI18n()
+  // Scopes the whole page (counts, flow, and every link into the inbox) to tickets in one language.
   const [lang, setLang] = React.useState<Lang>("all")
   const [range, setRange] = React.useState<Range>("24h")
 
+  const cases = lang === "all" ? all : all.filter((c) => c.triage.language === lang)
   const outcomes = cases.map((c) => outcome(c, state[c.ticket_id]))
   const count = (o: string) => outcomes.filter((x) => x === o).length
+  const inbox = (q: Record<string, string> = {}) => {
+    const p = new URLSearchParams({ ...q, ...(lang !== "all" ? { lang } : {}) })
+    return `/tickets${p.size ? `?${p}` : ""}`
+  }
+  const priority = {
+    high: { label: t("High"), color: "var(--prio-high)" },
+    medium: { label: t("Medium"), color: "var(--prio-medium)" },
+    low: { label: t("Low"), color: "var(--prio-low)" },
+  } satisfies ChartConfig
 
   const kpis = [
-    { key: "open", label: "Open", value: String(cases.length - count("draft")), trend: KPI_TRENDS.open, href: "/tickets", color: "var(--chart-1)" },
+    { key: "open", label: "Open", value: String(cases.length - count("draft")), trend: KPI_TRENDS.open, href: inbox(), color: "var(--chart-1)" },
     {
       key: "escalation",
       label: "Escalation rate",
-      value: `${Math.round((count("escalate") / cases.length) * 100)}%`,
+      value: cases.length ? `${Math.round((count("escalate") / cases.length) * 100)}%` : "–",
       trend: KPI_TRENDS.escalation,
-      href: "/tickets?status=escalate",
+      href: inbox({ status: "escalate" }),
       color: "var(--critical)",
     },
-    { key: "clarify", label: "Clarify", value: String(count("clarify")), trend: KPI_TRENDS.clarify, href: "/tickets?status=clarify", color: "var(--warning)" },
-    { key: "drafts", label: "Drafts ready", value: String(count("draft")), trend: KPI_TRENDS.drafts, href: "/tickets?status=draft", color: "var(--success)" },
+    { key: "clarify", label: "Clarify", value: String(count("clarify")), trend: KPI_TRENDS.clarify, href: inbox({ status: "clarify" }), color: "var(--warning)" },
+    { key: "drafts", label: "Drafts ready", value: String(count("draft")), trend: KPI_TRENDS.drafts, href: inbox({ status: "draft" }), color: "var(--success)" },
   ]
 
   // Drop the "Other teams" bucket so every node is a real team.
@@ -73,15 +80,31 @@ export function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Dashboard" />
+      <PageHeader
+        title="Dashboard"
+        actions={
+          <ToggleGroup
+            type="single"
+            size="sm"
+            variant="outline"
+            value={lang}
+            onValueChange={(v) => v && setLang(v as Lang)}
+            aria-label={t("Ticket language")}
+          >
+            <ToggleGroupItem value="all">{t("All")}</ToggleGroupItem>
+            <ToggleGroupItem value="en">EN</ToggleGroupItem>
+            <ToggleGroupItem value="de">DE</ToggleGroupItem>
+          </ToggleGroup>
+        }
+      />
       <div className="@container/main flex flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-        <section aria-label="Queue status" className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+        <section aria-label={t("Queue status")} className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
           {kpis.map((k) => (
             <Card key={k.key} className="relative gap-3">
               <CardHeader>
                 <CardDescription>
                   <Link href={k.href} className="rounded-sm outline-none after:absolute after:inset-0 focus-visible:ring-3 focus-visible:ring-ring/50">
-                    {k.label}
+                    {t(k.label)}
                   </Link>
                 </CardDescription>
                 <CardTitle className="font-mono text-2xl font-semibold tabular-nums">{k.value}</CardTitle>
@@ -90,7 +113,7 @@ export function Dashboard() {
                 </CardAction>
               </CardHeader>
               <CardContent>
-                <Sparkline values={k.trend} color={k.color} label={k.label} />
+                <Sparkline values={k.trend} color={k.color} label={k.key} />
               </CardContent>
             </Card>
           ))}
@@ -98,7 +121,7 @@ export function Dashboard() {
 
         <Card className="@container/card">
           <CardHeader>
-            <CardTitle>Volume by priority</CardTitle>
+            <CardTitle>{t("Volume by priority")}</CardTitle>
             <CardAction className="flex items-center gap-2">
               <MockBadge />
               <ToggleGroup
@@ -107,7 +130,7 @@ export function Dashboard() {
                 variant="outline"
                 value={range}
                 onValueChange={(v) => v && setRange(v as Range)}
-                aria-label="Time range"
+                aria-label={t("Time range")}
                 className="hidden @[540px]/card:flex"
               >
                 {RANGES.map((r) => (
@@ -117,7 +140,7 @@ export function Dashboard() {
                 ))}
               </ToggleGroup>
               <Select value={range} onValueChange={(v) => setRange(v as Range)}>
-                <SelectTrigger size="sm" className="w-20 @[540px]/card:hidden" aria-label="Time range">
+                <SelectTrigger size="sm" className="w-20 @[540px]/card:hidden" aria-label={t("Time range")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,7 +154,7 @@ export function Dashboard() {
             </CardAction>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={priorityConfig} className="aspect-auto h-[232px] w-full">
+            <ChartContainer config={priority} className="aspect-auto h-[232px] w-full">
               <AreaChart data={volume.points} margin={{ top: 18, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid vertical={false} strokeDasharray="2 3" />
                 <XAxis dataKey="t" {...AXIS} interval="preserveStartEnd" minTickGap={24} />
@@ -145,7 +168,7 @@ export function Dashboard() {
                     stroke="var(--critical)"
                     strokeOpacity={0.45}
                     strokeDasharray="3 3"
-                    label={{ value: "Outage burst", position: "insideTopRight", fill: "var(--critical-fg)", fontSize: 10.5, dy: -14, dx: 4 }}
+                    label={{ value: t("Outage burst"), position: "insideTopRight", fill: "var(--critical-fg)", fontSize: 10.5, dy: -14, dx: 4 }}
                   />
                 ) : null}
                 {volume.burst && volume.burst[0] === volume.burst[1] ? (
@@ -153,7 +176,7 @@ export function Dashboard() {
                     x={volume.burst[0]}
                     stroke="var(--critical)"
                     strokeDasharray="3 3"
-                    label={{ value: "Outage burst", position: "insideTopRight", fill: "var(--critical-fg)", fontSize: 10.5, dy: -14 }}
+                    label={{ value: t("Outage burst"), position: "insideTopRight", fill: "var(--critical-fg)", fontSize: 10.5, dy: -14 }}
                   />
                 ) : null}
                 <ChartTooltip cursor={{ strokeDasharray: "2 2" }} content={<ChartTooltipContent indicator="line" />} />
@@ -179,22 +202,8 @@ export function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Where incidents come from</CardTitle>
-            <CardDescription className="font-mono text-xs">{total.toLocaleString("en-US")} incidents in dataset</CardDescription>
-            <CardAction>
-              <ToggleGroup
-                type="single"
-                size="sm"
-                variant="outline"
-                value={lang}
-                onValueChange={(v) => v && setLang(v as Lang)}
-                aria-label="Language"
-              >
-                <ToggleGroupItem value="all">All</ToggleGroupItem>
-                <ToggleGroupItem value="en">EN</ToggleGroupItem>
-                <ToggleGroupItem value="de">DE</ToggleGroupItem>
-              </ToggleGroup>
-            </CardAction>
+            <CardTitle>{t("Where incidents come from")}</CardTitle>
+            <CardDescription className="font-mono text-xs">{t(`${total.toLocaleString("en-US")} incidents in dataset`)}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {total ? (
@@ -202,12 +211,12 @@ export function Dashboard() {
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-1.5 rounded-sm bg-info" aria-hidden="true" />
-                    Team
+                    {t("Team")}
                   </span>
                   {(["high", "medium", "low"] as const).map((k) => (
                     <span key={k} className="inline-flex items-center gap-1.5">
                       <span className={`h-2.5 w-1.5 rounded-sm ${PRIO_SWATCH[k]}`} aria-hidden="true" />
-                      {priorityConfig[k].label}
+                      {priority[k].label}
                     </span>
                   ))}
                 </div>
@@ -217,7 +226,7 @@ export function Dashboard() {
                     categories={categories}
                     teams={teams}
                     onSelect={({ kind, name }) =>
-                      router.push(`/tickets?${kind === "team" ? "queue" : "category"}=${encodeURIComponent(name)}`)
+                      router.push(inbox({ [kind === "team" ? "queue" : "category"]: name }))
                     }
                   />
                 </div>
@@ -225,7 +234,7 @@ export function Dashboard() {
             ) : (
               <Empty>
                 <EmptyHeader>
-                  <EmptyDescription>No incidents for this language.</EmptyDescription>
+                  <EmptyDescription>{t("No incidents for this language.")}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}

@@ -161,7 +161,9 @@ Ours (`components/sentinel`):
 | `ClarifyingQuestion` | AI surface that asks one question when a field is Ambiguous; options, free answer, ask requester |
 | `GroundedReply`, `CitedText`, `CitationProvider` | Draft with per-sentence support and numbered citation chips (promoted from D) |
 | `EvidenceRail` | Retrieved precedents; cited ones marked, linked to citation hover |
-| `AppSidebar`, `PageHeader` | Console shell for `/tickets` and `/dashboard` |
+| `TopNav`, `PageHeader` | Console shell: navigation across the top (with the English/Deutsch and Dusk/Lime switches), page title row below |
+| `TicketCopilot`, `CopilotMessages`, `CopilotComposer` | Ask the copilot about one ticket; one question on the ticket, follow-ups on the Copilot page |
+| `TicketFinder` | Find a customer's ticket from their words or a (partial) ticket number |
 | `MockBadge` | Outline "Mock" badge for panels whose data isn't from the real pipeline |
 | `IncidentFlow` (`components/charts`) | Sankey flow map: incident categories to receiving teams; hover isolates a node, click opens the inbox filtered |
 

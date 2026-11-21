@@ -1,16 +1,20 @@
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/sentinel/app-sidebar"
+import { TopNav } from "@/components/sentinel/top-nav"
 import { CaseStoreProvider } from "@/lib/case-store"
+import { CopilotProvider } from "@/lib/copilot-store"
+import { I18nProvider } from "@/lib/i18n"
 
+// Console shell: navigation across the top, page content below.
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   return (
+    <I18nProvider>
     <CaseStoreProvider>
-      <SidebarProvider
-        style={{ "--sidebar-width": "calc(var(--spacing) * 60)", "--header-height": "calc(var(--spacing) * 14)" } as React.CSSProperties}
-      >
-        <AppSidebar />
-        <SidebarInset className="min-w-0 bg-canvas">{children}</SidebarInset>
-      </SidebarProvider>
+    <CopilotProvider>
+      <div className="flex min-h-svh flex-col bg-canvas [--header-height:3.5rem] [--topbar:3.25rem]">
+        <TopNav />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    </CopilotProvider>
     </CaseStoreProvider>
+    </I18nProvider>
   )
 }

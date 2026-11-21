@@ -1,4 +1,7 @@
+"use client"
+
 import { PenLineIcon } from "lucide-react"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 // Our AI mark: a flat navy squircle with a pen. Marks model-generated content only.
@@ -32,6 +35,7 @@ export function AISurface({
   className?: string
   children: React.ReactNode
 }) {
+  const { t } = useI18n()
   return (
     <section
       aria-busy={generating}
@@ -40,7 +44,7 @@ export function AISurface({
     >
       <header className="flex min-h-7 items-center gap-2.5">
         <AIMark />
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h3 className="text-sm font-semibold">{typeof title === "string" ? t(title) : title}</h3>
         {action ? <div className="ml-auto flex items-center gap-1">{action}</div> : null}
       </header>
       {children}

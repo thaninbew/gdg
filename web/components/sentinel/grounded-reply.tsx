@@ -5,6 +5,7 @@ import { TriangleAlertIcon } from "lucide-react"
 
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { TicketId } from "@/components/sentinel/status"
+import { useI18n } from "@/lib/i18n"
 import type { Draft, Precedent, SentenceCheck } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -48,6 +49,7 @@ export function useCitation() {
 
 function CitationChip({ id }: { id: string }) {
   const { precedents, activeId, setActiveId } = useCitation()
+  const { t } = useI18n()
   const [open, setOpen] = React.useState(false)
   const index = precedents.findIndex((p) => p.ticket_id === id)
   const p = precedents[index]
@@ -59,7 +61,7 @@ function CitationChip({ id }: { id: string }) {
   if (!p) {
     return (
       <span className="mx-0.5 inline-flex h-5 items-center rounded-md bg-critical-tint px-1.5 align-[0.15em] font-mono text-[0.6875rem] font-semibold text-critical-fg">
-        <span className="sr-only">Invalid citation </span>
+        <span className="sr-only">{t("Invalid citation")} </span>
         {id}
       </span>
     )
@@ -73,7 +75,7 @@ function CitationChip({ id }: { id: string }) {
           onClick={() => set(true)}
           onFocus={() => set(true)}
           onBlur={() => set(false)}
-          aria-label={`Source ${index + 1}: ${p.ticket_id}`}
+          aria-label={t(`Source ${index + 1}: ${p.ticket_id}`)}
           className={cn(
             "ml-1 inline-flex size-5 items-center justify-center rounded-md align-[0.15em] font-mono text-[0.6875rem] font-semibold transition-colors duration-150 outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
             activeId === id
@@ -124,6 +126,7 @@ export function CitedText({ text }: { text: string }) {
 const isClaim = (c: SentenceCheck) => !(c.supported && c.source_ticket_id === null)
 
 export function GroundingBar({ sentences }: { sentences: SentenceCheck[] }) {
+  const { t } = useI18n()
   const claims = sentences.filter(isClaim)
   const supported = claims.filter((c) => c.supported).length
   const unsupported = claims.length - supported
@@ -135,12 +138,12 @@ export function GroundingBar({ sentences }: { sentences: SentenceCheck[] }) {
         ))}
       </div>
       <span className="font-medium">
-        {supported} of {claims.length} grounded
+        {t(`${supported} of ${claims.length} grounded`)}
       </span>
       {unsupported ? (
         <span className="inline-flex items-center gap-1 text-warning-fg">
           <TriangleAlertIcon className="size-3.5" aria-hidden="true" />
-          {unsupported} unsupported
+          {t(`${unsupported} unsupported`)}
         </span>
       ) : null}
     </div>
@@ -163,6 +166,7 @@ function linesWithChecks(reply: string, sentences: SentenceCheck[]) {
 /** The draft, sentence by sentence: supported claims get a green underline, unsupported ones a warning. */
 export function GroundedReply({ draft, lang, editing }: { draft: Draft; lang: string; editing?: boolean }) {
   const { activeId } = useCitation()
+  const { t } = useI18n()
   const sentences = draft.sentences ?? []
   const lines = linesWithChecks(draft.reply, sentences)
 
@@ -196,7 +200,7 @@ export function GroundedReply({ draft, lang, editing }: { draft: Draft; lang: st
                           activeId !== null && citedIds(c.text).has(activeId) && "bg-info-tint"
                         )}
                       >
-                        <span className="sr-only">Supported: </span>
+                        <span className="sr-only">{t("Supported")}: </span>
                         <CitedText text={c.text} />
                       </span>
                       {space}
@@ -206,7 +210,7 @@ export function GroundedReply({ draft, lang, editing }: { draft: Draft; lang: st
                   <React.Fragment key={j}>
                     <span className="rounded-sm bg-warning-tint px-1 underline decoration-warning decoration-dotted decoration-2 underline-offset-[7px] box-decoration-clone">
                       <TriangleAlertIcon className="mr-1 inline size-4 -translate-y-px text-warning-fg" aria-hidden="true" />
-                      <span className="sr-only">Unsupported: </span>
+                      <span className="sr-only">{t("Unsupported")}: </span>
                       <CitedText text={c.text} />
                     </span>
                     {space}

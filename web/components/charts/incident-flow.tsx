@@ -4,6 +4,7 @@ import * as React from "react"
 import { Sankey } from "recharts"
 
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 // Flow map of where incidents come from: incident categories (left) flow into the teams that
@@ -38,6 +39,8 @@ export function IncidentFlow({
   className?: string
 }) {
   const [active, setActive] = React.useState<string | null>(null)
+  const { t, lang } = useI18n()
+  const num = (n: number) => n.toLocaleString(lang === "de" ? "de-DE" : "en-US")
 
   const data = React.useMemo(() => {
     const cats = categories.slice().sort((a, b) => b.n - a.n)
@@ -93,7 +96,7 @@ export function IncidentFlow({
             <g
               tabIndex={0}
               role="button"
-              aria-label={`${p.name}: ${p.value.toLocaleString("en-US")} incidents. Open in inbox.`}
+              aria-label={t(`${p.name}: ${p.value.toLocaleString("en-US")} incidents. Open in inbox.`)}
               onPointerEnter={() => setActive(p.name)}
               onPointerLeave={() => setActive(null)}
               onFocus={() => setActive(p.name)}
@@ -125,9 +128,9 @@ export function IncidentFlow({
                 dominantBaseline="middle"
                 className="fill-foreground text-xs"
               >
-                {p.name}
+                {t(p.name)}
                 <tspan dx={6} className="fill-muted-foreground font-mono text-[11px]">
-                  {p.value.toLocaleString("en-US")}
+                  {num(p.value)}
                 </tspan>
               </text>
             </g>

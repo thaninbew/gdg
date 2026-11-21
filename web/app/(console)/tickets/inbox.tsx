@@ -3,14 +3,13 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { PlusIcon, XIcon } from "lucide-react"
+import { PlusIcon, SearchIcon, XIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
-import { Kbd } from "@/components/ui/kbd"
 import { Label } from "@/components/ui/label"
 import {
   Sheet,
@@ -29,8 +28,11 @@ import { ConfidenceMeter } from "@/components/sentinel/confidence"
 import { PageHeader } from "@/components/sentinel/page-header"
 import { PriorityBadge, TicketId } from "@/components/sentinel/status"
 import { sortQueue, useCases } from "@/lib/case-store"
+import { TicketDetail } from "./[id]/detail"
 import { outcome, TRIAGE_FIELDS } from "@/lib/gate"
-import type { CaseOutcome } from "@/lib/types"
+import { useI18n } from "@/lib/i18n"
+import type { CaseOutcome, Language } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 type Status = "all" | CaseOutcome
 const STATUSES: { value: Status; label: string }[] = [
@@ -40,9 +42,24 @@ const STATUSES: { value: Status; label: string }[] = [
   { value: "draft", label: "Draft ready" },
 ]
 
-export function Inbox({ queue, category, status: initialStatus }: { queue: string | null; category: string | null; status: string | null }) {
+export function Inbox({
+  queue,
+  category,
+  status: initialStatus,
+  language,
+  open,
+}: {
+  queue: string | null
+  category: string | null
+  status: string | null
+  /** Only tickets written in this language (from the dashboard's language filter). */
+  language: Language | null
+  /** Ticket shown in the side panel beside the list. */
+  open: string | null
+}) {
   const router = useRouter()
   const { cases, state, accept, escalate, restore } = useCases()
+  const { t } = useI18n()
   const [status, setStatus] = React.useState<Status>(
     STATUSES.some((s) => s.value === initialStatus) ? (initialStatus as Status) : "all"
   )
@@ -50,9 +67,23 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
   const ticketLinks = React.useRef(new Map<string, HTMLAnchorElement>())
 
   const rows = sortQueue(cases, state).map((c) => ({ c, s: state[c.ticket_id], o: outcome(c, state[c.ticket_id]) }))
-  const scoped = rows.filter(({ c, s }) => (!queue || s.triage.queue === queue) && (!category || c.category === category))
+  const scoped = rows.filter(({ c, s }) => (!queue || s.triage.queue === queue) && (!category || c.category === category) && (!language || c.triage.language === language))
   const visible = scoped.filter(({ o }) => status === "all" || o === status)
   const activeId = visible.some((v) => v.c.ticket_id === selected) ? selected : (visible[0]?.c.ticket_id ?? null)
+
+  // Tickets open beside the list; the URL keeps the filters so Back and Forward work.
+  const listQuery = (extra: Record<string, string> = {}, keep: { scope?: boolean; language?: boolean } = {}) => {
+    const { scope = true, language: keepLang = true } = keep
+    const q = new URLSearchParams({
+      ...(scope && queue ? { queue } : {}),
+      ...(scope && category ? { category } : {}),
+      ...(keepLang && language ? { lang: language } : {}),
+      ...(status !== "all" ? { status } : {}),
+      ...extra,
+    })
+    return `/tickets${q.size ? `?${q}` : ""}`
+  }
+  const openHref = (ticketId: string) => listQuery({ open: ticketId })
 
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -72,26 +103,40 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
         link?.scrollIntoView({ block: "nearest" })
       } else if (e.key === "Enter" && !focusedId) {
         e.preventDefault()
-        router.push(`/tickets/${id}`)
+        router.push(openHref(id))
       } else if (e.key === "a") {
         if (TRIAGE_FIELDS.every((f) => before.fields[f] !== "suggested")) return
         accept(id)
-        toast(`Accepted triage for ${id}`, { action: { label: "Undo", onClick: () => restore(id, before) } })
+        toast(t(`Accepted triage for ${id}`), { action: { label: t("Undo"), onClick: () => restore(id, before) } })
       } else if (e.key === "e") {
         escalate(id, "Operator escalated from the inbox")
-        toast(`Escalated ${id}`, { action: { label: "Undo", onClick: () => restore(id, before) } })
+        toast(t(`Escalated ${id}`), { action: { label: t("Undo"), onClick: () => restore(id, before) } })
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [visible, activeId, state, router, accept, escalate, restore])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- openHref only reads the filters from props
+  }, [visible, activeId, state, router, accept, escalate, restore, t])
 
-  const clearHref = status === "all" ? "/tickets" : `/tickets?status=${status}`
 
   return (
     <>
-      <PageHeader title="Inbox" actions={<NewTicket />} />
-      <div className="flex flex-col gap-4 p-4 lg:p-6">
+      <PageHeader
+        title="Inbox"
+        actions={
+          <>
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/find">
+                <SearchIcon data-icon="inline-start" aria-hidden="true" />
+                <span className="hidden sm:inline">{t("Find a ticket")}</span>
+              </Link>
+            </Button>
+            <NewTicket />
+          </>
+        }
+      />
+      <div className={cn(open && "lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(22rem,46%,38rem)] lg:items-start")}>
+      <div className="flex min-w-0 flex-col gap-4 p-4 lg:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <ToggleGroup
             type="single"
@@ -99,11 +144,11 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
             size="sm"
             value={status}
             onValueChange={(v) => v && setStatus(v as Status)}
-            aria-label="Status"
+            aria-label={t("Status")}
           >
             {STATUSES.map((s) => (
               <ToggleGroupItem key={s.value} value={s.value} className="gap-1.5 px-2.5">
-                {s.label}
+                {t(s.label)}
                 <span className="font-mono text-xs text-muted-foreground">
                   {s.value === "all" ? scoped.length : scoped.filter((v) => v.o === s.value).length}
                 </span>
@@ -112,8 +157,16 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
           </ToggleGroup>
           {queue || category ? (
             <Badge variant="info" asChild>
-              <Link href={clearHref} aria-label={`Clear filter ${queue ?? category}`}>
+              <Link href={listQuery({}, { scope: false })} aria-label={t(`Clear filter ${queue ?? category}`)}>
                 {queue ?? category}
+                <XIcon data-icon="inline-end" aria-hidden="true" />
+              </Link>
+            </Badge>
+          ) : null}
+          {language ? (
+            <Badge variant="info" asChild>
+              <Link href={listQuery({}, { language: false })} aria-label={t("Clear language filter")}>
+                {language === "de" ? t("German") : t("English")}
                 <XIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
             </Badge>
@@ -128,13 +181,13 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="w-24">Priority</TableHead>
-                  <TableHead className="w-24">Ticket</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead className="hidden w-44 lg:table-cell">Queue</TableHead>
-                  <TableHead className="hidden w-36 md:table-cell">Confidence</TableHead>
-                  <TableHead className="w-28">Status</TableHead>
-                  <TableHead className="hidden w-16 text-right md:table-cell">Received</TableHead>
+                  <TableHead className="w-24">{t("Priority")}</TableHead>
+                  <TableHead className="w-24">{t("Ticket")}</TableHead>
+                  <TableHead>{t("Subject")}</TableHead>
+                  <TableHead className={cn("hidden w-44", !open && "lg:table-cell")}>{t("Queue")}</TableHead>
+                  <TableHead className={cn("hidden w-36", !open && "md:table-cell")}>{t("Confidence")}</TableHead>
+                  <TableHead className="w-28">{t("Status")}</TableHead>
+                  <TableHead className={cn("hidden w-16 text-right", !open && "md:table-cell")}>{t("Received")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -144,9 +197,9 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
                   return (
                     <TableRow
                       key={c.ticket_id}
-                      data-state={activeId === c.ticket_id ? "selected" : undefined}
+                      data-state={(open ?? activeId) === c.ticket_id ? "selected" : undefined}
                       onClick={(e) => {
-                        if (e.target instanceof Element && !e.target.closest("a")) router.push(`/tickets/${c.ticket_id}`)
+                        if (e.target instanceof Element && !e.target.closest("a")) router.push(openHref(c.ticket_id))
                       }}
                       onMouseEnter={() => {
                         if (document.activeElement === document.body) setSelected(c.ticket_id)
@@ -161,7 +214,7 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
                       </TableCell>
                       <TableCell className="max-w-0">
                         <Link
-                          href={`/tickets/${c.ticket_id}`}
+                          href={openHref(c.ticket_id)}
                           data-ticket-id={c.ticket_id}
                           ref={(el) => {
                             if (el) ticketLinks.current.set(c.ticket_id, el)
@@ -174,20 +227,20 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
                           {c.subject}
                         </Link>
                       </TableCell>
-                      <TableCell className="hidden truncate text-[0.8125rem] text-muted-foreground lg:table-cell">
+                      <TableCell className={cn("hidden truncate text-[0.8125rem] text-muted-foreground", !open && "lg:table-cell")}>
                         {s.triage.queue}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell className={cn("hidden", !open && "md:table-cell")}>
                         {unsettled.length ? (
                           <ConfidenceMeter value={conf} />
                         ) : (
-                          <span className="text-xs text-muted-foreground">Accepted</span>
+                          <span className="text-xs text-muted-foreground">{t("Accepted")}</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <OutcomeBadge outcome={o} />
                       </TableCell>
-                      <TableCell className="hidden text-right font-mono text-xs text-muted-foreground md:table-cell">
+                      <TableCell className={cn("hidden text-right font-mono text-xs text-muted-foreground", !open && "md:table-cell")}>
                         {c.received}
                       </TableCell>
                     </TableRow>
@@ -199,7 +252,7 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
         ) : (
           <Empty className="border bg-card">
             <EmptyHeader>
-              <EmptyDescription>No tickets match these filters.</EmptyDescription>
+              <EmptyDescription>{t("No tickets match these filters.")}</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <Button
@@ -209,27 +262,21 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
                   router.push("/tickets")
                 }}
               >
-                Clear filters
+                {t("Clear filters")}
               </Button>
             </EmptyContent>
           </Empty>
         )}
 
-        <p className="hidden flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground md:flex">
-          <span className="inline-flex items-center gap-1">
-            <Kbd>J</Kbd>
-            <Kbd>K</Kbd> move
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Kbd>Enter</Kbd> open
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Kbd>A</Kbd> accept triage
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Kbd>E</Kbd> escalate
-          </span>
-        </p>
+      </div>
+      {open ? (
+        <aside
+          aria-label={t("Ticket")}
+          className="overflow-y-auto border-l bg-canvas max-lg:fixed max-lg:inset-x-0 max-lg:top-(--topbar) max-lg:bottom-0 max-lg:z-30 lg:sticky lg:top-[calc(var(--topbar)+var(--header-height))] lg:h-[calc(100svh-var(--topbar)-var(--header-height))]"
+        >
+          <TicketDetail id={open} variant="panel" closeHref={listQuery()} />
+        </aside>
+      ) : null}
       </div>
     </>
   )
@@ -237,12 +284,13 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
 
 function NewTicket() {
   const [open, setOpen] = React.useState(false)
+  const { t } = useI18n()
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button size="sm">
           <PlusIcon data-icon="inline-start" aria-hidden="true" />
-          New ticket
+          {t("New ticket")}
         </Button>
       </SheetTrigger>
       <SheetContent>
@@ -251,25 +299,25 @@ function NewTicket() {
           onSubmit={(e) => {
             e.preventDefault()
             setOpen(false)
-            toast.error("Triage API not connected", { description: "Start the backend, then submit again." })
+            toast.error(t("Triage API not connected"), { description: t("Start the backend, then submit again.") })
           }}
         >
           <SheetHeader>
-            <SheetTitle>New ticket</SheetTitle>
-            <SheetDescription>English or German.</SheetDescription>
+            <SheetTitle>{t("New ticket")}</SheetTitle>
+            <SheetDescription>{t("English or German.")}</SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-4 px-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nt-subject">Subject</Label>
+              <Label htmlFor="nt-subject">{t("Subject")}</Label>
               <Input id="nt-subject" name="subject" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nt-body">Message</Label>
+              <Label htmlFor="nt-body">{t("Message")}</Label>
               <Textarea id="nt-body" name="body" rows={8} required />
             </div>
           </div>
           <SheetFooter>
-            <Button type="submit">Triage ticket</Button>
+            <Button type="submit">{t("Triage ticket")}</Button>
           </SheetFooter>
         </form>
       </SheetContent>
