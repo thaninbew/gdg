@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelDesk Software Factory</title>
+<style>
+:root{
+  --canvas:#f6f6fa;--card:#fff;--fg:#16161f;--muted:#f1f1f6;--muted-fg:#5b5e70;--border:#e3e3ec;--border-strong:#c9cad8;
+  --primary:#3550e0;--primary-fg:#fff;
+  --warning:#f0a81c;--warning-fg:#8a5000;--warning-tint:#fef4da;
+  --success:#1f9254;--success-fg:#146c3c;--success-tint:#e5f4eb;
+  --info-fg:#2e45c4;--info-tint:#eceffe;
+  --critical-fg:#b42323;--critical-tint:#fdecec;
+  --code-bg:#f3f3f8;
+  --ai-gradient:linear-gradient(90deg,#f0644a,#d9468f 35%,#8a5cf5 70%,#3478f6);
+  --ease:cubic-bezier(.2,0,0,1);
+  --mono:"Google Sans Code",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#0a0a0f;--card:#14141c;--fg:#ececf3;--muted:#1b1b25;--muted-fg:#a2a4b8;--border:#272836;--border-strong:#3a3b4d;
+  --primary:#8c9eff;--primary-fg:#0b1033;
+  --warning:#f4be4f;--warning-fg:#f6cc6e;--warning-tint:#33270f;
+  --success:#4cc283;--success-fg:#72d69f;--success-tint:#11301f;
+  --info-fg:#a8b5ff;--info-tint:#181d3d;--critical-fg:#ff9c96;--critical-tint:#3a1719;--code-bg:#101018;
+  --ai-gradient:linear-gradient(90deg,#ff7a5c,#e862a8 35%,#a07bff 70%,#5b8eff);color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --canvas:#0a0a0f;--card:#14141c;--fg:#ececf3;--muted:#1b1b25;--muted-fg:#a2a4b8;--border:#272836;--border-strong:#3a3b4d;
+  --primary:#8c9eff;--primary-fg:#0b1033;
+  --warning:#f4be4f;--warning-fg:#f6cc6e;--warning-tint:#33270f;
+  --success:#4cc283;--success-fg:#72d69f;--success-tint:#11301f;
+  --info-fg:#a8b5ff;--info-tint:#181d3d;--critical-fg:#ff9c96;--critical-tint:#3a1719;--code-bg:#101018;
+  --ai-gradient:linear-gradient(90deg,#ff7a5c,#e862a8 35%,#a07bff 70%,#5b8eff);color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 Manrope,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+.stage{background:var(--canvas);color:var(--fg);padding:16px;min-height:100%}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+
+/* Presenter bar: outside product chrome */
+.presenter{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.demo-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted-fg)}
+.demo-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--warning)}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--border);border-radius:8px;background:var(--card)}
+.seg button{border:0;background:transparent;padding:6px 14px;min-height:32px;border-radius:6px;font-size:13px;font-weight:600;color:var(--muted-fg);cursor:pointer;transition:background-color .15s,color .15s}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--card)}
+.seg-label{font-size:12px;color:var(--muted-fg);margin-right:8px}
+
+/* Product frame */
+.frame{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-width:0}
+.appbar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;letter-spacing:-.01em}
+.brand svg{width:22px;height:22px;color:var(--fg)}
+.ctx{font-size:12px;color:var(--muted-fg);padding-left:10px;border-left:1px solid var(--border)}
+.nav{margin-left:auto;display:flex;gap:2px}
+.nav a{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;min-height:32px;border-radius:6px;font-size:13px;font-weight:600;color:var(--muted-fg);text-decoration:none;transition:background-color .15s,color .15s}
+.nav a:hover{background:var(--muted)}
+.nav a[aria-current="page"]{color:var(--fg);background:var(--muted)}
+.nav .num{font-family:var(--mono);font-size:11px;opacity:.7}
+
+.ticket{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--border)}
+.ticket .id{font-family:var(--mono);font-size:12px;color:var(--muted-fg)}
+.ticket h1{font-size:15px;font-weight:600;margin:0;flex:1 1 220px;min-width:0}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.b-warn{background:var(--warning-tint);color:var(--warning-fg)}
+.b-ok{background:var(--success-tint);color:var(--success-fg)}
+.b-info{background:var(--info-tint);color:var(--info-fg)}
+.b-muted{background:var(--muted);color:var(--muted-fg)}
+.badge svg{width:12px;height:12px}
+
+main{padding:16px;outline:none}
+.page{display:flex;flex-direction:column;gap:12px;animation:in .2s var(--ease)}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.panel{border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0;background:var(--card)}
+.panel.ai{position:relative;overflow:hidden;border-radius:14px}
+.panel.ai::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--ai-gradient)}
+.head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.head h2{font-size:14px;font-weight:600;margin:0}
+.head .badge{margin-left:auto}
+h3{font-size:12px;font-weight:600;color:var(--muted-fg);margin:0 0 6px;text-transform:none}
+
+/* Track */
+.track{position:relative;display:grid;grid-template-columns:repeat(6,1fr);margin:16px -4px 4px}
+.track::before,.fill{content:"";position:absolute;top:13px;height:2px;left:calc(100%/12)}
+.track::before{right:calc(100%/12);background:var(--border-strong)}
+.fill{background:var(--fg);width:calc((100% - 100%/6) * var(--p,0));transition:width .45s var(--ease)}
+.node{position:relative;z-index:1;border:0;background:transparent;padding:0 0 4px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border-radius:8px;min-width:0}
+.node .dot{width:28px;height:28px;display:grid;place-items:center}
+.node .dot i{display:block;width:10px;height:10px;border-radius:50%;background:var(--card);border:2px solid var(--border-strong);transition:all .2s var(--ease)}
+.node.done .dot i{background:var(--fg);border-color:var(--fg)}
+.node.active .dot i{width:18px;height:18px;border:2px solid var(--fg);background:var(--card);box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 9px var(--fg)}
+.node.active.live .dot i{animation:pulse 1.6s var(--ease) infinite}
+@keyframes pulse{0%{outline:0 solid transparent}50%{outline:5px solid var(--info-tint)}100%{outline:0 solid transparent}}
+.node .lbl{font-size:12px;color:var(--muted-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
+.node.done .lbl,.node.active .lbl{color:var(--fg)}
+.node.inspect .lbl{color:var(--primary);font-weight:700}
+.node.inspect .dot{box-shadow:0 0 0 2px var(--primary);border-radius:50%}
+.node:hover .dot i{border-color:var(--fg)}
+.steptitle{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:8px}
+.steptitle .k{font-family:var(--mono);font-size:12px;color:var(--muted-fg)}
+.steptitle strong{font-size:15px}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--fg);transition:background-color .15s,border-color .15s,opacity .15s}
+.btn:hover{background:var(--muted)}
+.btn svg{width:16px;height:16px;flex:none}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-fg)}
+.btn.primary:hover{opacity:.92}
+.btn[disabled],.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.controls .spacer{flex:1}
+.chip{font-size:12px;color:var(--muted-fg);display:inline-flex;align-items:center;gap:6px}
+.linkish{border:0;background:none;color:var(--primary);font-weight:600;font-size:12px;cursor:pointer;padding:4px;border-radius:4px}
+
+/* Stage detail */
+.acts{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.acts li{display:flex;gap:8px;align-items:flex-start;font-size:13px;transition:opacity .25s var(--ease),transform .25s var(--ease)}
+.acts li.pending{opacity:0;transform:translateY(3px)}
+.acts li svg{width:14px;height:14px;margin-top:3px;flex:none;color:var(--success)}
+.acts li.now svg{color:var(--primary)}
+.empty{font-size:13px;color:var(--muted-fg);margin:10px 0 0}
+pre.code{margin:12px 0 0;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font:12px/1.6 var(--mono);overflow-x:auto;white-space:pre}
+.code .file{display:block;color:var(--muted-fg);margin-bottom:4px}
+.code .del{color:var(--critical-fg);background:var(--critical-tint);display:inline-block;width:100%}
+.code .add{color:var(--success-fg);background:var(--success-tint);display:inline-block;width:100%}
+.code .hl{background:var(--warning-tint);display:inline-block;width:100%}
+
+/* Finding */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+dl.meta{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:12px 0 0;font-size:13px}
+dl.meta dt{color:var(--muted-fg)}
+dl.meta dd{margin:0;display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-width:0}
+ol.ev{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.ev code,.inline{font-family:var(--mono);font-size:12px;background:var(--muted);padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.pendingbox{font-size:13px;color:var(--muted-fg);display:flex;align-items:center;gap:8px}
+.skel{height:10px;border-radius:4px;background:var(--muted);margin-top:8px}
+.handoff pre{margin:10px 0 0;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font:12px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.copyrow .chip{margin-left:auto}
+.mini{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}
+.mini .bar{flex:1 1 120px;height:4px;border-radius:2px;background:var(--muted);overflow:hidden;min-width:80px}
+.mini .bar span{display:block;height:100%;background:var(--fg);transition:width .45s var(--ease)}
+p{margin:6px 0 0}
+.muted{color:var(--muted-fg)}
+
+@media (max-width:640px){
+  .stage{padding:12px 16px}
+  main{padding:12px}
+  .node .lbl{display:none}
+  .track{margin-top:12px}
+  .grid2{grid-template-columns:1fr}
+  .ctx{display:none}
+  .appbar{padding:10px 12px}
+  .ticket{padding:10px 12px}
+  dl.meta{grid-template-columns:1fr;gap:2px}
+  dl.meta dd{margin-bottom:8px}
+  .controls .btn{flex:1 1 auto}
+  .controls .spacer{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="wrap">
+    <div class="presenter" aria-label="Presenter controls" role="region">
+      <span class="demo-tag" title="Simulated data, no live systems"><span class="dot" aria-hidden="true"></span>Demo run</span>
+      <div style="display:flex;align-items:center">
+        <span class="seg-label" id="roleLbl">View as</span>
+        <div class="seg" role="group" aria-labelledby="roleLbl">
+          <button type="button" data-role="customer" aria-pressed="false">Customer</button>
+          <button type="button" data-role="it" aria-pressed="true">IT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header class="appbar">
+        <div class="brand">
+          <svg viewBox="8 12 50 42" aria-hidden="true"><defs><linearGradient id="sdb" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="#f0644a"/><stop offset=".35" stop-color="#d9468f"/><stop offset=".7" stop-color="#8a5cf5"/><stop offset="1" stop-color="#3478f6"/></linearGradient></defs><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#sdb)" opacity=".85"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="currentColor"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="currentColor"/><path d="M10 51.5 H54" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg>
+          SentinelDesk
+        </div>
+        <span class="ctx" id="ctx">IT console</span>
+        <nav class="nav" aria-label="Pages">
+          <a href="#run" data-page="run"><span class="num">1</span>Run</a>
+          <a href="#finding" data-page="finding"><span class="num">2</span>Finding</a>
+        </nav>
+      </header>
+      <div class="ticket">
+        <span class="id">SD-4182</span>
+        <h1>CSV export ignores the selected date range</h1>
+        <span class="badge b-warn" id="prio">Medium</span>
+      </div>
+      <main id="view" tabindex="-1"></main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const I = {
+  play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>',
+  replay:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
+  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
+  arrowR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+  arrowL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+  dotc:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
+};
+
+const CODE_INSPECT = '<span class="file">src/reports/export/csv.ts</span>' +
+'40  export function buildExportQuery(filters) {\n' +
+'41    return db.orders\n' +
+'<span class="hl">42      .where({ status: filters.status })</span>\n' +
+'43      .orderBy("created_at");\n' +
+'44    // filters.range is never read\n' +
+'45  }';
+const CODE_DIFF = '<span class="file">Proposed change · csv.ts · draft</span>' +
+'   return db.orders\n' +
+'     .where({ status: filters.status })\n' +
+'<span class="add">+    .whereBetween("created_at", [filters.range.from, filters.range.to])</span>\n' +
+'     .orderBy("created_at");';
+
+const STAGES = [
+  {short:'Review', name:'Review ticket',
+   it:['Read ticket SD-4182 and the attached export','Filters on ticket: Orders, Oct 1 to Oct 14','Matched area: Reports, CSV export'],
+   cu:['Read your request and the file you attached','Noted the dates you picked: Oct 1 to Oct 14']},
+  {short:'Reproduce', name:'Reproduce',
+   it:['Repro steps: Orders, range Oct 1 to 14, Export CSV','Sample data: rows dated Aug 8 to Nov 5','Reproduced: range filter not applied'],
+   cu:['Followed the same steps on sample data','Saw the same extra dates you did']},
+  {short:'Inspect', name:'Inspect code',
+   it:['Traced Export CSV to buildExportQuery()','csv.ts:42 reads filters.status only','filters.range never reaches the query'], code:CODE_INSPECT,
+   cu:['Found the part of the export that picks rows','It skips the date range you selected']},
+  {short:'Change', name:'Review proposed change',
+   it:['Drafted a one-line change to csv.ts','Change flagged for engineer review','Not merged'], code:CODE_DIFF,
+   cu:['Drafted a fix','Waiting for an engineer to check it']},
+  {short:'Verify', name:'Verify',
+   it:['Planned check: rerun repro, expect Oct 1 to 14 only','Planned check: add a range filter test','Checks listed, not run. Owner runs them before merge'],
+   cu:['Listed the checks an engineer will run','Nothing changes for you until they pass']},
+  {short:'Hand off', name:'Hand off',
+   it:['Owner: Reports team','Handoff prompt ready to copy','Ticket status: With engineering'],
+   cu:['Sent to the Reports team','Status update ready to copy']}
+];
+const N = STAGES.length;
+const TICK = 900;
+
+const PROMPT_IT = [
+'You are picking up SentinelDesk ticket SD-4182 for the Reports team.',
+'',
+'Issue: CSV export ignores the selected date range and returns all rows.',
+'Confidence: Likely (demo run, sample data).',
+'',
+'Evidence',
+'- Repro: Orders, range Oct 1 to 14, Export CSV. File has rows dated Aug 8 to Nov 5.',
+'- Code: src/reports/export/csv.ts:42, buildExportQuery() reads filters.status but never filters.range.',
+'',
+'Proposed change (unreviewed draft)',
+'- Add .whereBetween("created_at", [filters.range.from, filters.range.to]) before orderBy.',
+'',
+'Before merging',
+'- Review the diff.',
+'- Add a test for the range filter.',
+'- Rerun the repro and confirm only Oct 1 to 14 rows.',
+'',
+'Status: awaiting engineer review. Nothing has been merged or deployed.'
+].join('\n');
+const PROMPT_CU = [
+'Update on SD-4182: CSV export ignores the selected date range',
+'',
+'We found why your export includes dates outside the range you picked.',
+'A fix has been drafted and is waiting for an engineer on the Reports team to review it.',
+'It is not live yet. We will update this ticket when it is.',
+'',
+'Workaround for now: filter the Date column in your spreadsheet.'
+].join('\n');
+
+const S = { role:'it', cur:0, sub:0, playing:false, pin:null, copied:0, copyFail:false };
+const view = document.getElementById('view');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+let page = null, timer = null, built = null;
+
+function lines(i){ const st=STAGES[i]; return S.role==='it'?st.it:st.cu; }
+function done(){ return S.cur>=N; }
+function shown(){ return S.pin!==null ? S.pin : Math.min(S.cur, N-1); }
+function stageState(i){ return i<S.cur?'done':(i===S.cur?'active':'todo'); }
+function revealed(i){ const st=stageState(i); return st==='done'?lines(i).length:(st==='active'?S.sub:0); }
+
+function tick(){
+  if(!S.playing) return;
+  const len = lines(S.cur).length;
+  if(S.sub < len){ S.sub++; }
+  else { S.cur++; S.sub = 0; if(S.cur>=N){ S.playing=false; } }
+  update();
+}
+function setPlaying(p){
+  S.playing = p && !done();
+  if(S.playing) S.pin = null;
+  clearInterval(timer);
+  if(S.playing) timer = setInterval(tick, TICK);
+  update();
+}
+function replay(){ S.cur=0; S.sub=0; S.pin=null; S.copied=0; setPlaying(true); }
+function nextStep(){
+  if(done()) return;
+  S.playing=false; clearInterval(timer); S.pin=null;
+  const len=lines(S.cur).length;
+  if(S.sub<len) S.sub=len; else { S.cur++; S.sub=S.cur<N?lines(S.cur).length:0; }
+  update();
+}
+
+/* ---------- Run page ---------- */
+function buildRun(){
+  view.innerHTML = `
+  <section class="page" aria-labelledby="h-run">
+    <div class="panel">
+      <div class="head">
+        <h2 id="h-run" tabindex="-1">Triaging codebase</h2>
+        <span class="badge" id="runStatus"></span>
+      </div>
+      <div class="track" role="group" aria-label="Run stages, use arrow keys to inspect">
+        <div class="fill" id="fill"></div>
+        ${STAGES.map((s,i)=>`<button type="button" class="node" data-i="${i}" tabindex="${i===0?0:-1}"><span class="dot"><i></i></span><span class="lbl">${s.short}</span><span class="sr" data-sr></span></button>`).join('')}
+      </div>
+      <div class="steptitle"><span class="k" id="stepK"></span><strong id="stepName"></strong></div>
+      <div class="controls">
+        <button type="button" class="btn" id="bReplay">${I.replay}Replay</button>
+        <button type="button" class="btn" id="bPlay"></button>
+        <button type="button" class="btn" id="bNext">${I.next}Next step</button>
+        <span class="spacer"></span>
+        <a class="btn" id="bFinding" href="#finding">View finding${I.arrowR}</a>
+      </div>
+    </div>
+    <div class="panel ai" id="detail" aria-live="polite"></div>
+  </section>`;
+  view.querySelectorAll('.node').forEach(b=>{
+    b.addEventListener('click',()=>{ S.pin = (+b.dataset.i === S.cur && !done()) ? null : +b.dataset.i; update(); });
+    b.addEventListener('keydown',e=>{
+      const k=e.key; let j=+b.dataset.i;
+      if(k==='ArrowRight'||k==='ArrowDown') j=Math.min(N-1,j+1);
+      else if(k==='ArrowLeft'||k==='ArrowUp') j=Math.max(0,j-1);
+      else if(k==='Home') j=0; else if(k==='End') j=N-1; else return;
+      e.preventDefault(); S.pin=j; update();
+      view.querySelector(`.node[data-i="${j}"]`).focus();
+    });
+  });
+  document.getElementById('bReplay').onclick=replay;
+  document.getElementById('bPlay').onclick=()=>setPlaying(!S.playing);
+  document.getElementById('bNext').onclick=nextStep;
+  built = 'run:'+S.role;
+}
+function updateRun(){
+  const p = Math.min(S.cur, N-1)/(N-1);
+  document.getElementById('fill').style.setProperty('--p', done()?1:p);
+  const sh = shown();
+  view.querySelectorAll('.node').forEach(b=>{
+    const i=+b.dataset.i, st=stageState(i);
+    b.className = 'node ' + st + (st==='active'&&S.playing?' live':'') + (S.pin===i?' inspect':'');
+    b.tabIndex = i===sh?0:-1;
+    b.setAttribute('aria-current', i===sh?'step':'false');
+    b.querySelector('[data-sr]').textContent = `Step ${i+1}: ${STAGES[i].name}, ${st==='done'?'complete':st==='active'?'in progress':'not started'}`;
+  });
+  const rs=document.getElementById('runStatus');
+  if(done()){ rs.className='badge b-ok'; rs.innerHTML=I.check+'Handed off'; }
+  else if(S.playing){ rs.className='badge b-info'; rs.textContent='Running'; }
+  else if(S.cur===0&&S.sub===0){ rs.className='badge b-muted'; rs.textContent='Ready'; }
+  else { rs.className='badge b-muted'; rs.textContent='Paused'; }
+  document.getElementById('stepK').textContent = done()? `${N} of ${N}` : `Step ${S.cur+1} of ${N}`;
+  document.getElementById('stepName').textContent = done()? 'Run complete' : STAGES[S.cur].name;
+  const bp=document.getElementById('bPlay');
+  bp.innerHTML = S.playing? I.pause+'Pause' : I.play+(S.cur===0&&S.sub===0?'Play':'Resume');
+  bp.disabled = done(); document.getElementById('bNext').disabled = done();
+  const bf=document.getElementById('bFinding');
+  bf.className = 'btn' + (done()?' primary':'');
+
+  // detail
+  const st=STAGES[sh], ls=lines(sh), r=revealed(sh), state=stageState(sh);
+  const label = state==='done'?'<span class="badge b-ok">'+I.check+'Done</span>':state==='active'?(S.playing?'<span class="badge b-info">Working</span>':'<span class="badge b-muted">Paused</span>'):'<span class="badge b-muted">Not started</span>';
+  const showCode = S.role==='it' && st.code && r>=2;
+  document.getElementById('detail').innerHTML = `
+    <div class="head"><h2>${sh+1}. ${st.name}</h2>${label}</div>
+    ${S.pin!==null?`<button type="button" class="linkish" id="bLive">Back to live step</button>`:''}
+    ${state==='todo'?`<p class="empty">Waiting on step ${S.cur+1}.</p>`:
+      `<ul class="acts">${ls.map((t,i)=>`<li class="${i<r?'':'pending'}${state==='active'&&i===r-1?' now':''}" ${i<r?'':'aria-hidden="true"'}>${i<r?I.check:I.dotc}<span>${t}</span></li>`).join('')}</ul>`}
+    ${showCode?`<pre class="code" aria-label="Code excerpt">${st.code}</pre>`:''}`;
+  const bl=document.getElementById('bLive'); if(bl) bl.onclick=()=>{S.pin=null;update();};
+}
+
+/* ---------- Finding page ---------- */
+function renderFinding(){
+  const it = S.role==='it';
+  const c = S.cur;
+  const has = k => c>k; // stage index k complete
+  const pct = done()?100:Math.round(Math.min(c,N-1)/(N-1)*100);
+  const mini = `<div class="panel"><div class="mini">
+      <span class="mono muted">${done()?`${N} of ${N}`:`Step ${c+1} of ${N}`}</span>
+      <strong>${done()?'Handed off':STAGES[c].name}</strong>
+      <span class="bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
+      <a class="btn" href="#run">${I.arrowL}Run</a></div></div>`;
+  if(!has(2)){
+    view.innerHTML = `<section class="page" aria-labelledby="h-f">${mini}
+      <div class="panel ai"><div class="head"><h2 id="h-f" tabindex="-1">${it?'Issue found':'What we found'}</h2><span class="badge b-muted">${I.clock}Pending</span></div>
+      <p class="empty">Available after step 3, ${STAGES[2].name.toLowerCase()}.</p><div class="skel" style="width:70%"></div><div class="skel" style="width:50%"></div></div></section>`;
+    return;
+  }
+  const review = !has(3) ? `<span class="badge b-muted">${I.clock}Drafting</span>` :
+    it ? `<span class="badge b-warn">Awaiting engineer review</span><span class="muted">Not merged · Not deployed</span>`
+       : `<span class="badge b-warn">Not fixed yet</span><span class="muted">Engineer review next</span>`;
+  const evidence = it ? `<ol class="ev">
+      <li>Repro: Orders, range Oct 1 to 14. File rows dated Aug 8 to Nov 5.</li>
+      <li><code>src/reports/export/csv.ts:42</code> reads <code>filters.status</code> only.</li>
+      <li><code>filters.range</code> is never passed to the query.</li></ol>
+      <pre class="code">${CODE_INSPECT}</pre>`
+    : `<ol class="ev"><li>We followed your steps and got the same extra dates.</li><li>The export does not use the date range you pick.</li></ol>`;
+  const fix = !has(3) ? `<div class="pendingbox">${I.clock}Available after step 4.</div><div class="skel" style="width:60%"></div>` :
+    it ? `<p>Apply the selected range to the query before sorting.</p><pre class="code">${CODE_DIFF}</pre>
+      ${has(4)?`<h3 style="margin-top:12px">Checks before merge · not run</h3><ol class="ev"><li>Rerun repro, expect Oct 1 to 14 only</li><li>Add a range filter test</li></ol>`:''}`
+    : `<p>Make the export use only the dates you pick.</p><p class="muted">For now, filter the Date column in your spreadsheet.</p>`;
+  const handText = it?PROMPT_IT:PROMPT_CU;
+  const copied = S.copied && Date.now()<S.copied;
+  const hand = !has(5) ? `<div class="pendingbox">${I.clock}Available after step 6, hand off.</div>` :
+    `<div class="copyrow">
+       <button type="button" class="btn primary" id="bCopy">${copied?I.check+'Copied':I.copy+(it?'Copy handoff prompt':'Copy status update')}</button>
+       <span class="chip" role="status" id="copyMsg">${S.copyFail?'Copy blocked here. Text is selected below.':''}</span>
+     </div>
+     <pre id="handText" tabindex="0" aria-label="${it?'Handoff prompt':'Status update'}">${esc(handText)}</pre>`;
+
+  view.innerHTML = `<section class="page" aria-labelledby="h-f">${mini}
+    <div class="panel ai">
+      <div class="head"><h2 id="h-f" tabindex="-1">${it?'Issue found':'What we found'}</h2><span class="badge b-info">${it?'Likely':'Likely cause'}</span></div>
+      <p style="font-size:15px">${it?'Export query drops the selected date range.':'Your export ignores the dates you pick, so it includes every row.'}</p>
+      <dl class="meta">
+        <dt>${it?'Owning team':'Handled by'}</dt><dd>Reports team</dd>
+        <dt>Review status</dt><dd>${review}</dd>
+      </dl>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h3>Evidence</h3>${evidence}</div>
+      <div class="panel"><h3>${it?'Recommended fix':'What happens next'}</h3>${fix}</div>
+    </div>
+    <div class="panel handoff"><h3>${it?'Handoff':'Status update'}</h3>${hand}</div>
+  </section>`;
+  const bc=document.getElementById('bCopy');
+  if(bc) bc.onclick=async()=>{
+    const ok = await copyText(handText);
+    S.copyFail = !ok;
+    if(ok){ S.copied = Date.now()+1600; setTimeout(()=>{ if(page==='finding') render(); },1650); }
+    render();
+    if(!ok){ const pre=document.getElementById('handText'); const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+  };
+}
+function esc(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }catch(e){}
+  const ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly','');
+  ta.style.cssText='position:fixed;left:-9999px;opacity:0'; document.body.appendChild(ta); ta.select();
+  let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} ta.remove(); return ok;
+}
+
+/* ---------- Router ---------- */
+let lastFindingKey = '';
+function render(){
+  const fid = document.activeElement && document.activeElement.id;
+  if(page==='run'){
+    if(built!=='run:'+S.role) buildRun();
+    updateRun();
+  } else {
+    built=null;
+    renderFinding();
+  }
+  if(fid && !document.getElementById(fid)?.contains(document.activeElement)){
+    const el=document.getElementById(fid); if(el && view.contains(el)) el.focus();
+  }
+}
+function update(){
+  if(page==='finding'){
+    const key = S.role+':'+S.cur+':'+(S.copied>Date.now())+':'+S.copyFail;
+    if(key===lastFindingKey) return; lastFindingKey=key;
+  }
+  render();
+}
+function route(focus){
+  const h=(location.hash||'#run').slice(1);
+  page = h==='finding'?'finding':'run';
+  document.querySelectorAll('.nav a').forEach(a=>a.setAttribute('aria-current', a.dataset.page===page?'page':'false'));
+  built=null; lastFindingKey=''; S.copyFail=false;
+  render();
+  if(focus){ const hd=view.querySelector('h2[tabindex]'); if(hd) hd.focus({preventScroll:true}); }
+}
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+  if(S.role===b.dataset.role) return;
+  S.role=b.dataset.role;
+  // keep stage progress; clamp sub-line reveal to the new role's line count
+  if(!done()) S.sub=Math.min(S.sub, lines(S.cur).length);
+  document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false'));
+  document.getElementById('ctx').textContent = S.role==='it'?'IT console':'Support portal';
+  lastFindingKey=''; S.copyFail=false; S.copied=0; render();
+}));
+addEventListener('hashchange',()=>route(true));
+// Deep link #finding opens on a completed run so the Finding view is populated.
+if((location.hash||'').slice(1)==='finding'){ S.cur=N; S.sub=0; route(false); }
+else { route(false); setPlaying(true); }
+})();
+</script>
+</body>
+</html>

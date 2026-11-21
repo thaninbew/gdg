@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelDesk Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--canvas:#f6f6fa;--fg:#16161f;--card:#fff;--muted:#f1f1f6;--mfg:#5b5e70;--line:#e3e3ec;--sk:#e6e6ee;
+--pri:#3550e0;--prifg:#fff;--info-t:#eceffe;--info-f:#2e45c4;--crit-t:#fdecec;--crit-f:#b42323;--crit:#d93a3a;
+--ok-t:#e5f4eb;--ok-f:#146c3c;--warn-t:#fef4da;--warn-f:#8a5000;
+--ai:linear-gradient(90deg,#f0644a 0%,#d9468f 30%,#8a5cf5 62%,#3478f6 100%);--tile:#fff;--lamp:#15151c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--canvas:#0a0a0f;--fg:#ececf3;--card:#14141c;--muted:#1b1b25;--mfg:#a2a4b8;--line:#272836;--sk:#262634;
+--pri:#8c9eff;--prifg:#0b1033;--info-t:#181d3d;--info-f:#a8b5ff;--crit-t:#3a1719;--crit-f:#ff9c96;--crit:#f0605c;
+--ok-t:#11301f;--ok-f:#72d69f;--warn-t:#33270f;--warn-f:#f6cc6e;--tile:#0e0e14;--lamp:#fff}}
+:root[data-theme="dark"]{--canvas:#0a0a0f;--fg:#ececf3;--card:#14141c;--muted:#1b1b25;--mfg:#a2a4b8;--line:#272836;--sk:#262634;
+--pri:#8c9eff;--prifg:#0b1033;--info-t:#181d3d;--info-f:#a8b5ff;--crit-t:#3a1719;--crit-f:#ff9c96;--crit:#f0605c;
+--ok-t:#11301f;--ok-f:#72d69f;--warn-t:#33270f;--warn-f:#f6cc6e;--tile:#0e0e14;--lamp:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{color:var(--fg);font:14px/1.45 Manrope,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.mono{font-family:"Google Sans Code",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;padding:6px 11px}
+button:hover{border-color:var(--mfg)}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg);font-weight:600}
+.ghost{border-color:transparent;background:none;color:var(--mfg)}
+.crit{background:var(--crit);border-color:var(--crit);color:#fff;font-weight:600}
+.sel{border-color:var(--pri);background:var(--info-t);color:var(--info-f)}
+
+/* presenter strip, outside app chrome */
+.pres{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.where{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 220px}
+.n{font-size:12px;color:var(--mfg)}
+.loc{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role{font-size:11px;font-weight:700;letter-spacing:.03em;border-radius:4px;padding:1px 6px;white-space:nowrap}
+.role.c{background:var(--ok-t);color:var(--ok-f)}
+.role.e{background:var(--info-t);color:var(--info-f)}
+.role.t{background:var(--muted);color:var(--mfg)}
+.ctrls{display:flex;gap:6px}
+.dots{display:flex;gap:4px;margin:0 0 10px}
+.dots i{flex:1;height:3px;border-radius:2px;background:var(--line)}
+.dots i.on{background:var(--pri)}
+.switch{font-size:12px;color:var(--info-f);background:var(--info-t);border-radius:6px;padding:5px 9px;margin:0 0 10px}
+.foot{font-size:11px;color:var(--mfg);margin-top:8px}
+.simtag{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--warn-f);background:var(--warn-t);border-radius:4px;padding:1px 5px;vertical-align:middle;white-space:nowrap}
+
+/* app frame */
+.app{border:1px solid var(--line);border-radius:10px;background:var(--canvas);overflow:hidden}
+.chrome{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--card)}
+.chrome .brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}
+.chrome .url{margin-left:auto;font-size:11px;color:var(--mfg)}
+.phl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mfg);border:1px dashed var(--mfg);border-radius:4px;padding:0 5px;white-space:nowrap}
+.body{display:flex;min-height:380px}
+.side{width:150px;flex:none;border-right:1px solid var(--line);background:var(--card);padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.side button{border:0;background:none;text-align:left;color:var(--mfg);padding:6px 8px;font-size:13px}
+.side button.on{background:var(--muted);color:var(--fg);font-weight:600}
+.main{flex:1;min-width:0;padding:16px}
+@media (max-width:560px){.body{flex-direction:column}.side{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);padding:6px}.main{padding:12px}.chrome .url{display:none}}
+h1{font-size:18px;font-weight:600;margin:0 0 12px}
+h2{font-size:13px;font-weight:600;margin:0 0 8px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
+.ais{position:relative;border-radius:12px;overflow:hidden}
+.ais:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--ai)}
+.lbl{font-size:12px;color:var(--mfg);margin:0 0 4px}
+textarea{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px;resize:vertical;min-height:84px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.sk{display:block;height:8px;border-radius:4px;background:var(--sk);margin:6px 0}
+.sk.w9{width:90%}.sk.w7{width:70%}.sk.w5{width:50%}.sk.w3{width:30%}
+.blk{background:var(--sk);border-radius:6px}
+.badge{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;white-space:nowrap}
+.b-ok{background:var(--ok-t);color:var(--ok-f)}.b-crit{background:var(--crit-t);color:var(--crit-f)}.b-info{background:var(--info-t);color:var(--info-f)}.b-warn{background:var(--warn-t);color:var(--warn-f)}.b-mut{background:var(--muted);color:var(--mfg)}
+.q{font-weight:600;font-size:15px;margin:0 0 8px}
+.req{background:var(--info-t);border-radius:12px 12px 2px 12px;padding:9px 11px;margin:0 0 10px 10%;}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:6px 0;border-top:1px solid var(--line)}td:last-child{text-align:right}
+.list .r{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:9px 10px;border-top:1px solid var(--line);background:var(--card);cursor:pointer;width:100%;border-radius:0;border-left:0;border-right:0;border-bottom:0;text-align:left}
+.list .r:first-child{border-top:0}
+.list{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.list .r.skr{cursor:default}
+.list .r:hover:not(.skr){background:var(--muted)}
+.subj{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:560px){.list .r{grid-template-columns:1fr auto}.list .r .mono{grid-column:1/-1}}
+.grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:640px){.grid.d{grid-template-columns:1.4fr 1fr}.grid.k{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:639px){.grid.k{grid-template-columns:1fr 1fr}}
+.ev{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--card)}
+.cite{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--mfg)}
+.kpi .v{font-size:20px;font-weight:600;margin-top:4px}
+.reason{display:flex;gap:6px;align-items:baseline;font-size:13px;margin:4px 0}
+.reason:before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--crit);transform:translateY(-1px)}
+.toast{font-size:12px;margin-top:8px;color:var(--mfg)}
+
+/* title */
+.title{text-align:center;padding:48px 16px 40px}
+.title svg{width:72px;height:72px}
+.title h1{font-size:24px;margin:14px 0 6px}
+.title p{color:var(--mfg);max-width:420px;margin:0 auto 22px}
+[hidden]{display:none!important}
+/* additions for the landing-linked flow */
+.pres .home{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:var(--fg);text-decoration:none;padding:4px 6px;border-radius:6px}
+.pres .home:hover{background:var(--muted)}
+.pres .home svg{width:18px;height:18px}
+svg.i{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px}
+.backlink{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--info-f);font-weight:600;padding:4px 0;margin:0 0 10px}
+.backlink:hover{text-decoration:underline}
+.list .r.open{cursor:pointer}
+.list .r .chev{color:var(--mfg)}
+@media (max-width:560px){.list .r .chev{display:none}}
+.dhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+.dhead h1{margin:0}
+.cite{display:inline-flex;align-items:center;gap:3px;font-family:"Google Sans Code",ui-monospace,Menlo,monospace;font-size:11px;color:var(--info-f);background:var(--info-t);border:0;border-radius:4px;padding:1px 5px;margin-left:3px;vertical-align:1px}
+.sent{margin:0 0 6px;line-height:1.6;font-size:15px}
+.sent.uns{background:var(--warn-t);border-radius:4px;padding:0 3px}
+.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;color:var(--mfg);margin:4px 0 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.alert{border:1px solid var(--crit);background:var(--crit-t);color:var(--crit-f);border-radius:8px;padding:10px 12px}
+.livetag{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--ok-f);background:var(--ok-t);border-radius:4px;padding:1px 5px;white-space:nowrap}
+.mocktag{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--mfg);border:1px solid var(--line);border-radius:4px;padding:0 5px;white-space:nowrap}
+.ff{display:block;width:100%;height:max(640px,calc(100svh - 150px));border:1px solid var(--line);border-radius:10px;background:var(--canvas)}
+.ais[data-generating="true"]:before{background-size:200% 100%;animation:sweep 1.4s linear infinite}
+@keyframes sweep{from{background-position:0 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.ais[data-generating="true"]:before{animation:none}}
+body{padding:16px;max-width:1040px;margin:0 auto;background:var(--canvas)}
+#live iframe{display:block;width:100%;height:max(720px,calc(100svh - 150px));border:1px solid var(--line);border-radius:10px;background:#fff}
+.warn{font-size:12px;color:var(--warn-f);background:var(--warn-t);border-radius:6px;padding:5px 9px;margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="pres" aria-label="Presenter controls">
+  <a class="home" href="index.html" aria-label="Back to the SentinelDesk landing page"><span style="display:inline-flex;width:20px;height:20px" id="homelogo"></span>SentinelDesk</a>
+  <div class="where"><span class="role" id="role"></span><span class="loc" id="loc"></span><span class="n mono" id="num"></span></div>
+  <div class="ctrls">
+    <button id="back">Back</button>
+    <button id="next" class="pri">Next</button>
+    <button id="reset" class="ghost">Reset</button>
+  </div>
+</div>
+<div class="dots" id="dots" aria-hidden="true"></div>
+<div class="switch" id="switch" hidden></div>
+<div class="app" id="app"></div>
+<div id="live" hidden></div>
+<p class="foot" id="foot"></p>
+
+<script>
+// ---- Edit here: data and step list ----
+var D={
+  id:"TKT-26887",
+  who:"Jana Weber · Weber Family Practice",
+  text:"Can you break down the charges on my latest invoice? The total is higher than last month.",
+  question:"Which invoice?",
+  options:["INV-2026-1104","INV-2026-1032"],
+  lines:[["Practice plan, 12 seats","€216.00"],["Telehealth add-on","€45.00"],["Extra storage","€12.00"],["VAT 19%","€51.87"],["Total","€324.87"]],
+  evidence:[["TKT-18802","Invoice breakdown request"],["TKT-21540","Add-on charge question"]],
+  urgent:{id:"TKT-20431",who:"Amara Okafor · Northside Family Clinic",text:"VPN is down for all of our remote clinicians since 08:10. Nobody off-site can reach the EMR.",
+    reasons:["Outage affects many users","Critical-care customer","No past case covers it"]},
+  kpis:["Tickets received","Answered with evidence","Handed to an engineer","Median time to answer"]
+};
+var STEPS=[
+  {k:"intake", role:"c",loc:"New request", path:"/submit"},
+  {k:"ask",    role:"c",loc:"One question",path:"/submit"},
+  {k:"mine",   role:"c",loc:"My requests", path:"/requests"},
+  {k:"inbox",  role:"e",loc:"Inbox",       path:"/tickets"},
+  {k:"detail", role:"e",loc:"Ticket detail",path:"/tickets/"},
+  {k:"dash",   role:"e",loc:"Operations",  path:"/dashboard", opt:true},
+  {k:"run",    role:"e",loc:"Software Factory · Run", opt:true},
+  {k:"finding",role:"e",loc:"Software Factory · Finding", opt:true}
+];
+var ROLE={c:"CUSTOMER",e:"ENGINEER"};
+// Optional real handoff: demo.html?api=http://HOST:8000 posts to POST /triage {subject?, body}.
+// Only explicit http loopback origins are accepted, so a shared link can never send ticket text elsewhere.
+// Allowed: http://localhost|127.0.0.1|[::1][:port] with no credentials, path, query or hash.
+function loopback(raw){if(!raw)return "";try{var u=new URL(raw);
+  if(u.protocol!=="http:"||["localhost","127.0.0.1","[::1]"].indexOf(u.hostname)<0||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return "";
+  return u.origin}catch(e){return ""}}
+var Q=new URLSearchParams(location.search),REFUSED=[];
+function param(name,def){var raw=Q.get(name);if(raw===null)return def;var ok=loopback(raw);if(!ok)REFUSED.push(name);return ok}
+var API=param("api","");
+// The customer step embeds the existing /submit page from the web app (pnpm dev). Same loopback rule.
+var APP=param("app","http://localhost:3000"),REAL=false;
+var I={
+  back:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
+  chev:'<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
+  link:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="width:11px;height:11px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+};
+// ---- State ----
+var S;
+function fresh(){S={i:0,text:D.text,pick:null,sent:false,human:false,urgent:false,paged:false,open:false,more:false,api:{state:"idle",res:null,err:""}}}
+var LOGO='<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bm" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="#f0644a"/><stop offset=".35" stop-color="#d9468f"/><stop offset=".7" stop-color="#8a5cf5"/><stop offset="1" stop-color="#3478f6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="var(--tile)" stroke="var(--line)"/><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#bm)" opacity=".85"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="var(--lamp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="var(--lamp)"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="var(--lamp)" stroke="var(--lamp)" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="var(--lamp)"/><path d="M10 51.5 H54" stroke="var(--lamp)" stroke-width="3.6" stroke-linecap="round"/></svg>';
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function sk(){var o="";for(var i=0;i<arguments.length;i++)o+='<span class="sk w'+arguments[i]+'"></span>';return o}
+function step(){return STEPS[S.i]}
+function live(){return S.api.state==="ok"&&S.api.res}
+function myId(){return API?"NEW-0001":D.id}
+function tid(){return S.urgent?D.urgent.id:myId()}
+function handed(){return S.human||(live()&&S.api.res.escalate)}
+function submitted(){return S.sent||S.human||S.api.state!=="idle"}
+function srcTag(){if(!live())return '<span class="simtag">SAMPLE</span>';var src=S.api.res.sources||{},m=Object.keys(src).filter(function(k){return src[k]!=="real"});
+  return m.length?'<span class="mocktag" title="Stages not backed by the real model">Mock: '+esc(m.join(", "))+'</span>':'<span class="livetag">LIVE API</span>'}
+function status(){if(S.api.state==="loading")return '<span class="badge b-mut">Checking</span>';if(S.api.state==="error")return '<span class="badge b-crit">Not sent</span>';
+  return handed()?'<span class="badge b-info">With an engineer</span>':'<span class="badge b-ok">Answered</span>'}
+function cite(id){return '<span class="cite">'+I.link+esc(id)+'</span>'}
+function prio(p){p=String(p||"").toLowerCase();var c=p==="high"?"b-crit":p==="medium"?"b-warn":"b-ok";return '<span class="badge '+c+'">'+esc(p?p[0].toUpperCase()+p.slice(1):"Unknown")+'</span>'}
+
+// Reply body for the live API: sentence checks with citations, or the plain reply with cited IDs.
+function liveReply(eng){var d=S.api.res.draft||{};
+  if(d.sentences&&d.sentences.length)return d.sentences.map(function(s){return '<p class="sent'+(eng&&!s.supported?' uns':'')+'">'+esc(s.text)+(s.supported&&s.source_ticket_id?cite(s.source_ticket_id):'')+'</p>'}).join("");
+  return '<p class="sent">'+esc(d.reply)+'</p>'+(d.cited_ticket_ids||[]).map(cite).join("")}
+function sampleTable(){return '<table>'+D.lines.map(function(l,i){var b=i===D.lines.length-1;return '<tr><td>'+(b?'<b>':'')+l[0]+(b?'</b>':'')+'</td><td class="mono">'+(b?'<b>':'')+l[1]+(b?'</b>':'')+'</td></tr>'}).join("")+'</table><p class="lbl" style="margin-top:8px">Sources '+cite(D.evidence[0][0])+cite(D.evidence[1][0])+'</p>'}
+// What the customer sees as the result of their request.
+function customerResult(){
+  if(S.api.state==="loading")return '<div class="panel ais" data-generating="true"><h2>Checking past cases</h2>'+sk(9,7,5)+'</div>';
+  if(S.api.state==="error")return '<div class="alert" role="alert"><b>Could not reach SentinelDesk.</b> '+esc(S.api.err)+'<div class="row"><button class="pri" data-a="retry">Retry</button><button data-a="usesample">Use sample</button></div></div>';
+  if(handed())return '<div class="panel" role="status"><h2>With an engineer</h2><p class="lbl">'+(S.human?'You asked for a person. ':'')+'We will reply here.</p>'+sk(7,5)+'</div>';
+  if(live())return '<div class="panel ais"><h2>Answer '+srcTag()+'</h2>'+liveReply(false)+'</div>';
+  return '<div class="panel ais"><h2>Invoice breakdown <span class="mono lbl">'+esc(S.pick||D.options[0])+'</span> '+srcTag()+'</h2>'+sampleTable()+'</div>'}
+
+// ---- Page renderers ----
+var R={
+intake:function(){return '<h1>New request</h1><div class="panel"><label class="lbl" for="txt">What do you need?</label><textarea id="txt">'+esc(S.text)+'</textarea><div class="row"><button class="pri" data-a="submit">Continue</button><button class="ghost" data-a="human">Talk to a person</button></div></div>'},
+ask:function(){var o=D.options.map(function(x){return '<button class="mono'+(S.pick===x?' sel':'')+'" data-a="pick" data-v="'+x+'" aria-pressed="'+(S.pick===x)+'">'+x+'</button>'}).join("");
+  return '<h1>New request</h1><div class="req">'+esc(S.text)+'</div><div class="panel ais"><p class="q">'+D.question+' <span class="lbl">Optional</span></p><div class="row" role="group" aria-label="Invoice">'+o+'</div><div class="row"><button class="pri" data-a="send"'+(S.pick?'':' disabled')+'>Send</button><button class="ghost" data-a="skip">Skip</button><button class="ghost" data-a="human">Talk to a person</button></div></div>'},
+mine:function(){
+  if(!submitted())return '<h1>My requests</h1><div class="panel">No requests yet.<div class="row"><button class="pri" data-a="go" data-v="intake">New request</button></div></div>';
+  if(S.open)return R.myreq();
+  return '<h1>My requests</h1><div class="list"><button class="r open" data-a="openreq" aria-label="Open request '+myId()+'"><span class="mono">'+myId()+'</span><span class="subj">'+esc(S.text)+'</span><span style="display:flex;align-items:center;gap:6px">'+status()+I.chev+'</span></button><div class="r skr" aria-hidden="true">'+sk(5)+sk(7)+'<span class="badge b-mut">Closed</span></div></div>'},
+// Customer-facing ticket detail: same ID, text, status and answer or handoff as the walkthrough.
+myreq:function(){return '<button class="backlink" data-a="closereq">'+I.back+'Back to My requests</button><div class="dhead"><h1 class="mono">'+myId()+'</h1>'+status()+'</div>'+
+  '<div class="panel"><p class="lbl">You wrote</p>'+esc(S.text)+(S.pick?'<p class="lbl" style="margin-top:8px">'+D.question+' <span class="mono">'+esc(S.pick)+'</span></p>':'')+'</div>'+customerResult()},
+inbox:function(){var mine=handed()?'<span class="badge b-info">Needs engineer</span>':S.api.state==="error"?'<span class="badge b-mut">Not received</span>':'<span class="badge b-ok">Answered</span>';
+  return '<h1>Inbox</h1><div class="list">'+
+  '<button class="r" data-a="open" data-v="0"><span class="mono">'+myId()+'</span><span class="subj">'+esc(S.text)+'</span>'+mine+'</button>'+
+  '<button class="r" data-a="open" data-v="1"><span class="mono">'+D.urgent.id+'</span><span class="subj">'+esc(D.urgent.text)+'</span><span class="badge b-crit">Urgent</span></button>'+
+  '<div class="r skr" aria-hidden="true">'+sk(5)+sk(9)+'<span class="badge b-mut">Low</span></div><div class="r skr" aria-hidden="true">'+sk(5)+sk(7)+'<span class="badge b-mut">Low</span></div></div>'},
+detail:function(){var tog='<div class="row" style="margin:0 0 12px"><button class="'+(S.urgent?'':'sel')+'" data-a="case" data-v="0">'+myId()+'</button><button class="'+(S.urgent?'sel':'')+'" data-a="case" data-v="1">'+D.urgent.id+' <span class="badge b-crit">Urgent</span></button></div>';
+  if(S.urgent){var U=D.urgent;return '<h1 class="mono">'+U.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(U.who)+'</p>'+esc(U.text)+'</div><div class="panel ais"><h2>Handoff brief <span class="simtag">SAMPLE</span></h2>'+sk(9,7,5)+'<div class="row"><button class="crit" data-a="page">Page on-call</button></div>'+(S.paged?'<p class="toast" role="status"><span class="simtag">SIMULATED</span> On-call paged. Nothing was sent.</p>':'')+'</div></div><div><div class="panel" role="status"><h2>Why handed off</h2>'+U.reasons.map(function(r){return '<div class="reason">'+r+'</div>'}).join("")+'</div></div></div>'}
+  if(live())return '<div class="dhead"><h1 class="mono">'+myId()+'</h1>'+srcTag()+'</div>'+tog+R.liveDetail();
+  var ans=S.human?'<div class="panel" role="status"><h2>Handoff</h2><div class="reason">Customer asked for a person</div>'+sk(7,5)+'</div>'
+   :'<div class="panel ais"><h2>Sent answer <span class="simtag">SAMPLE</span></h2><p class="lbl">Invoice <span class="mono">'+esc(S.pick||D.options[0])+'</span></p><p class="sent">Line items for the selected invoice, with VAT and total.'+cite(D.evidence[0][0])+'</p><p class="sent">The Telehealth add-on is new this cycle.'+cite(D.evidence[1][0])+'</p></div>';
+  return '<h1 class="mono">'+D.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(D.who)+'</p>'+esc(S.text)+(S.pick?'<p class="lbl" style="margin-top:8px">'+D.question+' <span class="mono">'+esc(S.pick)+'</span></p>':'')+'</div>'+ans+'</div><div><div class="panel"><h2>Evidence</h2>'+D.evidence.map(function(e){return '<div class="ev"><span class="mono">'+e[0]+'</span> · '+e[1]+sk(9,5)+'</div>'}).join("")+'</div></div></div>'},
+liveDetail:function(){var r=S.api.res,t=r.triage||{},cited=(r.draft&&r.draft.cited_ticket_ids)||[],reasons=r.reasons||[];
+  var chips='<div class="chips">'+prio(t.priority)+'<span class="badge b-mut">'+esc(t.type)+'</span><span class="badge b-mut">'+esc(t.queue)+'</span><span class="badge b-mut mono">'+esc(String(t.language||"").toUpperCase())+'</span></div>';
+  var shown=S.more?reasons:reasons.slice(0,3);
+  var mid=r.escalate?'<div class="panel" role="status"><h2>Handed to an engineer</h2>'+shown.map(function(x){return '<div class="reason">'+esc(x)+'</div>'}).join("")+(reasons.length>3?'<button class="ghost" data-a="more">'+(S.more?'Less':'More ('+(reasons.length-3)+')')+'</button>':'')+'<div class="row"><button class="crit" data-a="page">Page on-call</button></div>'+(S.paged?'<p class="toast" role="status"><span class="simtag">SIMULATED</span> On-call paged. Nothing was sent.</p>':'')+'</div>'
+    :'<div class="panel ais"><h2>Sent answer</h2>'+liveReply(true)+'</div>';
+  var precs=(r.precedents||[]).slice().sort(function(a,b){return (cited.indexOf(b.ticket_id)>=0)-(cited.indexOf(a.ticket_id)>=0)});
+  var ev=precs.length?precs.map(function(p){return '<div class="ev"><span class="mono">'+esc(p.ticket_id)+'</span> <span class="mono lbl">'+(+p.similarity||0).toFixed(2)+'</span>'+(cited.indexOf(p.ticket_id)>=0?' <span class="badge b-ok">Cited</span>':'')+'<div>'+esc(p.subject)+'</div><p class="clamp">'+esc(p.answer_snippet)+'</p></div>'}).join(""):'<p class="lbl">No past case matched.</p>';
+  return '<div class="grid d"><div><div class="panel"><p class="lbl">Submitted from the demo</p>'+chips+esc(S.text)+'</div>'+mid+'</div><div><div class="panel"><h2>Evidence</h2>'+ev+'</div></div></div>'},
+dash:function(){return '<h1>Operations</h1><div class="grid k">'+D.kpis.map(function(k){return '<div class="panel kpi"><p class="lbl">'+k+'</p><div class="v mono">—</div></div>'}).join("")+'</div><div class="panel"><h2>Tickets over time</h2><div class="blk" style="height:140px"></div></div><div class="panel"><h2>Handoff reasons</h2>'+sk(7,5,3)+'</div>'},
+run:function(){return '<iframe class="ff" src="factory.html#run" title="Software Factory run"></iframe>'},
+finding:function(){return '<iframe class="ff" src="factory.html#finding" title="Software Factory finding"></iframe>'}
+};
+
+// ---- Shell ----
+function chrome(st){
+  var cust=st.role==="c",nav;
+  if(cust) nav='<nav class="side" aria-label="Help"><button class="'+(st.k!=="mine"?'on':'')+'" data-a="go" data-v="intake">New request</button><button class="'+(st.k==="mine"?'on':'')+'" data-a="go" data-v="mine">My requests</button></nav>';
+  else nav='<nav class="side" aria-label="Console"><button class="'+(st.k==="inbox"||st.k==="detail"?'on':'')+'" data-a="go" data-v="inbox">Inbox</button><button class="'+(st.k==="dash"?'on':'')+'" data-a="go" data-v="dash">Dashboard</button><button data-a="go" data-v="run">Software Factory</button></nav>';
+  var path=st.path+(st.k==="detail"?tid():st.k==="mine"&&S.open?"/"+myId():"");
+  return '<div class="chrome"><span class="brand"><span style="width:20px;height:20px;display:inline-flex">'+LOGO+'</span>SentinelDesk'+(cust?' Help':' Console')+'</span><span class="phl">Page placeholder</span><span class="url mono">'+path+'</span></div><div class="body">'+nav+'<div class="main">'+R[st.k]()+'</div></div>'}
+
+function render(focusSel){
+  var st=step(),app=document.getElementById("app");
+  var live=document.getElementById("live"),sup=st.k==="support";
+  app.hidden=sup;live.hidden=!sup;
+  if(sup&&!live.firstChild)live.innerHTML='<iframe src="'+esc(APP)+'/submit" title="SentinelDesk support, existing /submit page"></iframe>';
+  if(!sup)app.innerHTML=(st.k==="run"||st.k==="finding")?R[st.k]():chrome(st);
+  var r=document.getElementById("role");r.className="role "+st.role;r.textContent=ROLE[st.role]+(st.opt?" · OPTIONAL":"");
+  document.getElementById("loc").textContent=st.loc+(st.k==="detail"?" · "+tid():st.k==="mine"&&S.open?" · "+myId():"");
+  document.getElementById("num").textContent=(S.i+1)+"/"+STEPS.length;
+  var nextBtn=document.getElementById("next");
+  nextBtn.textContent=S.i===STEPS.length-1?"Finish":"Next";
+  nextBtn.disabled=st.k==="ask"&&!submitted();
+  document.getElementById("dots").innerHTML=STEPS.map(function(_,i){return '<i class="'+(i<=S.i?'on':'')+'"></i>'}).join("");
+  var sw=document.getElementById("switch");
+  if(st.k==="inbox"){sw.hidden=false;sw.textContent=REAL?"Now the engineer's view. Console pages are placeholders with the sample ticket "+myId()+".":"Now the engineer's view, same ticket "+myId()+"."}
+  else if(sup){sw.hidden=false;sw.textContent="Customer's view: the existing /submit page. Send a request, then open it under My requests."}
+  else if(st.k==="intake"){sw.hidden=false;sw.textContent="Customer's view. Edit the request if you like."}
+  else sw.hidden=true;
+  document.getElementById("foot").innerHTML=(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': only http://localhost, 127.0.0.1 or [::1] with an optional port.</span> ':'')+(REAL?'<span class="livetag">APP</span> Customer step is <span class="mono">'+esc(APP)+'/submit</span>. ':'')+(API?'<span class="livetag">API</span> Requests go to <span class="mono">'+esc(API)+'/triage</span>. Other pages use sample data. Nothing is sent to customers.':'<span class="simtag">SAMPLE</span> Placeholder pages with sample data. Nothing is sent. Arrow keys move between steps.');
+  var ta=document.getElementById("txt");if(ta)ta.addEventListener("input",function(){S.text=ta.value});
+  if(location.hash.slice(1)!==st.k)history.replaceState(null,"","#"+st.k);
+  if(focusSel){var f=app.querySelector(focusSel);if(f)f.focus()}
+}
+function idx(k){for(var i=0;i<STEPS.length;i++)if(STEPS[i].k===k)return i;return -1}
+function go(k,focusSel){var i=idx(k);if(i<0)return;S.i=i;S.open=false;render(focusSel)}
+// Deep links from the landing page land on a coherent state: later steps assume the sample request was sent.
+function enter(k){if(REAL&&(k==="intake"||k==="ask"||k==="mine"))k="support";var i=idx(k);if(i<0)i=0;if(i>=idx("mine")&&!submitted()){S.sent=true;S.pick=D.options[0]}S.i=i;S.open=false;render()}
+function next(){
+  var k=step().k;
+  if(S.i===STEPS.length-1){location.href="index.html";return}
+  if(k==="ask"&&!submitted())return;
+  if(k==="mine")S.urgent=false;
+  S.open=false;S.i++;render()}
+function back(){if(S.i===0){location.href="index.html";return}var k=step().k;if(k==="mine"&&S.human&&!S.sent){go("intake");return}S.open=false;S.i--;render()}
+
+function triage(){
+  S.api={state:"loading",res:null,err:""};go("mine");S.open=true;render();
+  fetch(API+"/triage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:"",body:S.text})})
+    .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j&&j.detail?j.detail:"HTTP "+r.status);return j})})
+    .then(function(j){S.api={state:"ok",res:j,err:""};render()})
+    .catch(function(e){S.api={state:"error",res:null,err:String(e.message||e)};render()});
+}
+
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,v=b.dataset.v;
+  if(a==="submit"){var ta=document.getElementById("txt");S.text=(ta&&ta.value.trim())||D.text;if(API){triage()}else go("ask")}
+  else if(a==="pick"){S.pick=v;render('[data-a="send"]')}
+  else if(a==="send"||a==="skip"){if(a==="skip")S.pick=null;S.sent=true;S.human=false;go("mine",'[data-a="openreq"]')}
+  else if(a==="human"){S.human=true;S.api={state:"idle",res:null,err:""};go("mine",'[data-a="openreq"]')}
+  else if(a==="openreq"){S.open=true;render('[data-a="closereq"]')}
+  else if(a==="closereq"){S.open=false;render('[data-a="openreq"]')}
+  else if(a==="retry")triage();
+  else if(a==="usesample"){API="";S.api={state:"idle",res:null,err:""};go("ask")}
+  else if(a==="open"){S.urgent=v==="1";S.paged=false;go("detail")}
+  else if(a==="case"){S.urgent=v==="1";S.paged=false;render()}
+  else if(a==="page"){S.paged=true;render()}
+  else if(a==="more"){S.more=!S.more;render()}
+  else if(a==="go"){if(v==="inbox")S.urgent=false;go(v)}
+});
+document.getElementById("next").onclick=next;
+document.getElementById("back").onclick=back;
+document.getElementById("reset").onclick=function(){fresh();render()};
+document.getElementById("homelogo").innerHTML=LOGO;
+document.addEventListener("keydown",function(e){
+  if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+  var t=e.target,tag=t&&t.tagName;
+  if(tag==="TEXTAREA"||tag==="INPUT"||tag==="SELECT"||(t&&t.isContentEditable)||document.querySelector("dialog[open],[aria-modal='true']"))return;
+  if(e.key==="ArrowRight"){e.preventDefault();next()}else if(e.key==="ArrowLeft"){e.preventDefault();back()}
+});
+addEventListener("hashchange",function(){var k=location.hash.slice(1);if(k&&k!==step().k)enter(k)});
+// Use the real customer page when the web app answers on APP; otherwise the sample customer steps.
+function start(){fresh();enter(location.hash.slice(1))}
+function probe(){if(!APP)return Promise.resolve(false);var c=new AbortController(),t=setTimeout(function(){c.abort()},1500);
+  return fetch(APP+"/submit",{mode:"no-cors",signal:c.signal}).then(function(){return true},function(){return false}).finally(function(){clearTimeout(t)})}
+probe().then(function(ok){if(ok){REAL=true;STEPS.splice(0,3,{k:"support",role:"c",loc:"Support",path:"/submit"})}start()});
+</script>
+</body>
+</html>
