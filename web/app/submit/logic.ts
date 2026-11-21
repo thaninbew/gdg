@@ -104,11 +104,6 @@ export function invoiceTotals(inv: Invoice) {
 
 export type Precedent = { id: string; subject: string }
 
-
-const PRECEDENTS: Record<string, Precedent> = {
-  "TKT-03990": { id: "TKT-03990", subject: "Sign-in loop after password reset" },
-}
-
 // ---------- analysis ----------
 
 const SECURITY = /\b(breach(ed)?|hacked|ransomware|compromised|data (loss|leak)|malware)\b/i
@@ -184,21 +179,21 @@ export function analyze(text: string, chosen: Topic | null, accountId: AccountId
 
 // ---------- outcomes ----------
 
-export type Team = "Billing" | "Technical support" | "Customer service" | "Product"
+export type Team = "Billing and Payments" | "Technical Support" | "Customer Service" | "Product Support"
 
 export type Outcome =
   | { kind: "urgent"; reasons: string[] }
   | { kind: "action"; invoice: Invoice; previous: Invoice | null }
-  | { kind: "answer"; sentences: { text: string; source: Precedent | null }[] }
+  | { kind: "answer"; sentences: { text: string; source: Precedent | null }[]; sample?: boolean }
   | { kind: "handoff"; team: string; reason: string }
   | { kind: "review" }
 
 const TEAM: Record<Topic | "none", Team> = {
-  billing: "Billing",
-  broken: "Technical support",
-  question: "Customer service",
-  improvement: "Product",
-  none: "Customer service",
+  billing: "Billing and Payments",
+  broken: "Technical Support",
+  question: "Customer Service",
+  improvement: "Product Support",
+  none: "Customer Service",
 }
 
 export function handoff(topic: Topic | null, reason: string): Outcome {
@@ -220,15 +215,13 @@ export function resolve(text: string, a: Analysis, answer: string | null, accoun
   if (topic === "broken") {
     if (answer === "Everyone") return { kind: "urgent", reasons: ["Outage affecting many people"] }
     if (answer === "Just me" && SIGNOUT.test(text)) {
-      const src = PRECEDENTS["TKT-03990"]
+      // Offline sample only: no dataset ticket is cited.
       return {
         kind: "answer",
+        sample: true,
         sentences: [
-          { text: "This usually comes from a saved sign-in that still holds your old password.", source: src },
-          {
-            text: "Remove the saved SentinelDesk entry from your keychain or credential manager, then sign in again.",
-            source: src,
-          },
+          { text: "This usually comes from a saved sign-in that still holds your old password.", source: null },
+          { text: "Remove the saved SentinelDesk entry from your keychain or credential manager, then sign in again.", source: null },
         ],
       }
     }

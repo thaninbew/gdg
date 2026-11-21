@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon, LightbulbIcon, ShieldCheckIcon, SirenIcon, UsersRoundIcon } from "lucide-react"
+import { CheckIcon, FileTextIcon, LightbulbIcon, SirenIcon, UsersRoundIcon } from "lucide-react"
 
 import { AISurface } from "@/components/sentinel/ai"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +16,7 @@ export function Urgent({ reasons }: { reasons: string[] }) {
     <div className="rounded-lg bg-critical-tint p-4 text-critical-fg">
       <div className="flex flex-wrap items-center gap-2">
         <SirenIcon className="size-4 shrink-0" aria-hidden="true" />
-        <p className="text-sm font-semibold">Sent to on-call as urgent</p>
+        <p className="text-sm font-semibold">On-call will take it first</p>
         <Badge variant="outline" className="border-critical/40 text-critical-fg">
           Simulated
         </Badge>
@@ -39,9 +39,9 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <ShieldCheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
+        <FileTextIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <h2 className="text-sm font-semibold">Invoice breakdown</h2>
-        <Badge variant="success">Verified, read-only</Badge>
+        <Badge variant="outline">Sample record, read-only</Badge>
         <span className="ml-auto font-mono text-[0.8125rem] text-muted-foreground">{invoice.id}</span>
       </div>
       <p className="mt-1 text-[0.8125rem] text-muted-foreground">
@@ -73,7 +73,7 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
         </TableFooter>
       </Table>
       {added.length && previous ? (
-        <p className="mt-3 rounded-md bg-info-tint px-3 py-2 text-[0.8125rem] text-info-fg">
+        <p className="mt-3 rounded-md bg-muted px-3 py-2 text-[0.8125rem]">
           New since {previous.period.split(" ")[0]}: {added.map((l) => `${l.item} (${eur.format(l.qty * l.unit)})`).join(", ")}
         </p>
       ) : null}
@@ -83,13 +83,15 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
 
 export type Source = { id: string; subject: string }
 
-export function Answer({ sentences }: { sentences: { text: string; source: Source | null }[] }) {
+export function Answer({ sentences, sample = false }: { sentences: { text: string; source: Source | null }[]; sample?: boolean }) {
   const sources = [...new Map(sentences.flatMap((s) => (s.source ? [[s.source.id, s.source] as const] : []))).values()]
   return (
     <AISurface
       title="Answer"
       action={
-        sources.length ? (
+        sample ? (
+          <Badge variant="outline">Sample answer</Badge>
+        ) : sources.length ? (
           <Badge variant="outline">From {sources.length === 1 ? "1 past ticket" : `${sources.length} past tickets`}</Badge>
         ) : null
       }
@@ -121,12 +123,12 @@ export function Answer({ sentences }: { sentences: { text: string; source: Sourc
 
 export function Handoff({ team, reason }: { team: string; reason: string }) {
   return (
-    <div className="rounded-lg bg-info-tint p-4 text-info-fg">
+    <div className="ai-surface rounded-xl p-4">
       <div className="flex items-center gap-2">
-        <UsersRoundIcon className="size-4 shrink-0" aria-hidden="true" />
+        <UsersRoundIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <p className="text-sm font-semibold">With our {team} team</p>
       </div>
-      <p className="mt-1 ml-6 text-[0.8125rem]">{reason} Replies show up in My requests.</p>
+      <p className="mt-1 ml-6 text-[0.8125rem] text-muted-foreground">{reason} Replies show up in My requests.</p>
     </div>
   )
 }

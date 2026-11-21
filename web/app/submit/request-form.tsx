@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { CircleCheckIcon, FlaskConicalIcon, SendIcon, SirenIcon, UserRoundIcon } from "lucide-react"
+import { CircleCheckIcon, FlaskConicalIcon, SendIcon, UserRoundIcon } from "lucide-react"
 
-import { ConfidenceMeter } from "@/components/sentinel/confidence"
+import { CONFIDENCE_BANDS, ConfidenceMeter } from "@/components/sentinel/confidence"
 import { Wordmark } from "@/components/sentinel/logo"
 import { PriorityBadge, TicketId } from "@/components/sentinel/status"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -18,39 +18,39 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Priority } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-import {
-  ACCOUNTS,
-  SAMPLES,
-  analyze,
-  handoff,
-  resolve,
-  ticketId,
-  type AccountId,
-  type Analysis,
-  type Outcome,
-  type Topic,
-} from "./logic"
+import { ACCOUNTS, SAMPLES, analyze, handoff, resolve, ticketId, type AccountId, type Analysis, type Outcome, type Topic } from "./logic"
 import { Answer, Breakdown, Handoff, Review, Urgent } from "./outcomes"
-import { mockStages, probe, toOutcome, triage, type Triaged } from "./pipeline"
+import { mockStages, probe, toOutcome, triage } from "./pipeline"
 import { TOPICS } from "./topics"
 
 type Backend = "checking" | "online" | "offline"
-type Via = { kind: "pipeline"; mock: string[] } | { kind: "local"; fallback: boolean }
-type Done = { id: string; outcome: Outcome; via: Via }
-type Mine = { id: string; title: string; outcome: Outcome }
+type Classification = { type: string; typeConf: number; queue: string; queueConf: number; priority: Priority }
+type Via = { kind: "pipeline"; mock: string[] } | { kind: "local"; fallback: boolean } | { kind: "person" }
+type Done = { id: string; outcome: Outcome; via: Via; cls: Classification | null }
+// One saved request in this browser session. Only what the customer sent and was shown.
+type Mine = { id: string; subject: string; message: string; sentAt: string; outcome: Outcome; via: Via }
 
-// Local stand-in for the classifier when the backend is offline.
+// Offline stand-in for the classifier. Labelled "Local rules" wherever it shows.
 const LOCAL_CLASS: Record<Topic | "none", { type: string; queue: string; priority: Priority }> = {
-  billing: { type: "Request", queue: "Billing & Payments", priority: "low" },
-  broken: { type: "Incident", queue: "Technical support", priority: "medium" },
-  question: { type: "Request", queue: "Customer service", priority: "low" },
-  improvement: { type: "Change", queue: "Product", priority: "low" },
-  none: { type: "Request", queue: "Customer service", priority: "low" },
+  billing: { type: "Request", queue: "Billing and Payments", priority: "low" },
+  broken: { type: "Incident", queue: "Technical Support", priority: "medium" },
+  question: { type: "Request", queue: "Customer Service", priority: "low" },
+  improvement: { type: "Change", queue: "Product Support", priority: "low" },
+  none: { type: "Request", queue: "Customer Service", priority: "low" },
+}
+
+function localClassification(a: Analysis, chosen: Topic | null): Classification {
+  const c = a.critical ? { type: "Incident", queue: "Technical Support", priority: "high" as Priority } : LOCAL_CLASS[a.topic ?? "none"]
+  const conf = chosen || a.critical ? 0.9 : a.topic ? 0.75 : 0.5
+  return { ...c, typeConf: conf, queueConf: conf }
 }
 
 function matchOption(a: Analysis, typed: string) {
@@ -62,7 +62,7 @@ function status(o: Outcome) {
   if (o.kind === "action" || o.kind === "answer") return { label: "Answered", variant: "success" as const }
   if (o.kind === "urgent") return { label: "Urgent", variant: "critical" as const }
   if (o.kind === "review") return { label: "In review", variant: "outline" as const }
-  return { label: o.team, variant: "info" as const }
+  return { label: o.team, variant: "outline" as const }
 }
 
 export function RequestForm() {
@@ -75,17 +75,21 @@ export function RequestForm() {
   const [done, setDone] = useState<Done | null>(null)
   const [sending, setSending] = useState(false)
   const [mine, setMine] = useState<Mine[]>([])
+  const [openId, setOpenId] = useState<string | null>(null)
+  // When the result replaces the form, put focus on its headline instead of dropping it on <body>.
+  const resultHeading = useRef<HTMLHeadingElement | null>(null)
+  useEffect(() => {
+    if (done) resultHeading.current?.focus({ preventScroll: true })
+  }, [done])
+  const lastRow = useRef<HTMLButtonElement | null>(null)
+  const opened = mine.find((m) => m.id === openId) ?? null
   const [backend, setBackend] = useState<Backend>("checking")
-  const [live, setLive] = useState<{ key: string; result: Triaged } | null>(null)
-  const [classifying, setClassifying] = useState(false)
   const account = ACCOUNTS[accountId]
 
+  // Only the one missing-detail question is worked out while typing; classification waits for Send.
   const full = `${title} ${text}`.trim()
   const a = useMemo(() => (full ? analyze(full, topic, accountId) : null), [full, topic, accountId])
   const q = a?.question ?? null
-  const answerText = q && answer.trim() && a ? `${q.prompt} ${matchOption(a, answer)}` : ""
-  const body = [text.trim(), answerText].filter(Boolean).join("\n\n")
-  const key = `${title.trim()}\u0000${body}`
   const ready = Boolean(text.trim()) && (!q || Boolean(answer.trim())) && !sending
 
   useEffect(() => {
@@ -96,45 +100,48 @@ export function RequestForm() {
     }
   }, [])
 
-  // Classify as the customer types, once they pause.
-  const inflight = useRef<AbortController | null>(null)
-  useEffect(() => {
-    if (backend !== "online" || done || text.trim().length < 12 || live?.key === key) return
-    const t = setTimeout(() => {
-      inflight.current?.abort()
-      const ctrl = new AbortController()
-      inflight.current = ctrl
-      setClassifying(true)
-      triage(title.trim(), body, ctrl.signal)
-        .then((result) => setLive({ key, result }))
-        .catch(() => {})
-        .finally(() => !ctrl.signal.aborted && setClassifying(false))
-    }, 700)
-    return () => clearTimeout(t)
-  }, [backend, done, text, title, body, key, live?.key])
-
   async function submit(person = false) {
-    if (!a) return
+    if (!a || sending) return
     const id = ticketId(full, accountId, sampleId)
     const ans = q && !person ? matchOption(a, answer) : null
+    setSending(true)
     let d: Done
     if (person) {
-      d = { id, outcome: handoff(a.topic, "You asked for a person."), via: { kind: "local", fallback: false } }
+      await localPause()
+      d = { id, outcome: handoff(a.topic, "You asked for a person."), via: { kind: "person" }, cls: null }
+      setSending(false)
     } else if (backend === "online") {
-      setSending(true)
+      // No clarification field in the contract: the answer travels as body context.
+      const body = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
       try {
-        const r = live?.key === key ? live.result : await triage(title.trim(), body)
-        d = { id, outcome: toOutcome(r, full, a, ans, accountId), via: { kind: "pipeline", mock: mockStages(r) } }
+        const r = await triage(title.trim(), body)
+        d = {
+          id,
+          outcome: toOutcome(r, a),
+          via: { kind: "pipeline", mock: mockStages(r) },
+          cls: {
+            type: r.triage.type,
+            typeConf: r.triage.type_conf,
+            queue: r.triage.queue,
+            queueConf: r.triage.queue_conf,
+            priority: r.triage.priority,
+          },
+        }
       } catch {
-        d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: true } }
+        d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: true }, cls: localClassification(a, topic) }
       } finally {
         setSending(false)
       }
     } else {
-      d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: false } }
+      await localPause()
+      d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: false }, cls: localClassification(a, topic) }
+      setSending(false)
     }
     setDone(d)
-    setMine((m) => [{ id: d.id, title: title.trim() || text.trim(), outcome: d.outcome }, ...m.filter((x) => x.id !== d.id)])
+    const message = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
+    const sentAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    const entry: Mine = { id: d.id, subject: title.trim(), message, sentAt, outcome: d.outcome, via: d.via }
+    setMine((m) => [entry, ...m.filter((x) => x.id !== d.id)])
   }
 
   function reset(t = "") {
@@ -142,12 +149,7 @@ export function RequestForm() {
     setText(t)
     setAnswer("")
     setDone(null)
-    setLive(null)
   }
-
-  const liveResult = backend === "online" && live && !done ? live.result : null
-  const localCls = a ? (a.critical ? { type: "Incident", queue: "Network & Access", priority: "high" as Priority } : LOCAL_CLASS[a.topic ?? "none"]) : null
-  const localConf = !a ? 0 : topic || a.critical ? 0.92 : a.topic ? 0.78 : 0.5
 
   return (
     <div className="min-h-svh bg-canvas">
@@ -158,7 +160,7 @@ export function RequestForm() {
           <div className="ml-auto flex min-w-0 items-center gap-2">
             <span className="hidden min-w-0 truncate text-[0.8125rem] sm:inline">{account.org}</span>
             {account.criticalCare ? (
-              <Badge variant="info" className="hidden sm:inline-flex">
+              <Badge variant="outline" className="hidden sm:inline-flex">
                 Critical care
               </Badge>
             ) : null}
@@ -177,7 +179,7 @@ export function RequestForm() {
                     onSelect={() => {
                       setAccountId(s.account)
                       setSampleId(s.id)
-                      setTopic(null)
+                      setTopic(s.topic)
                       reset(s.text)
                     }}
                   >
@@ -193,11 +195,34 @@ export function RequestForm() {
       <main className="mx-auto grid max-w-5xl gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="flex min-w-0 flex-col gap-4">
           <h1 className="text-xl font-semibold">New request</h1>
-          {done ? (
-            <section className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <CircleCheckIcon className="size-5 text-success" aria-hidden="true" />
-                <p className="text-base font-semibold">Request received</p>
+          {sending ? (
+            <section
+              aria-busy="true"
+              aria-live="polite"
+              className="flex flex-col gap-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+            >
+              <p className="text-base font-semibold">{backend === "online" ? "Checking your request…" : "Checking…"}</p>
+              <div
+                data-generating={backend === "online"}
+                className={cn("flex flex-col gap-3 p-4", backend === "online" ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
+              >
+                <Skeleton className="h-4 w-2/5" />
+                <Skeleton className="h-3.5 w-4/5" />
+                <Skeleton className="h-3.5 w-3/5" />
+              </div>
+            </section>
+          ) : done ? (
+            <section className="flex flex-col gap-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200">
+              <div className="flex flex-wrap items-center gap-2">
+                {isAutomatic(done.outcome) ? (
+                  <CircleCheckIcon className="size-5 text-success" aria-hidden="true" />
+                ) : (
+                  <UserRoundIcon className="size-5 text-muted-foreground" aria-hidden="true" />
+                )}
+                <h2 ref={resultHeading} tabIndex={-1} className="text-base font-semibold outline-none">
+                  {isAutomatic(done.outcome) ? "Answered automatically" : "An agent will take your request"}
+                </h2>
+                {done.outcome.kind === "urgent" ? <Badge variant="critical">Urgent</Badge> : null}
                 <TicketId id={done.id} className="ml-auto rounded-md border bg-card px-1.5 py-0.5" />
               </div>
               {done.via.kind === "local" && done.via.fallback ? (
@@ -206,25 +231,8 @@ export function RequestForm() {
                 </Alert>
               ) : null}
               <div role="status">
-                {done.outcome.kind === "urgent" ? <Urgent reasons={done.outcome.reasons} /> : null}
-                {done.outcome.kind === "action" ? <Breakdown invoice={done.outcome.invoice} previous={done.outcome.previous} /> : null}
-                {done.outcome.kind === "answer" ? <Answer sentences={done.outcome.sentences} /> : null}
-                {done.outcome.kind === "handoff" ? <Handoff team={done.outcome.team} reason={done.outcome.reason} /> : null}
-                {done.outcome.kind === "review" ? <Review /> : null}
+                <OutcomeCard outcome={done.outcome} />
               </div>
-              <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                {done.via.kind === "pipeline" ? (
-                  <>
-                    Decided by the pipeline
-                    {done.via.mock.length ? <Badge variant="outline">Mock: {done.via.mock.join(", ")}</Badge> : null}
-                  </>
-                ) : (
-                  <>
-                    <Badge variant="outline">Local rules</Badge>
-                    {done.outcome.kind === "urgent" ? "Simulated: nobody was paged." : null}
-                  </>
-                )}
-              </p>
               <div>
                 <Button
                   variant="outline"
@@ -240,111 +248,103 @@ export function RequestForm() {
             </section>
           ) : (
             <form
-              className="flex flex-col gap-3"
+              className="flex flex-col rounded-xl border bg-card transition-colors focus-within:border-foreground/25"
               onSubmit={(e) => {
                 e.preventDefault()
                 if (ready) void submit()
               }}
             >
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="req-title" className="text-xs text-muted-foreground">
-                  Title <span className="font-normal">(optional)</span>
-                </Label>
-                <Input id="req-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Short summary" />
-              </div>
-              <div className="rounded-xl border bg-card focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-                <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+              <Label htmlFor="req-title" className="sr-only">
+                Title, optional
+              </Label>
+              <Input
+                id="req-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (optional)"
+                className="h-11 rounded-none border-0 border-b bg-transparent px-4 text-[0.9375rem] font-medium shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+              <Label htmlFor="req-text" className="sr-only">
+                Details
+              </Label>
+              <Textarea
+                id="req-text"
+                autoFocus
+                rows={7}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value)
+                  setSampleId(null)
+                }}
+                placeholder="Describe what you need"
+                className="min-h-44 resize-none rounded-none border-0 bg-transparent px-4 py-3 text-[0.9375rem] leading-relaxed shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+              {q ? (
+                <fieldset className="flex flex-col gap-2 border-t px-4 py-3">
+                  <legend className="sr-only">{q.prompt}</legend>
+                  <p className="text-sm font-medium">
+                    {q.prompt} <span className="font-normal text-muted-foreground">{q.why}</span>
+                  </p>
                   <ToggleGroup
                     type="single"
                     variant="outline"
                     size="sm"
-                    spacing={1}
-                    value={topic ?? a?.topic ?? ""}
-                    onValueChange={(v) => setTopic((v || null) as Topic | null)}
-                    aria-label="Topic"
+                    spacing={2}
+                    value={(q.options as string[]).includes(answer) ? answer : ""}
+                    onValueChange={(v) => setAnswer(v)}
+                    aria-label={q.prompt}
                     className="flex-wrap"
                   >
-                    {TOPICS.map(({ id, label, Icon }) => {
-                      const shown = topic ?? a?.topic ?? null
-                      return (
+                    {q.options.map((o) => (
+                      <ToggleGroupItem
+                        key={o}
+                        value={o}
+                        className={cn(
+                          "data-[state=on]:border-foreground/25 data-[state=on]:bg-muted data-[state=on]:text-foreground",
+                          q.kind === "invoice" && "font-mono"
+                        )}
+                      >
+                        {o}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </fieldset>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  size="sm"
+                  spacing={1}
+                  value={topic ?? ""}
+                  onValueChange={(v) => setTopic((v || null) as Topic | null)}
+                  aria-label="Topic, optional"
+                  className="flex-wrap"
+                >
+                  {TOPICS.map(({ id, label, Icon }) => (
+                    <Tooltip key={id}>
+                      <TooltipTrigger asChild>
                         <ToggleGroupItem
-                          key={id}
                           value={id}
                           aria-label={label}
-                          className="data-[state=on]:border-primary data-[state=on]:bg-info-tint data-[state=on]:text-info-fg"
+                          className="data-[state=on]:border-foreground/25 data-[state=on]:bg-muted data-[state=on]:text-foreground"
                         >
                           <Icon aria-hidden="true" />
-                          <span className={cn("hidden", (shown === id || !shown) && "sm:inline")}>{label}</span>
+                          <span className={cn("hidden", topic === id && "sm:inline")}>{label}</span>
                         </ToggleGroupItem>
-                      )
-                    })}
-                  </ToggleGroup>
-                  {!topic && a?.topic ? <span className="text-xs text-muted-foreground">suggested</span> : null}
-                  {topic ? (
-                    <button type="button" className="text-xs text-muted-foreground hover:underline" onClick={() => setTopic(null)}>
-                      Auto-detect
-                    </button>
-                  ) : null}
-                </div>
-                <Label htmlFor="req-text" className="sr-only">
-                  Details
-                </Label>
-                <Textarea
-                  id="req-text"
-                  autoFocus
-                  rows={7}
-                  value={text}
-                  onChange={(e) => {
-                    setText(e.target.value)
-                    setSampleId(null)
-                  }}
-                  placeholder="Describe what you need"
-                  className="min-h-44 resize-none border-0 bg-transparent text-[0.9375rem] shadow-none focus-visible:ring-0 dark:bg-transparent"
-                />
-                {q ? (
-                  <div className="flex flex-col gap-2 border-t px-4 py-3">
-                    <p className="text-sm font-medium">
-                      {q.prompt} <span className="font-normal text-muted-foreground">{q.why}</span>
-                    </p>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      size="sm"
-                      spacing={2}
-                      value={(q.options as string[]).includes(answer) ? answer : ""}
-                      onValueChange={(v) => setAnswer(v)}
-                      aria-label={q.prompt}
-                      className="flex-wrap"
-                    >
-                      {q.options.map((o) => (
-                        <ToggleGroupItem
-                          key={o}
-                          value={o}
-                          className={cn(
-                            "data-[state=on]:border-primary data-[state=on]:bg-info-tint data-[state=on]:text-info-fg",
-                            q.kind === "invoice" && "font-mono"
-                          )}
-                        >
-                          {o}
-                        </ToggleGroupItem>
-                      ))}
-                    </ToggleGroup>
-                  </div>
-                ) : null}
-                <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
-                  {a?.critical ? (
-                    <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-critical-fg">
-                      <SirenIcon className="size-3.5" aria-hidden="true" />
-                      Urgent: goes straight to on-call
-                    </span>
-                  ) : null}
+                      </TooltipTrigger>
+                      <TooltipContent>{label}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </ToggleGroup>
+                <div className="ml-auto flex items-center gap-2">
                   {q ? (
                     <Button type="button" variant="ghost" size="sm" onClick={() => void submit(true)}>
                       <UserRoundIcon data-icon="inline-start" aria-hidden="true" />
                       Send to a person
                     </Button>
                   ) : null}
-                  <Button type="submit" disabled={!ready} className="ml-auto">
+                  <Button type="submit" disabled={!ready}>
                     <SendIcon data-icon="inline-start" aria-hidden="true" />
                     {sending ? "Sending…" : "Send request"}
                   </Button>
@@ -352,106 +352,73 @@ export function RequestForm() {
               </div>
             </form>
           )}
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline">Demo</Badge>
-            {backend === "online"
-              ? "Local pipeline connected. Nothing is paged or charged."
-              : "Local rules and sample data. Nothing is sent, paged or charged."}
-          </p>
         </div>
 
         <aside className="flex min-w-0 flex-col gap-4">
           <section
             aria-label="Classification"
-            aria-busy={classifying}
-            data-generating={classifying}
-            className={cn("p-4", liveResult ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
+            aria-busy={sending}
+            data-generating={sending && backend === "online"}
+            className={cn("p-4", (sending && backend === "online") || done?.via.kind === "pipeline" ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
           >
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold">Classification</h2>
               <Badge variant="outline" className="ml-auto">
-                {backend === "online" ? (liveResult && mockStages(liveResult).includes("triage") ? "Mock" : "Pipeline") : "Local rules"}
+                {done?.via.kind === "pipeline"
+                  ? done.via.mock.includes("triage")
+                    ? "Mock"
+                    : "Pipeline"
+                  : backend === "online"
+                    ? "Pipeline"
+                    : "Local rules"}
               </Badge>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {backend === "checking"
-                ? "Connecting…"
-                : backend === "online"
-                  ? liveResult
-                    ? `${(liveResult.timings_ms.total_ms / 1000).toFixed(1)} s`
-                    : "Classifies as you type"
-                  : "Pipeline offline"}
-            </p>
-            {liveResult ? (
-              <dl className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2.5 text-[0.8125rem]">
-                <dt className="text-muted-foreground">Type</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  {liveResult.triage.type}
-                  <ConfidenceMeter value={liveResult.triage.type_conf} label="Type" />
-                </dd>
-                <dt className="text-muted-foreground">Queue</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  <span className="truncate">{liveResult.triage.queue}</span>
-                  <ConfidenceMeter value={liveResult.triage.queue_conf} label="Queue" />
-                </dd>
-                <dt className="text-muted-foreground">Priority</dt>
-                <dd>
-                  <PriorityBadge priority={liveResult.triage.priority} />
-                </dd>
-              </dl>
-            ) : localCls && backend !== "online" ? (
-              <dl className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2.5 text-[0.8125rem]">
-                <dt className="text-muted-foreground">Type</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  {localCls.type}
-                  <ConfidenceMeter value={localConf} label="Type" />
-                </dd>
-                <dt className="text-muted-foreground">Queue</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  <span className="truncate">{localCls.queue}</span>
-                  <ConfidenceMeter value={localConf} label="Queue" />
-                </dd>
-                <dt className="text-muted-foreground">Priority</dt>
-                <dd>
-                  <PriorityBadge priority={localCls.priority} />
-                </dd>
-              </dl>
+            {sending ? (
+              <div className="mt-3 flex flex-col gap-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+            ) : done?.cls ? (
+              <ClassRows {...done.cls} />
             ) : (
-              <p className="mt-3 text-[0.8125rem] text-muted-foreground">Start typing to classify.</p>
-            )}
-            {a && !done ? (
-              <p className="mt-4 border-t pt-3 text-[0.8125rem]">
-                <span className="text-muted-foreground">On send: </span>
-                {a.critical || liveResult?.reasons.some((r) => /on-call|outage|security|critical service/i.test(r))
-                  ? "straight to on-call"
-                  : q && !answer
-                    ? "one detail first"
-                    : liveResult
-                      ? !liveResult.escalate && liveResult.draft.grounded
-                        ? "answer right away"
-                        : `to ${liveResult.triage.queue}`
-                      : (() => {
-                          const o = resolve(full, a, q ? matchOption(a, answer) : null, accountId)
-                          return o.kind === "handoff" ? `to ${o.team}` : o.kind === "review" ? "product review" : "answer right away"
-                        })()}
+              <p className="mt-2 text-[0.8125rem] text-muted-foreground">
+                {done ? "Not classified: sent straight to a person." : backend === "offline" ? "Pipeline offline. Runs on send." : "Runs when you send."}
               </p>
-            ) : null}
+            )}
           </section>
           <section className="rounded-lg border bg-card p-4" aria-label="My requests">
-            <h2 className="text-sm font-semibold">My requests</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">My requests</h2>
+              <span className="ml-auto text-xs text-muted-foreground">This session</span>
+            </div>
             {mine.length ? (
               <ul className="mt-2 flex flex-col">
                 {mine.map((m) => {
                   const v = status(m.outcome)
                   return (
-                    <li key={m.id} className="flex flex-col gap-1 border-t py-2 first:border-t-0">
-                      <span className="flex items-center gap-2">
+                    <li key={m.id} className="border-t first:border-t-0">
+                      <button
+                        type="button"
+                        aria-haspopup="dialog"
+                        aria-label={`Open ${m.id}: ${m.subject || firstLine(m.message)}`}
+                        onClick={(e) => {
+                          lastRow.current = e.currentTarget
+                          setOpenId(m.id)
+                        }}
+                        className="-mx-2 flex w-[calc(100%+1rem)] flex-col gap-1 rounded-md px-2 py-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      >
+                      <span className="flex w-full items-center gap-2">
                         <TicketId id={m.id} className="text-muted-foreground" />
                         <Badge variant={v.variant} className="ml-auto max-w-40 truncate">
+                          {v.variant === "outline" ? (
+                            <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-(image:--ai-gradient)" />
+                          ) : null}
                           {v.label}
                         </Badge>
                       </span>
-                      <span className="line-clamp-1 text-[0.8125rem]">{m.title}</span>
+                      <span className="line-clamp-1 text-[0.8125rem]">{m.subject || firstLine(m.message)}</span>
+                      </button>
                     </li>
                   )
                 })}
@@ -462,6 +429,121 @@ export function RequestForm() {
           </section>
         </aside>
       </main>
+
+      <Sheet open={opened !== null} onOpenChange={(o) => !o && setOpenId(null)}>
+        <SheetContent
+          className="gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-md"
+          onCloseAutoFocus={(e) => {
+            // The sheet opens from a row, not a SheetTrigger; hand focus back to that row.
+            e.preventDefault()
+            lastRow.current?.focus()
+          }}
+        >
+          {opened ? <RequestDetail request={opened} /> : null}
+        </SheetContent>
+      </Sheet>
     </div>
+  )
+}
+
+// Gradient bar for Confident/Likely; Ambiguous keeps the meter's warning color.
+const GRADIENT_METER = (v: number) =>
+  v >= CONFIDENCE_BANDS.likely ? "[&_[data-slot=progress-indicator]]:bg-(image:--ai-gradient)" : undefined
+
+function ClassRows({ type, typeConf, queue, queueConf, priority }: Classification) {
+  return (
+    <dl className="mt-3 flex flex-col gap-3 text-[0.8125rem]">
+      <div className="flex flex-col gap-1">
+        <dt className="text-xs text-muted-foreground">Type</dt>
+        <dd className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate font-medium">{type}</span>
+          <ConfidenceMeter value={typeConf} label="Type" className={GRADIENT_METER(typeConf)} />
+        </dd>
+      </div>
+      <div className="flex flex-col gap-1">
+        <dt className="text-xs text-muted-foreground">Queue</dt>
+        <dd className="flex items-center justify-between gap-2">
+          <span className="min-w-0 font-medium">{queue}</span>
+          <ConfidenceMeter value={queueConf} label="Queue" className={GRADIENT_METER(queueConf)} />
+        </dd>
+      </div>
+      <div className="flex flex-col gap-1">
+        <dt className="text-xs text-muted-foreground">Priority</dt>
+        <dd>
+          <PriorityBadge priority={priority} />
+        </dd>
+      </div>
+    </dl>
+  )
+}
+
+// Two outcomes for the customer: answered automatically, or an agent takes it (urgent included).
+function isAutomatic(o: Outcome) {
+  return o.kind === "answer" || o.kind === "action"
+}
+
+// Local rules answer instantly; a short pause keeps the result from flashing in. Skipped for reduced motion.
+function localPause() {
+  const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  return new Promise((done) => setTimeout(done, reduced ? 0 : 600))
+}
+
+function firstLine(text: string) {
+  return text.split("\n")[0]
+}
+
+function OutcomeCard({ outcome }: { outcome: Outcome }) {
+  if (outcome.kind === "urgent") return <Urgent reasons={outcome.reasons} />
+  if (outcome.kind === "action") return <Breakdown invoice={outcome.invoice} previous={outcome.previous} />
+  if (outcome.kind === "answer") return <Answer sentences={outcome.sentences} sample={outcome.sample} />
+  if (outcome.kind === "handoff") return <Handoff team={outcome.team} reason={outcome.reason} />
+  return <Review />
+}
+
+// Customer-facing detail for one saved request: what they sent and what they were told.
+function RequestDetail({ request: r }: { request: Mine }) {
+  const v = status(r.outcome)
+  return (
+    <>
+      <SheetHeader className="border-b pr-12">
+        <TicketId id={r.id} className="text-muted-foreground" />
+        <SheetTitle className="text-base">{r.subject || <span className="text-muted-foreground">No subject</span>}</SheetTitle>
+        <SheetDescription className="flex flex-wrap items-center gap-2">
+          <Badge variant={v.variant}>
+            {v.variant === "outline" ? (
+              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-(image:--ai-gradient)" />
+            ) : null}
+            {r.outcome.kind === "handoff" ? `With ${r.outcome.team}` : v.label}
+          </Badge>
+          <span>Sent {r.sentAt}</span>
+        </SheetDescription>
+      </SheetHeader>
+      <div className="flex flex-col gap-5 p-4">
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-xs text-muted-foreground">Your message</h3>
+          <p className="rounded-lg border bg-card px-3 py-2.5 text-[0.8125rem] whitespace-pre-wrap">{r.message}</p>
+        </section>
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-xs text-muted-foreground">Update</h3>
+          <OutcomeCard outcome={r.outcome} />
+          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {r.via.kind === "pipeline" ? (
+              <>
+                Decided by the pipeline
+                {r.via.mock.length ? <Badge variant="outline">Mock: {r.via.mock.join(", ")}</Badge> : null}
+              </>
+            ) : (
+              <Badge variant="outline">{r.via.kind === "person" ? "Your choice" : "Local rules"}</Badge>
+            )}
+            <span>Demo: not saved, no one notified.</span>
+          </p>
+        </section>
+      </div>
+      <SheetFooter className="mt-auto border-t">
+        <SheetClose asChild>
+          <Button variant="outline">Back to my requests</Button>
+        </SheetClose>
+      </SheetFooter>
+    </>
   )
 }
