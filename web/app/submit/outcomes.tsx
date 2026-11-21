@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon, FileTextIcon, LightbulbIcon, SirenIcon, UsersRoundIcon } from "lucide-react"
+import { CheckIcon, CircleDashedIcon, FileTextIcon, LightbulbIcon, Link2Icon, SirenIcon, UsersRoundIcon } from "lucide-react"
 
 import { AISurface } from "@/components/sentinel/ai"
 import { Badge } from "@/components/ui/badge"
@@ -84,15 +84,15 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
 export type Source = { id: string; subject: string }
 
 export function Answer({ sentences, sample = false }: { sentences: { text: string; source: Source | null }[]; sample?: boolean }) {
-  const sources = [...new Map(sentences.flatMap((s) => (s.source ? [[s.source.id, s.source] as const] : []))).values()]
+  const cited = new Set(sentences.flatMap((s) => (s.source ? [s.source.id] : []))).size
   return (
     <AISurface
       title="Answer"
       action={
         sample ? (
           <Badge variant="outline">Sample answer</Badge>
-        ) : sources.length ? (
-          <Badge variant="outline">From {sources.length === 1 ? "1 past ticket" : `${sources.length} past tickets`}</Badge>
+        ) : cited ? (
+          <Badge variant="outline">Grounded in {cited === 1 ? "1 past ticket" : `${cited} past tickets`}</Badge>
         ) : null
       }
     >
@@ -101,17 +101,19 @@ export function Answer({ sentences, sample = false }: { sentences: { text: strin
           <span key={i}>
             {s.text}{" "}
             {s.source ? (
+              // Ticket ID only: past tickets belong to other customers, so no subject or snippet is shown.
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="rounded-sm border px-1 align-baseline font-mono text-xs text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                    aria-label={`Source ${s.source.id}${s.source.subject ? `: ${s.source.subject}` : ""}`}
+                    aria-label={`Source: resolved past ticket ${s.source.id}`}
+                    className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 align-baseline font-mono text-xs text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
+                    <Link2Icon className="size-3 text-muted-foreground" aria-hidden="true" />
                     {s.source.id}
                   </button>
                 </TooltipTrigger>
-                {s.source.subject ? <TooltipContent>{s.source.subject}</TooltipContent> : null}
+                <TooltipContent>Backed by a resolved past ticket</TooltipContent>
               </Tooltip>
             ) : null}{" "}
           </span>
@@ -121,7 +123,7 @@ export function Answer({ sentences, sample = false }: { sentences: { text: strin
   )
 }
 
-export function Handoff({ team, reason }: { team: string; reason: string }) {
+export function Handoff({ team, reason, checked = false }: { team: string; reason: string; checked?: boolean }) {
   return (
     <div className="ai-surface rounded-xl p-4">
       <div className="flex items-center gap-2">
@@ -129,6 +131,19 @@ export function Handoff({ team, reason }: { team: string; reason: string }) {
         <p className="text-sm font-semibold">With our {team} team</p>
       </div>
       <p className="mt-1 ml-6 text-[0.8125rem] text-muted-foreground">{reason} Replies show up in My requests.</p>
+      {checked ? (
+        // Pre-triage finished; nobody has accepted the ticket yet, so this stops at "ready".
+        <ol className="mt-3 ml-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Progress">
+          <li className="flex items-center gap-1.5 text-success-fg">
+            <CheckIcon className="size-3.5" aria-hidden="true" />
+            Request checked
+          </li>
+          <li className="flex items-center gap-1.5 text-muted-foreground">
+            <CircleDashedIcon className="size-3.5" aria-hidden="true" />
+            Ready for engineer review
+          </li>
+        </ol>
+      ) : null}
     </div>
   )
 }
