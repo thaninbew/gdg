@@ -1,0 +1,68 @@
+# Local-first architecture and competitive analysis for hackathon project
+
+Sat, 21 Nov 26
+
+## Architecture: Local-First Approach
+
+- Core design decision: everything runs locally
+  - Key differentiator from other hackathon teams
+  - Avoids cloud data privacy issues entirely
+  - One judge runs CVS (healthcare), so privacy angle is well-timed
+- Cloud extension planned as bonus feature
+  - Masks/redacts data before sending to any cloud API
+  - Supports firms that already pay for cloud models and want to use them
+
+## Ticket Triage and Classification
+
+- Goal: triage tickets into categories (low, medium, critical), not solve them
+  - Challenge spec is about surfacing solutions, not building fixes
+  - Actual ticket resolution left to the company’s own tools and interface
+- Urgency classification via keyword probability
+  - If 90%+ of a specific word’s usage maps to “critical,” auto-flag it
+- Autonomous ticket resolution flagged as stretch/theoretical
+  - Can demo the concept without building it out fully
+- Input validation: text-based claim checks yes, image-based no
+
+## Competitive Intelligence
+
+- Pulled all public GitHub repos from concurrent GDG hackathons
+  - Filtered by most recent commits to find active teams
+  - Zipped repos and fed to Claude for synthesis
+  - Output: .md peer review summary, shared to Discord
+- Other concurrent hackathons found: Germany and Hungary
+  - Hungarian repos also being reviewed
+  - Idea floated to reach out to German team for collaboration
+
+## UI and Product Experience
+
+- Current UI: ticket interface on the right side, expandable
+  - Recommendation: replace transparent bars in “where incidents come from” section (feels claustrophobic)
+  - Reference sites: Carvana, CarMax (chat widget in bottom corner)
+- Proposed UX flow:
+  - External: chat popup in bottom-right corner for customer-facing queries
+  - Internal: operator/agent-facing view
+  - Emails and chat messages routed to the same backend pipeline
+- FAQ/popular topics section suggested (à la Carvana)
+  - Could cache frequent questions to reduce latency
+- Website as proof-of-concept for judges, offer to build it out
+
+## Tooling and Infrastructure
+
+- Switched from school credits to OpenRouter ($5 top-up) after credits were unreliable
+- Diagram (tree graph for deterministic categories) pushed to GitHub, Tofu branch, UI folder
+- Large CSV too big for Discord, pushed to GitHub directly
+- Idea noted: classifier-based harness to auto-click through repos (Jev mentioned as fast at this)
+  - Not built yet, but worth adding to custom tooling
+- Mac server running 24/7 for agents, iMessage bot, CI, and project hosting
+  - Raspberry Pi being sourced from Micro Center contact as alternative
+
+## Next Steps
+
+- **Review diagram in GitHub (Tofu branch, UI folder)**
+- **Finalize critical keyword list for urgency classification**
+- **Build out website UI for judge demo**
+- **Share ticket list and Claude peer review .md to Discord**
+
+---
+
+Chat with meeting transcript: https://notes.granola.ai/t/fda5f1cf-6ab0-48be-ad36-a1992ec0b356-00best9l
