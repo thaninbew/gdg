@@ -73,7 +73,7 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
         </TableFooter>
       </Table>
       {added.length && previous ? (
-        <p className="mt-3 rounded-md bg-info-tint px-3 py-2 text-[0.8125rem] text-info-fg">
+        <p className="mt-3 rounded-md bg-muted px-3 py-2 text-[0.8125rem]">
           New since {previous.period.split(" ")[0]}: {added.map((l) => `${l.item} (${eur.format(l.qty * l.unit)})`).join(", ")}
         </p>
       ) : null}

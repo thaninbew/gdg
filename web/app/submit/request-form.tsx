@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Priority } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -146,6 +147,18 @@ export function RequestForm() {
   }
 
   const liveResult = backend === "online" && live && !done ? live.result : null
+  const shownTopic = topic ?? a?.topic ?? null
+  const predicted = (() => {
+    if (!a || done) return null
+    if (q && !answer.trim()) return "one detail first"
+    const ans = q ? matchOption(a, answer) : null
+    const o = liveResult ? toOutcome(liveResult, full, a, ans, accountId) : resolve(full, a, ans, accountId)
+    if (o.kind === "urgent") return "straight to on-call"
+    if (o.kind === "action") return "invoice breakdown now"
+    if (o.kind === "answer") return "answer right away"
+    if (o.kind === "review") return "product review"
+    return `to ${o.team}`
+  })()
   const localCls = a ? (a.critical ? { type: "Incident", queue: "Network & Access", priority: "high" as Priority } : LOCAL_CLASS[a.topic ?? "none"]) : null
   const localConf = !a ? 0 : topic || a.critical ? 0.92 : a.topic ? 0.78 : 0.5
 
@@ -240,111 +253,118 @@ export function RequestForm() {
             </section>
           ) : (
             <form
-              className="flex flex-col gap-3"
+              className="flex flex-col rounded-xl border bg-card transition-colors focus-within:border-foreground/25"
               onSubmit={(e) => {
                 e.preventDefault()
                 if (ready) void submit()
               }}
             >
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="req-title" className="text-xs text-muted-foreground">
-                  Title <span className="font-normal">(optional)</span>
-                </Label>
-                <Input id="req-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Short summary" />
-              </div>
-              <div className="rounded-xl border bg-card focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-                <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+              <Label htmlFor="req-title" className="sr-only">
+                Title, optional
+              </Label>
+              <Input
+                id="req-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (optional)"
+                className="h-11 rounded-none border-0 border-b bg-transparent px-4 text-[0.9375rem] font-medium shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+              <Label htmlFor="req-text" className="sr-only">
+                Details
+              </Label>
+              <Textarea
+                id="req-text"
+                autoFocus
+                rows={7}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value)
+                  setSampleId(null)
+                }}
+                placeholder="Describe what you need"
+                className="min-h-44 resize-none rounded-none border-0 bg-transparent px-4 py-3 text-[0.9375rem] leading-relaxed shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+              {q ? (
+                <fieldset className="flex flex-col gap-2 border-t px-4 py-3">
+                  <legend className="sr-only">{q.prompt}</legend>
+                  <p className="text-sm font-medium">
+                    {q.prompt} <span className="font-normal text-muted-foreground">{q.why}</span>
+                  </p>
                   <ToggleGroup
                     type="single"
                     variant="outline"
                     size="sm"
-                    spacing={1}
-                    value={topic ?? a?.topic ?? ""}
-                    onValueChange={(v) => setTopic((v || null) as Topic | null)}
-                    aria-label="Topic"
+                    spacing={2}
+                    value={(q.options as string[]).includes(answer) ? answer : ""}
+                    onValueChange={(v) => setAnswer(v)}
+                    aria-label={q.prompt}
                     className="flex-wrap"
                   >
-                    {TOPICS.map(({ id, label, Icon }) => {
-                      const shown = topic ?? a?.topic ?? null
-                      return (
+                    {q.options.map((o) => (
+                      <ToggleGroupItem
+                        key={o}
+                        value={o}
+                        className={cn(
+                          "data-[state=on]:border-foreground/25 data-[state=on]:bg-muted data-[state=on]:text-foreground",
+                          q.kind === "invoice" && "font-mono"
+                        )}
+                      >
+                        {o}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </fieldset>
+              ) : null}
+              {a?.critical ? (
+                <p role="status" className="flex items-center gap-2 border-t bg-critical-tint px-4 py-2 text-[0.8125rem] text-critical-fg">
+                  <SirenIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                  Urgent: goes straight to on-call, no questions
+                </p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  size="sm"
+                  spacing={1}
+                  value={shownTopic ?? ""}
+                  onValueChange={(v) => setTopic((v || null) as Topic | null)}
+                  aria-label="Topic"
+                  className="flex-wrap"
+                >
+                  {TOPICS.map(({ id, label, Icon }) => (
+                    <Tooltip key={id}>
+                      <TooltipTrigger asChild>
                         <ToggleGroupItem
-                          key={id}
                           value={id}
                           aria-label={label}
-                          className="data-[state=on]:border-primary data-[state=on]:bg-info-tint data-[state=on]:text-info-fg"
-                        >
-                          <Icon aria-hidden="true" />
-                          <span className={cn("hidden", (shown === id || !shown) && "sm:inline")}>{label}</span>
-                        </ToggleGroupItem>
-                      )
-                    })}
-                  </ToggleGroup>
-                  {!topic && a?.topic ? <span className="text-xs text-muted-foreground">suggested</span> : null}
-                  {topic ? (
-                    <button type="button" className="text-xs text-muted-foreground hover:underline" onClick={() => setTopic(null)}>
-                      Auto-detect
-                    </button>
-                  ) : null}
-                </div>
-                <Label htmlFor="req-text" className="sr-only">
-                  Details
-                </Label>
-                <Textarea
-                  id="req-text"
-                  autoFocus
-                  rows={7}
-                  value={text}
-                  onChange={(e) => {
-                    setText(e.target.value)
-                    setSampleId(null)
-                  }}
-                  placeholder="Describe what you need"
-                  className="min-h-44 resize-none border-0 bg-transparent text-[0.9375rem] shadow-none focus-visible:ring-0 dark:bg-transparent"
-                />
-                {q ? (
-                  <div className="flex flex-col gap-2 border-t px-4 py-3">
-                    <p className="text-sm font-medium">
-                      {q.prompt} <span className="font-normal text-muted-foreground">{q.why}</span>
-                    </p>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      size="sm"
-                      spacing={2}
-                      value={(q.options as string[]).includes(answer) ? answer : ""}
-                      onValueChange={(v) => setAnswer(v)}
-                      aria-label={q.prompt}
-                      className="flex-wrap"
-                    >
-                      {q.options.map((o) => (
-                        <ToggleGroupItem
-                          key={o}
-                          value={o}
                           className={cn(
-                            "data-[state=on]:border-primary data-[state=on]:bg-info-tint data-[state=on]:text-info-fg",
-                            q.kind === "invoice" && "font-mono"
+                            "data-[state=on]:border-foreground/25 data-[state=on]:bg-muted data-[state=on]:text-foreground",
+                            !topic && "data-[state=on]:border-dashed"
                           )}
                         >
-                          {o}
+                          <Icon aria-hidden="true" />
+                          <span className={cn("hidden", (shownTopic === id || !shownTopic) && "md:inline")}>{label}</span>
                         </ToggleGroupItem>
-                      ))}
-                    </ToggleGroup>
-                  </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{label}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </ToggleGroup>
+                {!topic && a?.topic ? <span className="sr-only">Suggested topic</span> : null}
+                {topic ? (
+                  <Button type="button" variant="link" size="xs" className="text-muted-foreground" onClick={() => setTopic(null)}>
+                    Auto-detect
+                  </Button>
                 ) : null}
-                <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
-                  {a?.critical ? (
-                    <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-critical-fg">
-                      <SirenIcon className="size-3.5" aria-hidden="true" />
-                      Urgent: goes straight to on-call
-                    </span>
-                  ) : null}
+                <div className="ml-auto flex items-center gap-2">
                   {q ? (
                     <Button type="button" variant="ghost" size="sm" onClick={() => void submit(true)}>
                       <UserRoundIcon data-icon="inline-start" aria-hidden="true" />
                       Send to a person
                     </Button>
                   ) : null}
-                  <Button type="submit" disabled={!ready} className="ml-auto">
+                  <Button type="submit" disabled={!ready}>
                     <SendIcon data-icon="inline-start" aria-hidden="true" />
                     {sending ? "Sending…" : "Send request"}
                   </Button>
@@ -377,63 +397,28 @@ export function RequestForm() {
               {backend === "checking"
                 ? "Connecting…"
                 : backend === "online"
-                  ? liveResult
+                  ? liveResult && liveResult.timings_ms.total_ms >= 50
                     ? `${(liveResult.timings_ms.total_ms / 1000).toFixed(1)} s`
                     : "Classifies as you type"
                   : "Pipeline offline"}
             </p>
             {liveResult ? (
-              <dl className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2.5 text-[0.8125rem]">
-                <dt className="text-muted-foreground">Type</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  {liveResult.triage.type}
-                  <ConfidenceMeter value={liveResult.triage.type_conf} label="Type" />
-                </dd>
-                <dt className="text-muted-foreground">Queue</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  <span className="truncate">{liveResult.triage.queue}</span>
-                  <ConfidenceMeter value={liveResult.triage.queue_conf} label="Queue" />
-                </dd>
-                <dt className="text-muted-foreground">Priority</dt>
-                <dd>
-                  <PriorityBadge priority={liveResult.triage.priority} />
-                </dd>
-              </dl>
+              <ClassRows
+                type={liveResult.triage.type}
+                typeConf={liveResult.triage.type_conf}
+                queue={liveResult.triage.queue}
+                queueConf={liveResult.triage.queue_conf}
+                priority={liveResult.triage.priority}
+              />
             ) : localCls && backend !== "online" ? (
-              <dl className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2.5 text-[0.8125rem]">
-                <dt className="text-muted-foreground">Type</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  {localCls.type}
-                  <ConfidenceMeter value={localConf} label="Type" />
-                </dd>
-                <dt className="text-muted-foreground">Queue</dt>
-                <dd className="flex items-center justify-between gap-2">
-                  <span className="truncate">{localCls.queue}</span>
-                  <ConfidenceMeter value={localConf} label="Queue" />
-                </dd>
-                <dt className="text-muted-foreground">Priority</dt>
-                <dd>
-                  <PriorityBadge priority={localCls.priority} />
-                </dd>
-              </dl>
+              <ClassRows type={localCls.type} typeConf={localConf} queue={localCls.queue} queueConf={localConf} priority={localCls.priority} />
             ) : (
               <p className="mt-3 text-[0.8125rem] text-muted-foreground">Start typing to classify.</p>
             )}
-            {a && !done ? (
+            {predicted ? (
               <p className="mt-4 border-t pt-3 text-[0.8125rem]">
                 <span className="text-muted-foreground">On send: </span>
-                {a.critical || liveResult?.reasons.some((r) => /on-call|outage|security|critical service/i.test(r))
-                  ? "straight to on-call"
-                  : q && !answer
-                    ? "one detail first"
-                    : liveResult
-                      ? !liveResult.escalate && liveResult.draft.grounded
-                        ? "answer right away"
-                        : `to ${liveResult.triage.queue}`
-                      : (() => {
-                          const o = resolve(full, a, q ? matchOption(a, answer) : null, accountId)
-                          return o.kind === "handoff" ? `to ${o.team}` : o.kind === "review" ? "product review" : "answer right away"
-                        })()}
+                {predicted}
               </p>
             ) : null}
           </section>
@@ -463,5 +448,44 @@ export function RequestForm() {
         </aside>
       </main>
     </div>
+  )
+}
+
+function ClassRows({
+  type,
+  typeConf,
+  queue,
+  queueConf,
+  priority,
+}: {
+  type: string
+  typeConf: number
+  queue: string
+  queueConf: number
+  priority: Priority
+}) {
+  return (
+    <dl className="mt-3 flex flex-col gap-3 text-[0.8125rem]">
+      <div className="flex flex-col gap-1">
+        <dt className="text-xs text-muted-foreground">Type</dt>
+        <dd className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate font-medium">{type}</span>
+          <ConfidenceMeter value={typeConf} label="Type" />
+        </dd>
+      </div>
+      <div className="flex flex-col gap-1">
+        <dt className="text-xs text-muted-foreground">Queue</dt>
+        <dd className="flex items-center justify-between gap-2">
+          <span className="min-w-0 font-medium">{queue}</span>
+          <ConfidenceMeter value={queueConf} label="Queue" />
+        </dd>
+      </div>
+      <div className="flex flex-col gap-1">
+        <dt className="text-xs text-muted-foreground">Priority</dt>
+        <dd>
+          <PriorityBadge priority={priority} />
+        </dd>
+      </div>
+    </dl>
   )
 }
