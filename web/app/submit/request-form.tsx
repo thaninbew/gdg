@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { CircleCheckIcon, FlaskConicalIcon, SendIcon, UserRoundIcon } from "lucide-react"
 
 import { CONFIDENCE_BANDS, ConfidenceMeter } from "@/components/sentinel/confidence"
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -34,7 +35,8 @@ type Backend = "checking" | "online" | "offline"
 type Classification = { type: string; typeConf: number; queue: string; queueConf: number; priority: Priority }
 type Via = { kind: "pipeline"; mock: string[] } | { kind: "local"; fallback: boolean } | { kind: "person" }
 type Done = { id: string; outcome: Outcome; via: Via; cls: Classification | null }
-type Mine = { id: string; title: string; outcome: Outcome }
+// One saved request in this browser session. Only what the customer sent and was shown.
+type Mine = { id: string; subject: string; message: string; sentAt: string; outcome: Outcome; via: Via }
 
 // Offline stand-in for the classifier. Labelled "Local rules" wherever it shows.
 const LOCAL_CLASS: Record<Topic | "none", { type: string; queue: string; priority: Priority }> = {
@@ -73,6 +75,9 @@ export function RequestForm() {
   const [done, setDone] = useState<Done | null>(null)
   const [sending, setSending] = useState(false)
   const [mine, setMine] = useState<Mine[]>([])
+  const [openId, setOpenId] = useState<string | null>(null)
+  const lastRow = useRef<HTMLButtonElement | null>(null)
+  const opened = mine.find((m) => m.id === openId) ?? null
   const [backend, setBackend] = useState<Backend>("checking")
   const account = ACCOUNTS[accountId]
 
@@ -124,7 +129,10 @@ export function RequestForm() {
       d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: false }, cls: localClassification(a, topic) }
     }
     setDone(d)
-    setMine((m) => [{ id: d.id, title: title.trim() || text.trim(), outcome: d.outcome }, ...m.filter((x) => x.id !== d.id)])
+    const message = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
+    const sentAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    const entry: Mine = { id: d.id, subject: title.trim(), message, sentAt, outcome: d.outcome, via: d.via }
+    setMine((m) => [entry, ...m.filter((x) => x.id !== d.id)])
   }
 
   function reset(t = "") {
@@ -191,11 +199,7 @@ export function RequestForm() {
                 </Alert>
               ) : null}
               <div role="status">
-                {done.outcome.kind === "urgent" ? <Urgent reasons={done.outcome.reasons} /> : null}
-                {done.outcome.kind === "action" ? <Breakdown invoice={done.outcome.invoice} previous={done.outcome.previous} /> : null}
-                {done.outcome.kind === "answer" ? <Answer sentences={done.outcome.sentences} sample={done.outcome.sample} /> : null}
-                {done.outcome.kind === "handoff" ? <Handoff team={done.outcome.team} reason={done.outcome.reason} /> : null}
-                {done.outcome.kind === "review" ? <Review /> : null}
+                <OutcomeCard outcome={done.outcome} />
               </div>
               <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 {done.via.kind === "pipeline" ? (
@@ -378,8 +382,18 @@ export function RequestForm() {
                 {mine.map((m) => {
                   const v = status(m.outcome)
                   return (
-                    <li key={m.id} className="flex flex-col gap-1 border-t py-2 first:border-t-0">
-                      <span className="flex items-center gap-2">
+                    <li key={m.id} className="border-t first:border-t-0">
+                      <button
+                        type="button"
+                        aria-haspopup="dialog"
+                        aria-label={`Open ${m.id}: ${m.subject || firstLine(m.message)}`}
+                        onClick={(e) => {
+                          lastRow.current = e.currentTarget
+                          setOpenId(m.id)
+                        }}
+                        className="-mx-2 flex w-[calc(100%+1rem)] flex-col gap-1 rounded-md px-2 py-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      >
+                      <span className="flex w-full items-center gap-2">
                         <TicketId id={m.id} className="text-muted-foreground" />
                         <Badge variant={v.variant} className="ml-auto max-w-40 truncate">
                           {v.variant === "outline" ? (
@@ -388,7 +402,8 @@ export function RequestForm() {
                           {v.label}
                         </Badge>
                       </span>
-                      <span className="line-clamp-1 text-[0.8125rem]">{m.title}</span>
+                      <span className="line-clamp-1 text-[0.8125rem]">{m.subject || firstLine(m.message)}</span>
+                      </button>
                     </li>
                   )
                 })}
@@ -399,6 +414,19 @@ export function RequestForm() {
           </section>
         </aside>
       </main>
+
+      <Sheet open={opened !== null} onOpenChange={(o) => !o && setOpenId(null)}>
+        <SheetContent
+          className="gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-md"
+          onCloseAutoFocus={(e) => {
+            // The sheet opens from a row, not a SheetTrigger; hand focus back to that row.
+            e.preventDefault()
+            lastRow.current?.focus()
+          }}
+        >
+          {opened ? <RequestDetail request={opened} /> : null}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
@@ -431,5 +459,65 @@ function ClassRows({ type, typeConf, queue, queueConf, priority }: Classificatio
         </dd>
       </div>
     </dl>
+  )
+}
+
+function firstLine(text: string) {
+  return text.split("\n")[0]
+}
+
+function OutcomeCard({ outcome }: { outcome: Outcome }) {
+  if (outcome.kind === "urgent") return <Urgent reasons={outcome.reasons} />
+  if (outcome.kind === "action") return <Breakdown invoice={outcome.invoice} previous={outcome.previous} />
+  if (outcome.kind === "answer") return <Answer sentences={outcome.sentences} sample={outcome.sample} />
+  if (outcome.kind === "handoff") return <Handoff team={outcome.team} reason={outcome.reason} />
+  return <Review />
+}
+
+// Customer-facing detail for one saved request: what they sent and what they were told.
+function RequestDetail({ request: r }: { request: Mine }) {
+  const v = status(r.outcome)
+  return (
+    <>
+      <SheetHeader className="border-b pr-12">
+        <TicketId id={r.id} className="text-muted-foreground" />
+        <SheetTitle className="text-base">{r.subject || <span className="text-muted-foreground">No subject</span>}</SheetTitle>
+        <SheetDescription className="flex flex-wrap items-center gap-2">
+          <Badge variant={v.variant}>
+            {v.variant === "outline" ? (
+              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-(image:--ai-gradient)" />
+            ) : null}
+            {r.outcome.kind === "handoff" ? `With ${r.outcome.team}` : v.label}
+          </Badge>
+          <span>Sent {r.sentAt}</span>
+        </SheetDescription>
+      </SheetHeader>
+      <div className="flex flex-col gap-5 p-4">
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-xs text-muted-foreground">Your message</h3>
+          <p className="rounded-lg border bg-card px-3 py-2.5 text-[0.8125rem] whitespace-pre-wrap">{r.message}</p>
+        </section>
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-xs text-muted-foreground">Update</h3>
+          <OutcomeCard outcome={r.outcome} />
+          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {r.via.kind === "pipeline" ? (
+              <>
+                Decided by the pipeline
+                {r.via.mock.length ? <Badge variant="outline">Mock: {r.via.mock.join(", ")}</Badge> : null}
+              </>
+            ) : (
+              <Badge variant="outline">{r.via.kind === "person" ? "Your choice" : "Local rules"}</Badge>
+            )}
+            <span>Demo: not saved, no one notified.</span>
+          </p>
+        </section>
+      </div>
+      <SheetFooter className="mt-auto border-t">
+        <SheetClose asChild>
+          <Button variant="outline">Back to my requests</Button>
+        </SheetClose>
+      </SheetFooter>
+    </>
   )
 }
