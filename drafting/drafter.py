@@ -70,6 +70,17 @@ def customer_reply(reply):
     return re.sub(r"[ \t]{2,}", " ", text).strip()
 
 
+NO_CITATION = "Reply cites no precedent"
+
+
+def sentences_cover_citations(sentences):
+    """True if every substantive sentence passed the sentence check with a source ticket.
+    Boilerplate (greetings, sign-offs) has no source and is not substantive; a reply with no
+    substantive sentence at all does not qualify."""
+    substantive = [s for s in sentences if s.source_ticket_id or not s.supported]
+    return bool(substantive) and all(s.supported and s.source_ticket_id for s in substantive)
+
+
 def verify(out, subject, body, precedents):
     issues = []
     leaked = leaks_internal(out.reply)
@@ -78,7 +89,7 @@ def verify(out, subject, body, precedents):
     allowed = {p.ticket_id for p in precedents}
     cited = set(out.cited_ticket_ids) | set(TICKET_ID.findall(out.reply))
     if not cited:
-        issues.append("Reply cites no precedent")
+        issues.append(NO_CITATION)
     fake = cited - allowed
     if fake:
         issues.append(f"Cites tickets that were never retrieved: {sorted(fake)}")
@@ -302,6 +313,10 @@ def draft(subject, body, language, precedents):
     if unsupported:
         n = len(unsupported)
         issues.append(f"{n} sentence{'s' if n > 1 else ''} not backed by any past ticket")
+    # Round 2b: the sentence check already gives each claim a source, so a missing inline citation
+    # is not an issue on its own. All other checks still apply.
+    if sentences_cover_citations(sentences):
+        issues = [i for i in issues if i != NO_CITATION]
     # Checks ran on the raw reply (with inline markers); the customer gets it without them.
     # Per-sentence sources stay available to the agent in `sentences` and `cited_ticket_ids`.
     return Draft(reply=customer_reply(out.reply), cited_ticket_ids=sorted(set(out.cited_ticket_ids)),
