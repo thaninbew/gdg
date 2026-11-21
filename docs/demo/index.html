@@ -291,6 +291,8 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
     for(var j=0;j<n*.9;j++){var t3=R(),o3=(R()+R()-1)*.9*bw;star(ax+ux*len*t3+nx*o3,ay+uy*len*t3+ny*o3,false)}
     for(var k=0;k<Math.round(area/42000);k++)star(R()*W,Math.pow(R(),1.6)*H*.7,true);
   }
+  // Carry ?api= and ?app= into the walkthrough links; demo.html validates them.
+  if(location.search)document.querySelectorAll('a[href^="demo.html"]').forEach(function(a){var h=a.getAttribute('href'),i=h.indexOf('#');a.setAttribute('href',(i<0?h:h.slice(0,i))+location.search+(i<0?'':h.slice(i)))});
   var to;addEventListener('resize',function(){clearTimeout(to);to=setTimeout(draw,120)});
   draw();
 })();

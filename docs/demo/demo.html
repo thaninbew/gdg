@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -123,6 +123,8 @@ svg.i{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-widt
 @keyframes sweep{from{background-position:0 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.ais[data-generating="true"]:before{animation:none}}
 body{padding:16px;max-width:1040px;margin:0 auto;background:var(--canvas)}
+#live iframe{display:block;width:100%;height:max(720px,calc(100svh - 150px));border:1px solid var(--line);border-radius:10px;background:#fff}
+.warn{font-size:12px;color:var(--warn-f);background:var(--warn-t);border-radius:6px;padding:5px 9px;margin:0 0 10px}
 </style>
 </head>
 <body>
@@ -138,6 +140,7 @@ body{padding:16px;max-width:1040px;margin:0 auto;background:var(--canvas)}
 <div class="dots" id="dots" aria-hidden="true"></div>
 <div class="switch" id="switch" hidden></div>
 <div class="app" id="app"></div>
+<div id="live" hidden></div>
 <p class="foot" id="foot"></p>
 
 <script>
@@ -166,7 +169,16 @@ var STEPS=[
 ];
 var ROLE={c:"CUSTOMER",e:"ENGINEER"};
 // Optional real handoff: demo.html?api=http://HOST:8000 posts to POST /triage {subject?, body}.
-var API=(new URLSearchParams(location.search).get("api")||"").replace(/\/+$/,"");
+// Only explicit http loopback origins are accepted, so a shared link can never send ticket text elsewhere.
+// Allowed: http://localhost|127.0.0.1|[::1][:port] with no credentials, path, query or hash.
+function loopback(raw){if(!raw)return "";try{var u=new URL(raw);
+  if(u.protocol!=="http:"||["localhost","127.0.0.1","[::1]"].indexOf(u.hostname)<0||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return "";
+  return u.origin}catch(e){return ""}}
+var Q=new URLSearchParams(location.search),REFUSED=[];
+function param(name,def){var raw=Q.get(name);if(raw===null)return def;var ok=loopback(raw);if(!ok)REFUSED.push(name);return ok}
+var API=param("api","");
+// The customer step embeds the existing /submit page from the web app (pnpm dev). Same loopback rule.
+var APP=param("app","http://localhost:3000"),REAL=false;
 var I={
   back:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
   chev:'<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
@@ -250,7 +262,10 @@ function chrome(st){
 
 function render(focusSel){
   var st=step(),app=document.getElementById("app");
-  app.innerHTML=(st.k==="run"||st.k==="finding")?R[st.k]():chrome(st);
+  var live=document.getElementById("live"),sup=st.k==="support";
+  app.hidden=sup;live.hidden=!sup;
+  if(sup&&!live.firstChild)live.innerHTML='<iframe src="'+esc(APP)+'/submit" title="SentinelDesk support, existing /submit page"></iframe>';
+  if(!sup)app.innerHTML=(st.k==="run"||st.k==="finding")?R[st.k]():chrome(st);
   var r=document.getElementById("role");r.className="role "+st.role;r.textContent=ROLE[st.role]+(st.opt?" · OPTIONAL":"");
   document.getElementById("loc").textContent=st.loc+(st.k==="detail"?" · "+tid():st.k==="mine"&&S.open?" · "+myId():"");
   document.getElementById("num").textContent=(S.i+1)+"/"+STEPS.length;
@@ -259,10 +274,11 @@ function render(focusSel){
   nextBtn.disabled=st.k==="ask"&&!submitted();
   document.getElementById("dots").innerHTML=STEPS.map(function(_,i){return '<i class="'+(i<=S.i?'on':'')+'"></i>'}).join("");
   var sw=document.getElementById("switch");
-  if(st.k==="inbox"){sw.hidden=false;sw.textContent="Now the engineer's view, same ticket "+myId()+"."}
+  if(st.k==="inbox"){sw.hidden=false;sw.textContent=REAL?"Now the engineer's view. Console pages are placeholders with the sample ticket "+myId()+".":"Now the engineer's view, same ticket "+myId()+"."}
+  else if(sup){sw.hidden=false;sw.textContent="Customer's view: the existing /submit page. Send a request, then open it under My requests."}
   else if(st.k==="intake"){sw.hidden=false;sw.textContent="Customer's view. Edit the request if you like."}
   else sw.hidden=true;
-  document.getElementById("foot").innerHTML=API?'<span class="livetag">API</span> Requests go to <span class="mono">'+esc(API)+'/triage</span>. Other pages use sample data. Nothing is sent to customers.':'<span class="simtag">SAMPLE</span> Placeholder pages with sample data. Nothing is sent. Arrow keys move between steps.';
+  document.getElementById("foot").innerHTML=(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': only http://localhost, 127.0.0.1 or [::1] with an optional port.</span> ':'')+(REAL?'<span class="livetag">APP</span> Customer step is <span class="mono">'+esc(APP)+'/submit</span>. ':'')+(API?'<span class="livetag">API</span> Requests go to <span class="mono">'+esc(API)+'/triage</span>. Other pages use sample data. Nothing is sent to customers.':'<span class="simtag">SAMPLE</span> Placeholder pages with sample data. Nothing is sent. Arrow keys move between steps.');
   var ta=document.getElementById("txt");if(ta)ta.addEventListener("input",function(){S.text=ta.value});
   if(location.hash.slice(1)!==st.k)history.replaceState(null,"","#"+st.k);
   if(focusSel){var f=app.querySelector(focusSel);if(f)f.focus()}
@@ -270,7 +286,7 @@ function render(focusSel){
 function idx(k){for(var i=0;i<STEPS.length;i++)if(STEPS[i].k===k)return i;return -1}
 function go(k,focusSel){var i=idx(k);if(i<0)return;S.i=i;S.open=false;render(focusSel)}
 // Deep links from the landing page land on a coherent state: later steps assume the sample request was sent.
-function enter(k){var i=idx(k);if(i<0)i=0;if(i>=idx("mine")&&!submitted()){S.sent=true;S.pick=D.options[0]}S.i=i;S.open=false;render()}
+function enter(k){if(REAL&&(k==="intake"||k==="ask"||k==="mine"))k="support";var i=idx(k);if(i<0)i=0;if(i>=idx("mine")&&!submitted()){S.sent=true;S.pick=D.options[0]}S.i=i;S.open=false;render()}
 function next(){
   var k=step().k;
   if(S.i===STEPS.length-1){location.href="index.html";return}
@@ -314,7 +330,11 @@ document.addEventListener("keydown",function(e){
   if(e.key==="ArrowRight"){e.preventDefault();next()}else if(e.key==="ArrowLeft"){e.preventDefault();back()}
 });
 addEventListener("hashchange",function(){var k=location.hash.slice(1);if(k&&k!==step().k)enter(k)});
-fresh();enter(location.hash.slice(1));
+// Use the real customer page when the web app answers on APP; otherwise the sample customer steps.
+function start(){fresh();enter(location.hash.slice(1))}
+function probe(){if(!APP)return Promise.resolve(false);var c=new AbortController(),t=setTimeout(function(){c.abort()},1500);
+  return fetch(APP+"/submit",{mode:"no-cors",signal:c.signal}).then(function(){return true},function(){return false}).finally(function(){clearTimeout(t)})}
+probe().then(function(ok){if(ok){REAL=true;STEPS.splice(0,3,{k:"support",role:"c",loc:"Support",path:"/submit"})}start()});
 </script>
 </body>
 </html>
