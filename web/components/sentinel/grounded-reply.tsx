@@ -163,11 +163,12 @@ function linesWithChecks(reply: string, sentences: SentenceCheck[]) {
 /** The draft, sentence by sentence: supported claims get a green underline, unsupported ones a warning. */
 export function GroundedReply({ draft, lang, editing }: { draft: Draft; lang: string; editing?: boolean }) {
   const { activeId } = useCitation()
-  const lines = linesWithChecks(draft.reply, draft.sentences)
+  const sentences = draft.sentences ?? []
+  const lines = linesWithChecks(draft.reply, sentences)
 
   return (
     <div className="flex flex-col gap-4">
-      <GroundingBar sentences={draft.sentences} />
+      <GroundingBar sentences={sentences} />
       <div
         lang={lang}
         contentEditable={editing}
