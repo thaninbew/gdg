@@ -156,6 +156,15 @@ export function RequestForm() {
     setMine((m) => [entry, ...m.filter((x) => x.id !== d.id)])
   }
 
+  // Fills the form only; nothing is sent until Send request.
+  function loadSample(s: (typeof SAMPLES)[number]) {
+    setAccountId(s.account)
+    setSampleId(s.id)
+    setTopic(s.topic)
+    reset(s.text)
+    setTitle(s.subject ?? "")
+  }
+
   function reset(t = "") {
     if (presenter) setTicket(null)
     setTitle("")
@@ -189,13 +198,7 @@ export function RequestForm() {
                 {SAMPLES.map((s) => (
                   <DropdownMenuItem
                     key={s.id}
-                    onSelect={() => {
-                      setAccountId(s.account)
-                      setSampleId(s.id)
-                      setTopic(s.topic)
-                      reset(s.text)
-                      setTitle(s.subject ?? "")
-                    }}
+                    onSelect={() => loadSample(s)}
                   >
                     {s.label}
                   </DropdownMenuItem>
@@ -217,6 +220,19 @@ export function RequestForm() {
             <h1 className="text-xl font-semibold">New request</h1>
             {presenter ? <Badge variant="outline">Presenter mode · Use sample data</Badge> : null}
           </div>
+          {!sending && !done ? (
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Try a demo request">
+              <span className="text-xs text-muted-foreground">Try</span>
+              {FEATURED.map(({ id, label }) => {
+                const s = SAMPLES.find((x) => x.id === id)
+                return s ? (
+                  <Button key={id} type="button" variant="outline" size="sm" onClick={() => loadSample(s)} aria-pressed={sampleId === id}>
+                    {label}
+                  </Button>
+                ) : null
+              })}
+            </div>
+          ) : null}
           {sending ? (
             <section
               aria-busy="true"
@@ -399,7 +415,9 @@ export function RequestForm() {
                   ? done.via.mock.includes("triage")
                     ? "Mock"
                     : "Pipeline"
-                  : backend === "online"
+                  : done?.via.kind === "local"
+                    ? "Local rules"
+                    : backend === "online"
                     ? "Pipeline"
                     : "Local rules"}
               </Badge>
@@ -558,6 +576,14 @@ function localPause() {
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   return new Promise((done) => setTimeout(done, reduced ? 0 : 600))
 }
+
+// Curated demo situations shown above the composer.
+const FEATURED = [
+  { id: "settings-access", label: "Settings access" },
+  { id: "outage", label: "Hospital VPN outage" },
+  { id: "csv-export", label: "CSV export bug" },
+  { id: "signout", label: "Keeps signing out" },
+] as const
 
 function preTriaged(via: Via) {
   return via.kind === "pipeline" && via.mock.length === 0
