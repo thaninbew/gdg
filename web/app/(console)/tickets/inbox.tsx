@@ -40,10 +40,6 @@ const STATUSES: { value: Status; label: string }[] = [
   { value: "draft", label: "Draft ready" },
 ]
 
-function isTyping(el: EventTarget | null) {
-  return el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
-}
-
 export function Inbox({ queue, category, status: initialStatus }: { queue: string | null; category: string | null; status: string | null }) {
   const router = useRouter()
   const { cases, state, accept, escalate, restore } = useCases()
@@ -51,7 +47,7 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
     STATUSES.some((s) => s.value === initialStatus) ? (initialStatus as Status) : "all"
   )
   const [selected, setSelected] = React.useState<string | null>(null)
-  const rowRefs = React.useRef(new Map<string, HTMLTableRowElement>())
+  const ticketLinks = React.useRef(new Map<string, HTMLAnchorElement>())
 
   const rows = sortQueue(cases, state).map((c) => ({ c, s: state[c.ticket_id], o: outcome(c, state[c.ticket_id]) }))
   const scoped = rows.filter(({ c, s }) => (!queue || s.triage.queue === queue) && (!category || c.category === category))
@@ -60,25 +56,30 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
 
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey || !activeId) return
-      const i = visible.findIndex((v) => v.c.ticket_id === activeId)
-      const before = state[activeId]
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      const focusedId = e.target instanceof HTMLAnchorElement ? e.target.dataset.ticketId : undefined
+      // Leave controls outside the queue to handle their own keys.
+      if (e.target !== document.body && !focusedId) return
+      const id = focusedId ?? activeId
+      const i = visible.findIndex((v) => v.c.ticket_id === id)
+      if (!id || i < 0) return
+      const before = state[id]
       if (e.key === "j" || e.key === "k") {
         e.preventDefault()
         const next = visible[Math.min(visible.length - 1, Math.max(0, i + (e.key === "j" ? 1 : -1)))]
-        if (!next) return
-        setSelected(next.c.ticket_id)
-        rowRefs.current.get(next.c.ticket_id)?.scrollIntoView({ block: "nearest" })
-      } else if (e.key === "Enter") {
+        const link = ticketLinks.current.get(next.c.ticket_id)
+        link?.focus({ preventScroll: true })
+        link?.scrollIntoView({ block: "nearest" })
+      } else if (e.key === "Enter" && !focusedId) {
         e.preventDefault()
-        router.push(`/tickets/${activeId}`)
+        router.push(`/tickets/${id}`)
       } else if (e.key === "a") {
         if (TRIAGE_FIELDS.every((f) => before.fields[f] !== "suggested")) return
-        accept(activeId)
-        toast(`Accepted triage for ${activeId}`, { action: { label: "Undo", onClick: () => restore(activeId, before) } })
+        accept(id)
+        toast(`Accepted triage for ${id}`, { action: { label: "Undo", onClick: () => restore(id, before) } })
       } else if (e.key === "e") {
-        escalate(activeId, "Operator escalated from the inbox")
-        toast(`Escalated ${activeId}`, { action: { label: "Undo", onClick: () => restore(activeId, before) } })
+        escalate(id, "Operator escalated from the inbox")
+        toast(`Escalated ${id}`, { action: { label: "Undo", onClick: () => restore(id, before) } })
       }
     }
     window.addEventListener("keydown", onKey)
@@ -143,12 +144,13 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
                   return (
                     <TableRow
                       key={c.ticket_id}
-                      ref={(el) => {
-                        if (el) rowRefs.current.set(c.ticket_id, el)
-                      }}
                       data-state={activeId === c.ticket_id ? "selected" : undefined}
-                      onClick={() => router.push(`/tickets/${c.ticket_id}`)}
-                      onMouseEnter={() => setSelected(c.ticket_id)}
+                      onClick={(e) => {
+                        if (e.target instanceof Element && !e.target.closest("a")) router.push(`/tickets/${c.ticket_id}`)
+                      }}
+                      onMouseEnter={() => {
+                        if (document.activeElement === document.body) setSelected(c.ticket_id)
+                      }}
                       className="h-10 cursor-pointer"
                     >
                       <TableCell>
@@ -160,6 +162,11 @@ export function Inbox({ queue, category, status: initialStatus }: { queue: strin
                       <TableCell className="max-w-0">
                         <Link
                           href={`/tickets/${c.ticket_id}`}
+                          data-ticket-id={c.ticket_id}
+                          ref={(el) => {
+                            if (el) ticketLinks.current.set(c.ticket_id, el)
+                            else ticketLinks.current.delete(c.ticket_id)
+                          }}
                           onFocus={() => setSelected(c.ticket_id)}
                           lang={c.triage.language}
                           className="block truncate rounded-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

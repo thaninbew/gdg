@@ -244,7 +244,15 @@ function TicketPanel({
                       status === "suggested" && "border-dashed border-muted-foreground/60"
                     )}
                   >
-                    {f === "priority" ? <PriorityBadge priority={value as Priority} /> : <SelectValue />}
+                    {f === "priority" ? (
+                      <PriorityBadge priority={value as Priority} />
+                    ) : (
+                      <SelectValue>
+                        <span className="truncate" title={value}>
+                          {value}
+                        </span>
+                      </SelectValue>
+                    )}
                   </SelectTrigger>
                   <SelectContent position="popper" align="start">
                     {OPTIONS[f].map((opt) => (
