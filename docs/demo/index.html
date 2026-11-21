@@ -116,78 +116,109 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
   .sample{top:-28px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-/* ---------- Capabilities (below the hero) ---------- */
-/* Uses the page tokens and .badge/.cite/.aimark/.reason/.mono/svg.i/.sample already in index.html.
-   Motion reuses sd-motion.css: --sd-step/--sd-ease, the [data-generating="true"] strip sweep and .sd-enter. */
-.cap{max-width:1080px;margin:0 auto;padding:56px 16px 8px}
-.cap-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px}
-.cap h2{font-size:22px;font-weight:600;letter-spacing:-.015em;margin:0}
-.cap .sample{position:static;flex:none}
-.cap-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
-.cap-card{display:flex;flex-direction:column;gap:14px;min-width:0;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}
-.cap-head{display:flex;align-items:center;gap:8px;min-width:0}
-.cap-head h3{margin:0;font-size:14px;font-weight:600}
-.cap-id{font-size:12px;color:var(--mfg)}
-.cap-replay{margin-left:auto;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--mfg);cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
-.cap-replay:hover{background:var(--muted);color:var(--fg)}
-.cap-replay svg{width:14px;height:14px}
-.cap-ask{margin:0;background:var(--muted);border-radius:10px 10px 10px 3px;padding:10px 12px;font-size:13px}
-.cap-lbl{display:flex;align-items:center;gap:6px;margin:0 0 4px;font-size:12px;color:var(--mfg)}
-.cap-lbl svg{width:14px;height:14px}
-.cap-row{display:flex;align-items:center;gap:8px;min-width:0;padding:6px 0;font-size:13px;border-top:1px solid var(--line)}
-.cap-row:first-of-type{border-top:0}
-.cap-row .mono{font-size:12px}
-.cap-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cap-n{color:var(--mfg)}
-.cap-none{color:var(--mfg)}
-.cap-none svg{width:14px;height:14px}
-.cap-chips{display:flex;flex-wrap:wrap;gap:6px}
-.cap-neutral{background:var(--muted);color:var(--mfg)}
-.cap-decide .reason{margin:6px 0 0}
-.cap-foot{margin-top:auto;min-height:37px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
-.cap-link{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--pri);border-radius:4px}
-.cap-link:hover{color:var(--pri-hover)}
-.cap-link svg{width:14px;height:14px}
+/* ---------- Capabilities: three vertical feature sections ---------- */
+/* Page tokens and .badge/.cite/.aimark/.mono/svg.i come from index.html. sd-motion.css supplies the
+   [data-generating] strip sweep and the sd-arrive keyframes; without it the section still settles. */
+.sv{padding:clamp(24px,6vh,64px) 16px 0}
+.sv-sec{max-width:1160px;margin:0 auto;min-height:min(88svh,880px);padding:clamp(56px,10vh,120px) 0;
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px);align-items:center}
+.sv-flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+.sv-flip .sv-copy{order:2}
+.sv-wide{grid-template-columns:minmax(0,1fr);justify-items:center;align-content:center;gap:clamp(32px,6vh,56px)}
+.sv-wide .sv-copy{text-align:center;max-width:720px}
+.sv-wide .sv-sub{margin-left:auto;margin-right:auto}
+.sv-copy{min-width:0}
+.sv-kicker{margin:0 0 14px;font-size:14px;font-weight:600;color:var(--pri)}
+.sv h2{margin:0;font-size:clamp(32px,3.6vw,50px);line-height:1.08;letter-spacing:-.03em;font-weight:600;text-wrap:balance}
+.sv-sub{margin:18px 0 0;max-width:34ch;font-size:clamp(16px,1.35vw,19px);line-height:1.5;color:var(--mfg);text-wrap:pretty}
+.sv-link{display:inline-flex;align-items:center;gap:6px;margin-top:26px;font-size:15px;font-weight:600;color:var(--pri);border-radius:4px;transition:color .15s}
+.sv-link:hover{color:var(--pri-hover)}
+.sv-link svg{width:16px;height:16px}
 
-/* AI surface: 3px gradient strip and soft glow. sd-motion.css sweeps the strip while data-generating="true". */
-.cap-ai{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px}
-.cap-ai:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai)}
-.cap-ai:after{content:"";position:absolute;inset:-50% -10% auto;height:70%;background:var(--ai);opacity:.06;filter:blur(36px);pointer-events:none}
-.cap-aihead{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:13px;font-weight:600}
-.cap-push{margin-left:auto}
-.cap-stack{display:grid}
-.cap-stack>*{grid-area:1/1}
-.cap-reply{margin:0;font-size:14px;line-height:1.6}
-.cap-skel{display:flex;flex-direction:column;gap:9px;padding-top:6px}
-.cap-skel i{display:block;height:9px;border-radius:4px;background:var(--muted)}
-.cap-finding{margin:0 0 8px;font-size:14px;font-weight:600}
-.cap-code{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-size:12px;color:var(--mfg);min-width:0}
-.cap-code svg{width:14px;height:14px}
-.cap-code .mono{overflow-wrap:anywhere}
-.cap-state{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;font-size:12px;color:var(--mfg)}
+/* Product stage: neutral canvas, white product surfaces */
+.sv-stage{position:relative;min-width:0;width:100%;background:var(--canvas);border-radius:24px;padding:clamp(20px,3.4vw,48px)}
+.sv-wide .sv-stage{max-width:1080px}
+.sv-card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,22,31,.04),0 12px 32px -18px rgba(22,30,80,.2)}
+.sv-id{font-size:13px;color:var(--mfg)}
+.sv-ask{margin:0;background:var(--muted);border-radius:14px 14px 14px 4px;padding:14px 16px;font-size:17px;line-height:1.5}
+.sv-lbl{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--mfg)}
 
-/* Factory run progress */
-.cap-run{display:flex;flex-direction:column;gap:8px}
-.cap-runhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:13px}
-.cap-runhead strong{font-weight:600}
-.cap-count{font-size:12px;color:var(--mfg)}
-.cap-seg{display:flex;gap:3px}
-.cap-seg i{flex:1;height:5px;border-radius:3px;background:var(--line);transition:background-color .2s var(--ease)}
-.cap-seg i.on{background:var(--pri)}
-.cap-detail{margin:0;font-size:13px;color:var(--mfg);min-height:1.5em}
+/* AI surface: 3px gradient strip and soft glow; sd-motion.css sweeps the strip while generating */
+.sv-ai{position:relative;overflow:hidden;border-radius:16px;padding:20px 22px}
+.sv-ai:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai)}
+.sv-ai:after{content:"";position:absolute;inset:-50% -10% auto;height:70%;background:var(--ai);opacity:.06;filter:blur(40px);pointer-events:none}
+.sv-aihead{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:14px;font-weight:600}
+.sv-stack{display:grid}
+.sv-stack>*{grid-area:1/1}
+.sv-skel{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.sv-skel i{display:block;height:12px;border-radius:6px;background:var(--muted)}
 
-/* Sequenced reveal. Without JS or with reduced motion every step stays visible. */
-.cap.is-ready [data-s],.cap.is-ready [data-until]{transition:opacity var(--sd-step,200ms) var(--sd-ease,var(--ease)),transform var(--sd-step,200ms) var(--sd-ease,var(--ease))}
-.cap.is-ready [data-s]:not(.is-on){opacity:0;transform:translateY(4px)}
-.cap.is-ready [data-until].is-off{opacity:0}
-.cap:not(.is-ready) [data-until]{display:none}
-.cap:not(.is-ready) .cap-replay{display:none}
+/* 1. Auto-answer */
+.sv-answer{display:flex;flex-direction:column;gap:16px;padding:22px}
+.sv-answer .sv-ask{align-self:flex-start;max-width:88%}
+.sv-reply{margin:0;font-size:18px;line-height:1.65}
+.sv-reply .cite{font-size:12.5px;padding:4px 6px;vertical-align:2px}
+.sv-reply .cite svg{width:12px;height:12px}
 
-@media (max-width:900px){.cap-grid{grid-template-columns:minmax(0,1fr)}.cap-card{max-width:560px;width:100%;margin:0 auto}}
+/* 2. Engineer handoff */
+.sv-handoff{display:flex;flex-direction:column;gap:16px}
+.sv-inbox{padding:8px 0}
+.sv-inbox .sv-lbl{padding:10px 20px 4px;margin:0}
+.sv-row{display:flex;align-items:center;gap:12px;min-width:0;padding:14px 20px;border-top:1px solid var(--line);font-size:16px}
+.sv-row:first-of-type{border-top:0}
+.sv-row .sv-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-row .sv-time{font-size:13px;color:var(--mfg)}
+.sv-row.sv-quiet{color:var(--mfg)}
+.sv-new .sv-t{font-weight:600}
+.sv-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.sv-brief p{margin:0;font-size:17px;line-height:1.6}
+
+/* 3. Software Factory */
+.sv-factory{display:grid;grid-template-columns:minmax(0,4fr) auto minmax(0,6fr);gap:20px;align-items:center}
+.sv-report{padding:20px}
+.sv-report .sv-lbl{justify-content:space-between}
+.sv-join{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid var(--line);color:var(--mfg)}
+.sv-join svg{width:18px;height:18px}
+.sv-finding h3{margin:0 0 6px;font-size:20px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+.sv-muted{margin:0;font-size:14px;color:var(--mfg)}
+.sv-diff{margin:16px 0 0;padding:12px 14px;border-radius:10px;background:var(--canvas);font:400 13.5px/1.7 var(--mono);color:var(--mfg);white-space:pre-wrap;overflow-wrap:anywhere}
+.sv-diff b{display:block;font-weight:500;color:var(--ok-f);background:var(--ok-t);margin:0 -14px;padding:0 14px}
+.sv-review{display:flex;align-items:center;gap:8px;margin:16px 0 0;font-size:14px;color:var(--warn-f)}
+.sv-review svg{width:16px;height:16px}
+
+/* Closing call to action */
+.sv-end{display:flex;flex-direction:column;align-items:center;gap:14px;padding:clamp(24px,6vh,64px) 0 clamp(72px,12vh,128px)}
+.sv-cta{display:inline-flex;align-items:center;gap:10px;border-radius:999px;background:var(--fg);color:#fff;font-size:15px;font-weight:600;padding:5px 5px 5px 22px;transition:background-color .15s}
+.sv-cta:hover{background:#2a2a38}
+.sv-cta .dot{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--pri);color:#fff}
+.sv-cta .dot svg{width:14px;height:14px}
+.sv-note{margin:0;font-size:13px;color:var(--mfg)}
+
+/* One in-view reveal per section. Without JS, without IntersectionObserver or with reduced motion,
+   every step is visible from the start. Hidden steps use opacity and transform only: no layout shift. */
+.sv.is-ready [data-s],.sv.is-ready [data-until]{transition:opacity var(--sd-step,200ms) var(--sd-ease,var(--ease)),transform var(--sd-step,200ms) var(--sd-ease,var(--ease))}
+.sv.is-ready [data-s]:not(.is-on){opacity:0;transform:translateY(6px)}
+.sv.is-ready [data-until].is-off{opacity:0}
+.sv:not(.is-ready) [data-until]{display:none}
+.sv.is-ready .sv-new.is-on{animation:sd-arrive var(--sd-arrive,900ms) var(--sd-ease,var(--ease))}
+
+@media (max-width:900px){
+  .sv-sec,.sv-flip{grid-template-columns:minmax(0,1fr);min-height:0;gap:28px;padding:48px 0}
+  .sv-flip .sv-copy{order:0}
+  .sv-factory{grid-template-columns:minmax(0,1fr)}
+  .sv-join{justify-self:center;transform:rotate(90deg)}
+}
+@media (max-width:520px){
+  .sv-stage{border-radius:18px;padding:14px}
+  .sv-answer,.sv-report{padding:16px}
+  .sv-ai{padding:18px 16px}
+  .sv-row{padding:12px 16px;font-size:15px}
+  .sv-inbox .sv-lbl{padding:8px 16px 4px}
+  .sv-reply{font-size:16px}
+}
 @media (prefers-reduced-motion:reduce){
-  .cap [data-s]{opacity:1!important;transform:none!important}
-  .cap [data-until]{display:none}
-  .cap-replay{display:none}
+  .sv [data-s]{opacity:1!important;transform:none!important;animation:none!important}
+  .sv [data-until]{display:none}
 }
 </style>
 </head>
@@ -279,102 +310,96 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
 </header>
 
 <main>
-  <!-- Capabilities: sample data only. -->
-  <section class="cap" id="capabilities" aria-labelledby="cap-h">
+  <!-- Capabilities: three vertical feature sections. Sample data only; nothing is sent. -->
+  <div class="sv" id="capabilities">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
-        <symbol id="cap-i-replay" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
-        <symbol id="cap-i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
-        <symbol id="cap-i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
-        <symbol id="cap-i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+        <symbol id="sv-i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+        <symbol id="sv-i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
       </defs>
     </svg>
 
-    <div class="cap-top">
-      <h2 id="cap-h">What happens to a ticket</h2>
-      <span class="sample">Sample data</span>
-    </div>
-
-    <div class="cap-grid">
-      <!-- 1. Grounded auto-answer -->
-      <article class="cap-card" data-cap="answer" aria-labelledby="cap-a-h">
-        <header class="cap-head">
-          <h3 id="cap-a-h">Auto-answer</h3>
-          <span class="mono cap-id">TKT-26912</span>
-          <button class="cap-replay" type="button" aria-label="Replay auto-answer example"><svg class="i" aria-hidden="true"><use href="#cap-i-replay"/></svg></button>
-        </header>
-        <p class="cap-ask">I was charged twice for this month's invoice. Can you refund one?</p>
-        <div class="cap-block" data-s="1">
-          <p class="cap-lbl"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Past cases</p>
-          <div class="cap-row"><span class="cap-t" lang="de">Rechnung doppelt abgebucht</span><span class="mono cap-n">0.87</span></div>
-          <div class="cap-row"><span class="cap-t">Charged twice for the same invoice</span><span class="mono cap-n">0.81</span></div>
-        </div>
-        <div class="cap-ai" data-s="2" data-gen="2-3">
-          <p class="cap-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Draft reply</p>
-          <div class="cap-stack">
-            <div class="cap-skel" data-until="3" aria-hidden="true"><i></i><i></i><i></i><i style="width:58%"></i></div>
-            <p class="cap-reply" data-s="3">We're checking the duplicate charge and will refund the second payment once confirmed.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-03318</span> Refunds usually appear within 5 to 7 business days.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-07731</span></p>
+    <!-- 1. Auto-answer -->
+    <section class="sv-sec" data-sv="answer" aria-labelledby="sv-a-h">
+      <div class="sv-copy">
+        <p class="sv-kicker">Auto-answer</p>
+        <h2 id="sv-a-h">Answers that cite their source.</h2>
+        <p class="sv-sub">Routine questions get a reply grounded in a case you already solved.</p>
+        <a class="sv-link" href="demo.html#mine">See the customer view<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="sv-stage">
+        <div class="sv-card sv-answer">
+          <p class="sv-ask">How do I download last month's invoice as a PDF?</p>
+          <div class="sv-card sv-ai" data-s="1" data-gen="1-2">
+            <p class="sv-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Reply</p>
+            <div class="sv-stack">
+              <div class="sv-skel" data-until="2" aria-hidden="true"><i></i><i></i><i style="width:62%"></i></div>
+              <p class="sv-reply" data-s="2">Open Billing, then Invoices, and choose Download PDF next to last month.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-17318</span> To send copies to your accountant, add them under Billing contacts.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-19940</span></p>
+            </div>
           </div>
         </div>
-        <footer class="cap-foot">
-          <span class="badge b-ok" data-s="4"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>2 of 2 supported</span>
-          <a class="cap-link" href="demo.html#mine">Open in demo<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-        </footer>
-      </article>
+      </div>
+    </section>
 
-      <!-- 2. Uncertain request goes to a person -->
-      <article class="cap-card" data-cap="handoff" aria-labelledby="cap-b-h">
-        <header class="cap-head">
-          <h3 id="cap-b-h">Handoff</h3>
-          <span class="mono cap-id">TKT-20431</span>
-          <button class="cap-replay" type="button" aria-label="Replay handoff example"><svg class="i" aria-hidden="true"><use href="#cap-i-replay"/></svg></button>
-        </header>
-        <p class="cap-ask">VPN is down for all of our remote clinicians since 08:10. Nobody off-site can reach the EMR.</p>
-        <div class="cap-chips" data-s="1">
-          <span class="badge b-crit"><svg class="i" aria-hidden="true"><use href="#i-signal"/></svg>High</span>
-          <span class="badge cap-neutral">Network</span>
+    <!-- 2. Engineer handoff -->
+    <section class="sv-sec sv-flip" data-sv="handoff" aria-labelledby="sv-b-h">
+      <div class="sv-copy">
+        <p class="sv-kicker">Engineer handoff</p>
+        <h2 id="sv-b-h">The hard ones go straight to an engineer.</h2>
+        <p class="sv-sub">Outages and new problems skip the auto-reply and arrive already written up.</p>
+        <a class="sv-link" href="demo.html#urgent">Open the engineer view<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="sv-stage sv-handoff">
+        <div class="sv-card sv-inbox">
+          <p class="sv-lbl"><svg class="i" aria-hidden="true"><use href="#sv-i-inbox"/></svg>Engineer inbox</p>
+          <div class="sv-row sv-new" data-s="1"><span class="badge b-crit"><svg class="i" aria-hidden="true"><use href="#i-signal"/></svg>High</span><span class="sv-t">VPN down for all remote clinicians</span><span class="mono sv-time">08:12</span></div>
+          <div class="sv-row sv-quiet"><span class="sv-dot" aria-hidden="true"></span><span class="sv-t">Single sign-on loop for one user</span><span class="mono sv-time">07:54</span></div>
+          <div class="sv-row sv-quiet"><span class="sv-dot" aria-hidden="true"></span><span class="sv-t">Add a clinic location to the account</span><span class="mono sv-time">07:31</span></div>
         </div>
-        <div class="cap-block" data-s="2">
-          <p class="cap-lbl"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Past cases</p>
-          <div class="cap-row cap-none"><svg class="i" aria-hidden="true"><use href="#cap-i-search"/></svg><span class="cap-t">No close match</span></div>
+        <div class="sv-card sv-ai sv-brief" data-s="2">
+          <p class="sv-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Handoff brief</p>
+          <p>Remote clinicians have had no VPN since 08:10 and cannot reach the EMR. No past case matches, so the customer got no automated reply.</p>
         </div>
-        <div class="cap-decide" data-s="3">
-          <span class="badge b-crit"><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg>Escalate</span>
-          <p class="reason">Outage affects many users</p>
-          <p class="reason">Critical-care customer</p>
-          <p class="reason">No past case covers it</p>
-        </div>
-        <footer class="cap-foot">
-          <span class="badge b-info" data-s="4"><svg class="i" aria-hidden="true"><use href="#cap-i-user"/></svg>With an engineer</span>
-          <a class="cap-link" href="demo.html#urgent">Open in demo<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-        </footer>
-      </article>
+      </div>
+    </section>
 
-      <!-- 3. Software Factory: progress to finding -->
-      <article class="cap-card" data-cap="factory" aria-labelledby="cap-c-h">
-        <header class="cap-head">
-          <h3 id="cap-c-h">Software Factory</h3>
-          <span class="mono cap-id">SD-4182</span>
-          <button class="cap-replay" type="button" aria-label="Replay Software Factory example"><svg class="i" aria-hidden="true"><use href="#cap-i-replay"/></svg></button>
-        </header>
-        <p class="cap-ask">My CSV export includes dates outside the range I picked.</p>
-        <div class="cap-run">
-          <div class="cap-runhead"><strong class="cap-stage">Hand off</strong><span class="mono cap-count">6 of 6</span></div>
-          <div class="cap-seg" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
-          <p class="cap-detail">Owner: Reports team</p>
+    <!-- 3. Software Factory -->
+    <section class="sv-sec sv-wide" data-sv="factory" aria-labelledby="sv-c-h">
+      <div class="sv-copy">
+        <p class="sv-kicker">Software Factory</p>
+        <h2 id="sv-c-h">From bug report to a reviewable fix.</h2>
+        <p class="sv-sub">It reproduces the bug and drafts a change. An engineer decides what ships.</p>
+        <a class="sv-link" href="demo.html#run">Watch a run<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="sv-stage">
+        <div class="sv-factory">
+          <div class="sv-card sv-report">
+            <p class="sv-lbl"><span>Bug report</span><span class="mono sv-id">SD-4182</span></p>
+            <p class="sv-ask">My CSV export includes dates outside the range I picked.</p>
+          </div>
+          <span class="sv-join" aria-hidden="true"><svg class="i"><use href="#i-arrow"/></svg></span>
+          <div class="sv-card sv-ai sv-finding" data-s="1" data-gen="1-2">
+            <p class="sv-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Issue found</p>
+            <div class="sv-stack">
+              <div class="sv-skel" data-until="2" aria-hidden="true"><i style="width:80%"></i><i style="width:46%"></i><i></i><i></i></div>
+              <div data-s="2">
+                <h3>CSV export ignores the selected date range.</h3>
+                <p class="sv-muted">Reproduced on sample data. One-line change drafted:</p>
+<pre class="sv-diff">  .where({ status: filters.status })
+<b>+ .whereBetween("created_at", [range.from, range.to])</b>  .orderBy("created_at")</pre>
+              </div>
+            </div>
+            <p class="sv-review" data-s="3"><svg class="i" aria-hidden="true"><use href="#sv-i-clock"/></svg>Waiting for engineer review · Not merged</p>
+          </div>
         </div>
-        <div class="cap-ai" data-s="7">
-          <p class="cap-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Issue found<span class="badge b-info cap-push">Likely</span></p>
-          <p class="cap-finding">CSV export ignores the selected date range.</p>
-          <p class="cap-code"><svg class="i" aria-hidden="true"><use href="#cap-i-code"/></svg><span class="mono">src/reports/export/csv.ts:42</span></p>
-          <p class="cap-state"><span class="badge b-warn">Awaiting review</span><span>Not merged · Not deployed</span></p>
-        </div>
-        <footer class="cap-foot">
-          <a class="cap-link" href="demo.html#run">Open in demo<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-        </footer>
-      </article>
+      </div>
+    </section>
+
+    <div class="sv-end">
+      <a class="sv-cta" href="demo.html#intake">Get a demo<span class="dot"><svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+      <p class="sv-note">Examples use sample tickets.</p>
     </div>
-  </section>
+  </div>
 </main>
 
 <script>
@@ -434,53 +459,38 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
 })();
 </script>
 <script>
-// Capabilities examples: sample data, local timers only, nothing is sent.
-// Plays once in sequence when scrolled into view; each card can replay. Reduced motion shows final states.
+// Capabilities sections: sample data, local timers only, nothing is sent.
+// Each section plays its reveal once when its product stage reaches the middle of the viewport.
+// Normal scrolling throughout. Reduced motion, no JS or no IntersectionObserver: final states.
 (function(){
   var root=document.getElementById('capabilities');if(!root)return;
   var mq=matchMedia('(prefers-reduced-motion: reduce)');
-  var cards=[].slice.call(root.querySelectorAll('.cap-card'));
-  var STAGES=[['Review ticket','Matched area: Reports, CSV export'],['Reproduce','Reproduced: range filter not applied'],['Inspect code','filters.range never reaches the query'],['Review proposed change','Drafted a one-line change'],['Verify','Checks listed, not run'],['Hand off','Owner: Reports team']];
-  // [ms after start, step]
-  var TL={
-    answer:[[500,1],[1400,2],[2900,3],[3400,4]],
-    handoff:[[500,1],[1300,2],[2100,3],[2700,4]],
-    factory:[[300,1],[850,2],[1400,3],[1950,4],[2500,5],[3050,6],[3600,7]]
-  };
-  function last(c){var t=TL[c.dataset.cap];return t[t.length-1][1]}
-  function swap(el,text){if(el.textContent===text)return;el.textContent=text;if(mq.matches)return;el.classList.remove('sd-enter');void el.offsetWidth;el.classList.add('sd-enter')}
-  function set(c,at){
-    c.dataset.at=at;
-    [].forEach.call(c.querySelectorAll('[data-s]'),function(e){e.classList.toggle('is-on',+e.dataset.s<=at)});
-    [].forEach.call(c.querySelectorAll('[data-until]'),function(e){e.classList.toggle('is-off',at>=+e.dataset.until)});
-    [].forEach.call(c.querySelectorAll('[data-gen]'),function(e){var r=e.dataset.gen.split('-');if(at>=+r[0]&&at<+r[1]&&!mq.matches)e.setAttribute('data-generating','true');else e.removeAttribute('data-generating')});
-    if(c.dataset.cap==='factory'){
-      var k=Math.min(at,STAGES.length);
-      [].forEach.call(c.querySelectorAll('.cap-seg i'),function(s,i){s.classList.toggle('on',i<k)});
-      swap(c.querySelector('.cap-stage'),k?STAGES[k-1][0]:'Not started');
-      swap(c.querySelector('.cap-detail'),k?STAGES[k-1][1]:'');
-      c.querySelector('.cap-count').textContent=k+' of '+STAGES.length;
-    }
+  var secs=[].slice.call(root.querySelectorAll('[data-sv]'));
+  // [ms after the stage enters, step]
+  var TL={answer:[[150,1],[1500,2]],handoff:[[150,1],[1000,2]],factory:[[150,1],[1600,2],[2300,3]]};
+  function last(s){var t=TL[s.dataset.sv];return t[t.length-1][1]}
+  function each(s,sel,fn){[].forEach.call(s.querySelectorAll(sel),fn)}
+  function set(s,at){
+    s.dataset.at=at;
+    each(s,'[data-s]',function(e){e.classList.toggle('is-on',+e.dataset.s<=at)});
+    each(s,'[data-until]',function(e){e.classList.toggle('is-off',at>=+e.dataset.until)});
+    each(s,'[data-gen]',function(e){var r=e.dataset.gen.split('-');if(at>=+r[0]&&at<+r[1]&&!mq.matches)e.setAttribute('data-generating','true');else e.removeAttribute('data-generating')});
   }
-  function stop(c){(c._t||[]).forEach(clearTimeout);c._t=[]}
-  function play(c){
-    stop(c);c._played=true;set(c,0);
-    var tl=TL[c.dataset.cap];
-    c._t=tl.map(function(p,i){return setTimeout(function(){set(c,p[1]);if(i===tl.length-1&&c._next){var n=c._next;c._next=null;n()}},p[0])});
-  }
-  function settle(){root.classList.remove('is-ready');cards.forEach(function(c){stop(c);c._next=null;set(c,last(c))})}
-  function chain(i){
-    if(i>=cards.length||mq.matches)return;
-    if(cards[i]._played)return chain(i+1);
-    cards[i]._next=function(){setTimeout(function(){chain(i+1)},350)};
-    play(cards[i]);
-  }
-  cards.forEach(function(c){c.querySelector('.cap-replay').addEventListener('click',function(){if(!mq.matches)play(c)})});
-  (mq.addEventListener?mq.addEventListener.bind(mq,'change'):mq.addListener.bind(mq))(function(){if(mq.matches)settle()});
+  function stop(s){(s._t||[]).forEach(clearTimeout);s._t=[]}
+  function finish(s){stop(s);s._done=true;set(s,last(s))}
+  function play(s){s._done=true;s._t=TL[s.dataset.sv].map(function(p){return setTimeout(function(){set(s,p[1])},p[0])})}
+  function settle(){root.classList.remove('is-ready');secs.forEach(finish)}
+  (mq.addEventListener?mq.addEventListener.bind(mq,'change'):mq.addListener.bind(mq))(function(){if(mq.matches){if(io)io.disconnect();settle()}});
   if(mq.matches||!('IntersectionObserver' in window)){settle();return}
-  root.classList.add('is-ready');cards.forEach(function(c){set(c,0)});
-  var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting})){io.disconnect();chain(0)}},{threshold:.35});
-  io.observe(root.querySelector('.cap-grid'));
+  root.classList.add('is-ready');secs.forEach(function(s){set(s,0)});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    var s=e.target.closest('[data-sv]');if(s._done)return;
+    // Already scrolled past (anchor jump or reload mid-page): show the outcome without replaying.
+    if(!e.isIntersecting&&e.rootBounds&&e.boundingClientRect.bottom<e.rootBounds.top){io.unobserve(e.target);finish(s);return}
+    // Sections above one that starts are settled too, so a skipped section never stays blank.
+    if(e.isIntersecting){io.unobserve(e.target);secs.slice(0,secs.indexOf(s)).forEach(function(p){if(!p._done){io.unobserve(p.querySelector('.sv-stage'));finish(p)}});play(s)}
+  })},{rootMargin:'-35% 0px -35% 0px'});
+  secs.forEach(function(s){io.observe(s.querySelector('.sv-stage'))});
 })();
 </script>
 </body>
