@@ -18,11 +18,14 @@ export function ClarifyingQuestion({
   step,
   total,
   onAnswer,
+  onAskRequester,
 }: {
   question: Clarification
   step: number
   total: number
   onAnswer: (optionIndex: number | null, freeText?: string) => void
+  /** Sends the question to the customer in their language. */
+  onAskRequester?: () => void
 }) {
   const [text, setText] = React.useState("")
   const id = React.useId()
@@ -73,7 +76,7 @@ export function ClarifyingQuestion({
         <Button
           variant="link"
           className="h-auto self-start p-0"
-          onClick={() => toast("Question sent to requester", { description: question.ask_requester })}
+          onClick={() => (onAskRequester ? onAskRequester() : toast("Question sent to requester", { description: question.ask_requester }))}
         >
           <SendIcon data-icon="inline-start" aria-hidden="true" />
           Ask requester

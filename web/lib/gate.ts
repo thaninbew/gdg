@@ -11,8 +11,10 @@ import type {
   TriageResult,
 } from "@/lib/types"
 
-export const CONF_MIN = 0.45
-export const SIM_MIN = 0.55
+// Gate v2 (round 2) thresholds. Live tickets use the pipeline's own decision (TicketCase.gate);
+// these only drive the demo fixtures. Keyword and urgent-history rules need the backend, so aren't mirrored.
+export const CONF_MIN = 0.35
+export const SIM_MIN = 0.4
 
 const RISKY =
   /refund|reimburs|compensat|lawsuit|legal|lawyer|guarantee|discount|price|pricing|\bSLA\b|erstatt|rückerstatt|entschädig|anwalt|klage|rechtlich|garantie|rabatt|preis/i
@@ -94,11 +96,13 @@ export function changeField(c: TicketCase, s: CaseState, field: TriageField, val
 /** Same rules and wording as gate/gate.py, plus reasons forced by answers. Operator-settled fields
  *  no longer count toward low confidence. */
 export function gateReasons(c: TicketCase, s: CaseState): string[] {
+  if (c.gate) return [...(c.gate.escalate ? c.gate.reasons : []), ...s.forced]
   const t = s.triage
   const text = `${c.subject} ${c.body} ${s.extraText}`
   const reasons: string[] = []
   if (t.priority === "high" && t.type === "Incident") reasons.push("High-priority incident: page the on-call engineer")
-  const unsettled = TRIAGE_FIELDS.filter((f) => s.fields[f] === "suggested").map((f) => t[CONF_KEY[f]])
+  // Gate v2 checks type and priority only; the queue has ~50 classes, so it's left out.
+  const unsettled = (["type", "priority"] as const).filter((f) => s.fields[f] === "suggested").map((f) => t[CONF_KEY[f]])
   const low = Math.min(1, ...unsettled)
   if (low < CONF_MIN) reasons.push(`Low classifier confidence (${Math.round(low * 100)}%)`)
   const top = Math.max(0, ...c.precedents.map((p) => p.similarity))
@@ -109,7 +113,7 @@ export function gateReasons(c: TicketCase, s: CaseState): string[] {
   return [...reasons, ...s.forced]
 }
 
-const HARD_STOP = /High-priority incident|prompt injection/
+const HARD_STOP = /High-priority incident|prompt injection|Mentions an outage|urgent incidents/
 
 /**
  * clarify: a field is Ambiguous and its question is still open (asked before any draft).

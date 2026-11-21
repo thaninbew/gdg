@@ -1,10 +1,20 @@
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
 
-import { TICKETS } from "@/lib/fixtures"
+import Loading from "../../loading"
 import { TicketDetail } from "./detail"
 
-export default async function TicketPage({ params }: PageProps<"/tickets/[id]">) {
+export default function TicketPage({ params }: PageProps<"/tickets/[id]">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <TicketFromParams params={params} />
+    </Suspense>
+  )
+}
+
+async function TicketFromParams({ params }: Pick<PageProps<"/tickets/[id]">, "params">) {
   const { id } = await params
-  if (!TICKETS.some((t) => t.ticket_id === id)) notFound()
+  // Demo tickets and a customer's live ticket (presenter mode) both resolve on the client.
+  if (!/^TKT-\d{5}$/.test(id)) notFound()
   return <TicketDetail id={id} />
 }

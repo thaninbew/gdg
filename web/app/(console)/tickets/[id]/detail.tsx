@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowLeftIcon, CheckIcon, ChevronDownIcon, RotateCcwIcon, SirenIcon } from "lucide-react"
+import { ArrowLeftIcon, CheckIcon, ChevronDownIcon, EyeIcon, RotateCcwIcon, SirenIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,11 @@ import { EvidenceRail } from "@/components/sentinel/evidence-rail"
 import { CitationProvider, CitedText, GroundedReply, citedIds } from "@/components/sentinel/grounded-reply"
 import { PageHeader } from "@/components/sentinel/page-header"
 import { EscalationStatus, PriorityBadge, TicketId } from "@/components/sentinel/status"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty"
+import { CustomerUpdate } from "@/components/sentinel/customer-update"
 import { useCases } from "@/lib/case-store"
+import { nowTime, useCustomerUpdates } from "@/lib/customer-updates"
+import { assignment, stripCitations, type CustomerPost } from "@/lib/customer-view"
 import { gateReasons, openQuestion, outcome, remainingQuestions, TRIAGE_FIELDS, type CaseState } from "@/lib/gate"
 import type { Priority, TicketCase, TriageField } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -49,15 +53,24 @@ const STAGES = [
 
 export function TicketDetail({ id }: { id: string }) {
   const { cases, state, answer, accept, change, escalate, reset } = useCases()
-  const c = cases.find((x) => x.ticket_id === id)!
+  const updates = useCustomerUpdates()
+  const [editing, setEditing] = React.useState(false)
+  const c = cases.find((x) => x.ticket_id === id)
+  if (!c) return <MissingTicket id={id} />
   const s = state[id]
   const o = outcome(c, s)
   const reasons = gateReasons(c, s)
   const q = openQuestion(c, s)
-  const [editing, setEditing] = React.useState(false)
   const urgent = reasons.some((r) => r.startsWith("High-priority"))
-  const act = () => toast(urgent ? `Paged on-call for ${id}` : `Assigned ${id} to you`)
-  const send = () => toast(`Sent reply for ${id}`, { description: "Demo data. Nothing was sent." })
+  const lang = c.triage.language
+  // Each action posts what the customer should see; Undo takes it back.
+  const post = (p: CustomerPost, message: string) => {
+    updates.publish(id, p)
+    toast(message, { description: "The customer sees it in My requests.", action: { label: "Undo", onClick: () => updates.retract(id) } })
+  }
+  const act = () => post(assignment(s.triage.queue, s.triage.priority, lang, urgent, nowTime()), urgent ? `Paged on-call for ${id}` : `Assigned ${id} to you`)
+  const send = () => post({ kind: "reply", text: stripCitations(c.draft.reply), at: nowTime() }, `Sent reply for ${id}`)
+  const askRequester = (text: string) => post({ kind: "question", text, at: nowTime() }, "Question sent to the customer")
   const touched = s.answers.length > 0 || s.forced.length > 0 || TRIAGE_FIELDS.some((f) => s.fields[f] !== "suggested")
 
   const cited = new Set([
@@ -117,6 +130,7 @@ export function TicketDetail({ id }: { id: string }) {
               step={s.answers.length + 1}
               total={s.answers.length + remainingQuestions(c, s).length}
               onAnswer={(i, text) => answer(id, i, text)}
+              onAskRequester={() => askRequester(q.ask_requester)}
             />
           ) : null}
 
@@ -143,6 +157,17 @@ export function TicketDetail({ id }: { id: string }) {
               </div>
             </AISurface>
           ) : null}
+
+          <section aria-labelledby="customer-sees" className="flex flex-col gap-3 rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-2">
+              <EyeIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+              <h2 id="customer-sees" className="text-sm font-semibold">
+                Customer sees
+              </h2>
+              <span className="ml-auto text-xs text-muted-foreground uppercase">{lang}</span>
+            </div>
+            <CustomerUpdate posts={updates.posts(id)} lang={lang} />
+          </section>
 
           <Latency c={c} />
         </div>
@@ -325,5 +350,23 @@ function Latency({ c }: { c: TicketCase }) {
       </span>
       {mock ? <MockBadge /> : null}
     </footer>
+  )
+}
+
+// A ticket ID that isn't a demo case or the customer's live ticket in this session.
+function MissingTicket({ id }: { id: string }) {
+  return (
+    <div className="p-4 lg:p-6">
+      <Empty className="border bg-card">
+        <EmptyHeader>
+          <EmptyDescription>{id} isn&apos;t in this session. Live tickets appear after a customer sends one from /submit.</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" asChild>
+            <Link href="/tickets">Back to inbox</Link>
+          </Button>
+        </EmptyContent>
+      </Empty>
+    </div>
   )
 }

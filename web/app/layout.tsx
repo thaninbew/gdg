@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import { CustomerUpdatesProvider } from "@/lib/customer-updates"
 import { PresenterTicketProvider } from "@/lib/presenter-ticket"
 import "./globals.css"
 
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-svh">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <TooltipProvider delayDuration={300}>
-            <PresenterTicketProvider>{children}</PresenterTicketProvider>
+            <PresenterTicketProvider>
+              <CustomerUpdatesProvider>{children}</CustomerUpdatesProvider>
+            </PresenterTicketProvider>
           </TooltipProvider>
           <Toaster />
         </ThemeProvider>

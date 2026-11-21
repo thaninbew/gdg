@@ -115,6 +115,8 @@ export interface TicketCase {
   clarifications: Clarification[]
   timings_ms: PipelineResult["timings_ms"]
   sources: PipelineResult["sources"]
+  /** The real gate's decision when the ticket came from the pipeline (e.g. a customer's /submit). */
+  gate?: { escalate: boolean; reasons: string[] }
 }
 
 export interface ClarifyAnswer {

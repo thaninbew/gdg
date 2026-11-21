@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChartColumnIcon, InboxIcon } from "lucide-react"
@@ -22,12 +23,13 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { useCases } from "@/lib/case-store"
 import { outcome } from "@/lib/gate"
 
+type NavItem = { href: string; label: string; Icon: typeof InboxIcon; badge?: number }
+
 export function AppSidebar() {
-  const pathname = usePathname()
   const { cases, state } = useCases()
   const open = cases.filter((c) => outcome(c, state[c.ticket_id]) !== "draft").length
 
-  const nav = [
+  const nav: NavItem[] = [
     { href: "/tickets", label: "Inbox", Icon: InboxIcon, badge: open },
     { href: "/dashboard", label: "Dashboard", Icon: ChartColumnIcon },
   ]
@@ -49,19 +51,10 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {nav.map(({ href, label, Icon, badge }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith(href)} tooltip={label}>
-                    <Link href={href}>
-                      <Icon aria-hidden="true" />
-                      <span>{label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                  {badge ? <SidebarMenuBadge className="font-mono">{badge}</SidebarMenuBadge> : null}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {/* The active item depends on the URL, so it streams in; the placeholder is the same menu unhighlighted. */}
+            <Suspense fallback={<NavMenu nav={nav} pathname={null} />}>
+              <ActiveNavMenu nav={nav} />
+            </Suspense>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
@@ -70,5 +63,27 @@ export function AppSidebar() {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
+  )
+}
+
+function ActiveNavMenu({ nav }: { nav: NavItem[] }) {
+  return <NavMenu nav={nav} pathname={usePathname()} />
+}
+
+function NavMenu({ nav, pathname }: { nav: NavItem[]; pathname: string | null }) {
+  return (
+    <SidebarMenu>
+      {nav.map(({ href, label, Icon, badge }) => (
+        <SidebarMenuItem key={href}>
+          <SidebarMenuButton asChild isActive={!!pathname?.startsWith(href)} tooltip={label}>
+            <Link href={href}>
+              <Icon aria-hidden="true" />
+              <span>{label}</span>
+            </Link>
+          </SidebarMenuButton>
+          {badge ? <SidebarMenuBadge className="font-mono">{badge}</SidebarMenuBadge> : null}
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
   )
 }
