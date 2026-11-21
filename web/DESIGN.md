@@ -18,19 +18,21 @@ the charts from C (Ops Observatory) and the font from A (Command Center).
 
 ## Brand
 
-**Logo: the architect desk lamp.** The lamp is solid ink; its light is the AI gradient. Read it
-as "a desk that sheds light on every answer".
+**Logo: the architect desk lamp.** The lamp is solid ink; its light runs white → blue → violet
+(`#ffffff`, `#b9d0ff`, `#5b8eff`, `#8a5cf5`). Read it as "a desk that sheds light on every answer".
 
 | Use | Asset |
 |---|---|
-| In the app | `<Logo />` (tile, inverts with the theme), `<Logo variant="mark" />` (lamp only, `currentColor`), `<Wordmark />` (tile + "SentinelDesk") from `components/sentinel/logo` |
-| Favicon | `app/icon.svg` (dark tile; Next.js serves it automatically) |
-| Slides, docs, Devpost | `public/brand/logo-light.svg` (white tile), `logo-dark.svg` (black tile), `mark.svg` |
+| In the app | `<Logo />` (white tile with a `#a9c6f2` hairline in both themes), `<Logo variant="mark" />` (lamp only, `currentColor`), `<Wordmark />` (tile + "SentinelDesk") from `components/sentinel/logo` |
+| Favicon | `app/icon.svg` (navy tile; Next.js serves it automatically) |
+| Slides, docs, Devpost | `public/brand/logo-light.svg` (white tile), `logo-dark.svg` (navy `#11295f` tile), `mark.svg` |
 
-- Tile background is only black or white. Never put the gradient on the tile or the lamp body.
-- The beam is the only gradient in the logo; don't recolor, rotate or animate it.
+- Tile background is only white (with the hairline) or navy `#11295f` with a white lamp. Never black,
+  and never a gradient on the tile or the lamp body.
+- The beam is the only multi-hue gradient in the product, and violet appears only there. Don't
+  recolor, rotate or animate it.
 - Minimum size 16px. Keep clear space of a quarter of the tile width around it.
-- The logo is the brand. `AIMark` (gradient tile with a pen) only marks AI-generated content.
+- The logo is the brand. `AIMark` (navy tile with a pen) only marks AI-generated content.
 
 ## Stack
 
@@ -68,10 +70,11 @@ Clutter is the main risk for this product: tickets, drafts and evidence are alre
 | Caution (amber) | `bg-warning-tint text-warning-fg`, `bg-warning` | Medium priority, low confidence, unsupported sentence |
 | Safe (green) | `bg-success-tint text-success-fg`, `bg-success` | Low priority, auto-draft ready, supported sentence |
 | Action / info (blue) | `bg-primary`, `bg-info-tint text-info-fg` | Primary buttons, links, focus, selection |
-| AI (gradient) | `ai-surface`, `<AIMark />`, `bg-(image:--ai-gradient)` | Only content the model generated |
+| AI (ice → blue) | `ai-surface`, `<AIMark />`, `bg-(image:--ai-gradient)` | Only content the model generated |
 
-- AI gradient runs coral → rose → violet → blue (`--ai-coral|rose|violet|blue`). It appears only as
-  the 3px strip and soft glow of `ai-surface` and in `AIMark`. Never on text, buttons or status.
+- AI accent runs ice → blue (`--ai-ice`, `--ai-blue`). It appears only as the 3px line of
+  `ai-surface` and small AI markers; no glow wash. `AIMark` is flat `--ai-mark` navy with a white
+  pen. Never on text, buttons or status.
 - Page background `bg-canvas`; panels `bg-card` with `border`. Popovers are the only shadows.
 - Text: `text-foreground`; secondary `text-muted-foreground`. Never lighter for text.
 - Status always pairs color with an icon or label (`PriorityBadge` does this).

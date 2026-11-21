@@ -15,7 +15,7 @@ import { autoDraftBilling, escalatedOutage } from "@/lib/mock"
 export const metadata: Metadata = { title: "Design system · SentinelDesk" }
 
 const SWATCHES = [
-  { group: "AI", items: ["ai-coral", "ai-rose", "ai-violet", "ai-blue"] },
+  { group: "AI", items: ["ai-ice", "ai-blue", "ai-mark"] },
   { group: "Status", items: ["critical", "warning", "success", "info"] },
   { group: "Tints", items: ["critical-tint", "warning-tint", "success-tint", "info-tint"] },
   { group: "Neutral", items: ["canvas", "card", "muted", "border", "muted-foreground", "foreground"] },

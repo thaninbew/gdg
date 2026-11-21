@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import {
   CheckIcon,
   CircleCheckIcon,
@@ -30,6 +32,7 @@ import { AISurface } from "@/components/sentinel/ai"
 import { ConfidenceMeter } from "@/components/sentinel/confidence"
 import { Wordmark } from "@/components/sentinel/logo"
 import { PriorityBadge, TicketId } from "@/components/sentinel/status"
+import { PRESENTER_SUBMIT, usePresenterTicket } from "@/lib/presenter-ticket"
 import { cn } from "@/lib/utils"
 import type { PipelineResult, Precedent, Priority, SentenceCheck } from "@/lib/types"
 
@@ -611,6 +614,8 @@ function IdleResults({ onTry }: { onTry: () => void }) {
 /* -------------------------------------------------------------------- root */
 
 export function Console() {
+  const presenter = useSearchParams().get("presenter") === "1"
+  const { ticket: handoff, setTicket } = usePresenterTicket()
   const [subject, setSubject] = React.useState("")
   const [body, setBody] = React.useState("")
   const [state, setState] = React.useState<State>({ status: "idle" })
@@ -664,6 +669,9 @@ export function Console() {
   React.useEffect(() => () => abortRef.current?.abort(), [])
 
   const loading = state.status === "loading"
+  const completed = presenter
+    ? handoff && { ticket: handoff.request, result: handoff.result }
+    : state.status === "done" ? state : null
 
   return (
     <div className="flex min-h-svh flex-col bg-canvas text-foreground">
@@ -682,18 +690,31 @@ export function Console() {
 
       <main className="mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 content-start gap-5 px-4 py-5 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:px-6 lg:py-6">
         <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-          <TicketForm
-            subject={subject}
-            body={body}
-            onSubject={setSubject}
-            onBody={setBody}
-            onSubmit={() => run({ subject, body })}
-            loading={loading}
-          />
+          {presenter ? (
+            <section aria-label="Presenter handoff" className="flex flex-col items-start gap-3 rounded-lg border bg-card p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">Presenter mode</Badge>
+                {handoff ? <TicketId id={handoff.id} /> : null}
+              </div>
+              {!handoff ? <p role="status">No presenter ticket. It may have expired.</p> : null}
+              <Button asChild variant="outline">
+                <Link href={PRESENTER_SUBMIT} onClick={() => setTicket(null)}>Return to support</Link>
+              </Button>
+            </section>
+          ) : (
+            <TicketForm
+              subject={subject}
+              body={body}
+              onSubject={setSubject}
+              onBody={setBody}
+              onSubmit={() => run({ subject, body })}
+              loading={loading}
+            />
+          )}
         </div>
 
         <div ref={resultsRef} className="flex min-w-0 scroll-mt-4 flex-col gap-4">
-          {state.status === "idle" ? (
+          {!presenter && state.status === "idle" ? (
             <IdleResults
               onTry={() => {
                 const s = SAMPLES[0]
@@ -704,9 +725,9 @@ export function Console() {
             />
           ) : null}
 
-          {state.status === "loading" ? <LoadingResults startedAt={state.startedAt} /> : null}
+          {!presenter && state.status === "loading" ? <LoadingResults startedAt={state.startedAt} /> : null}
 
-          {state.status === "error" ? (
+          {!presenter && state.status === "error" ? (
             <Alert variant="destructive">
               <UnplugIcon aria-hidden="true" />
               <AlertTitle>{state.title}</AlertTitle>
@@ -720,17 +741,17 @@ export function Console() {
             </Alert>
           ) : null}
 
-          {state.status === "done" ? (
-            <React.Fragment key={state.result.timings_ms.total_ms}>
+          {completed ? (
+            <React.Fragment key={completed.result.timings_ms.total_ms}>
               <StatusBanner
-                escalate={state.result.escalate}
-                reasons={state.result.reasons}
-                mock={state.result.sources.gate !== "real"}
+                escalate={completed.result.escalate}
+                reasons={completed.result.reasons}
+                mock={completed.result.sources.gate !== "real"}
               />
-              <TriagePanel result={state.result} ticket={state.ticket} />
-              <DraftPanel result={state.result} />
-              <PrecedentsPanel result={state.result} />
-              <TimingsPanel result={state.result} />
+              <TriagePanel result={completed.result} ticket={completed.ticket} />
+              <DraftPanel result={completed.result} />
+              <PrecedentsPanel result={completed.result} />
+              <TimingsPanel result={completed.result} />
             </React.Fragment>
           ) : null}
         </div>

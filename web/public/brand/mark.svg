@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="8 12 50 42" width="250" height="210" role="img" aria-label="SentinelDesk">
   <defs>
     <linearGradient id="sd-beam" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50">
-      <stop offset="0" stop-color="#f0644a"/>
-      <stop offset="0.35" stop-color="#d9468f"/>
-      <stop offset="0.7" stop-color="#8a5cf5"/>
-      <stop offset="1" stop-color="#3478f6"/>
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.3" stop-color="#b9d0ff"/>
+      <stop offset="0.65" stop-color="#5b8eff"/>
+      <stop offset="1" stop-color="#8a5cf5"/>
     </linearGradient>
     <linearGradient id="sd-fade-g" gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="0" y2="50">
       <stop offset="0" stop-color="#fff"/>

@@ -32,10 +32,9 @@
   --color-info-fg: var(--info-fg);
   --color-info-tint: var(--info-tint);
 
-  --color-ai-coral: var(--ai-coral);
-  --color-ai-rose: var(--ai-rose);
-  --color-ai-violet: var(--ai-violet);
+  --color-ai-ice: var(--ai-ice);
   --color-ai-blue: var(--ai-blue);
+  --color-ai-mark: var(--ai-mark);
 
   --color-prio-high: var(--prio-high);
   --color-prio-medium: var(--prio-medium);
@@ -83,19 +82,11 @@
 }
 
 :root {
-  /* AI gradient. Only on model-generated surfaces and the AI mark; never for text or status. */
-  --ai-coral: #f0644a;
-  --ai-rose: #d9468f;
-  --ai-violet: #8a5cf5;
+  /* AI accent: ice to blue. Only on model-generated surfaces; never for text, buttons or status. */
+  --ai-ice: #cfe0ff;
   --ai-blue: #3478f6;
-  --ai-gradient: linear-gradient(
-    100deg,
-    var(--ai-coral) 0%,
-    var(--ai-rose) 30%,
-    var(--ai-violet) 62%,
-    var(--ai-blue) 100%
-  );
-  --ai-glow-opacity: 0.09;
+  --ai-gradient: linear-gradient(100deg, var(--ai-ice) 0%, var(--ai-blue) 100%);
+  --ai-mark: #1e2f73;
 
   --background: #ffffff;
   --canvas: #f6f6fa;
@@ -152,11 +143,9 @@
 }
 
 .dark {
-  --ai-coral: #ff7a5c;
-  --ai-rose: #e862a8;
-  --ai-violet: #a07bff;
+  --ai-ice: #c9dcff;
   --ai-blue: #5b8eff;
-  --ai-glow-opacity: 0.13;
+  --ai-mark: #3b52b5;
 
   --background: #0e0e14;
   --canvas: #0a0a0f;
@@ -224,7 +213,7 @@
   }
 }
 
-/* The one AI surface: a 3px gradient strip on top and a soft wash that fades into the card.
+/* The one AI surface: a 3px ice-to-blue line on top of a plain card.
    Set data-generating="true" only while the model is actually working; the strip then sweeps. */
 @utility ai-surface {
   position: relative;
@@ -239,17 +228,6 @@
     height: 3px;
     background: var(--ai-gradient);
     background-size: 200% 100%;
-  }
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 180px;
-    z-index: -1;
-    pointer-events: none;
-    background: var(--ai-gradient);
-    opacity: var(--ai-glow-opacity);
-    mask-image: linear-gradient(to bottom, black, transparent);
   }
   &[data-generating="true"]::before {
     animation: ai-sweep 1.8s var(--ease-standard) infinite alternate;

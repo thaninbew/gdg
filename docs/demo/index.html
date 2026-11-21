@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="sd-motion.css">
+<style>
+/* Light-only by direction: the sky fades into a white page. Tokens follow web/app/globals.css (Dusk, light). */
+:root{
+  --canvas:#f6f6fa;--card:#fff;--fg:#16161f;--muted:#f1f1f6;--mfg:#5b5e70;--line:#e3e3ec;
+  --pri:#3550e0;--pri-hover:#2a43c7;--info-t:#eceffe;--info-f:#2e45c4;
+  --crit:#d93a3a;--crit-t:#fdecec;--crit-f:#b42323;--ok:#1f9254;--ok-t:#e5f4eb;--ok-f:#146c3c;--warn-t:#fef4da;--warn-f:#8a5000;
+  --ai:linear-gradient(90deg,#cfe0ff,#3478f6);
+  --ease:cubic-bezier(.2,0,0,1);
+  --mono:"Google Sans Code",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#fff;color:var(--fg);font:14px/1.5 Manrope,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+svg.i{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.sky-focus :focus-visible{outline-color:#fff}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;isolation:isolate;min-height:100svh;display:flex;flex-direction:column;padding:0 16px}
+.sky{position:absolute;inset:0 0 auto 0;height:100svh;min-height:680px;z-index:-1;overflow:hidden;background:#060a20}
+.sky canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* progressive blur across the lower half, then a fade to white */
+.sky .haze{position:absolute;inset:0;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 45%,#000 68%);mask-image:linear-gradient(to bottom,transparent 45%,#000 68%)}
+.sky .fade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,0) 50%,rgba(236,242,255,.45) 63%,rgba(255,255,255,.9) 78%,#fff 88%)}
+
+.nav{position:relative;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;max-width:1200px;width:100%;margin:0 auto;padding:20px 0}
+.brand{display:flex;align-items:center;gap:9px;color:#fff;font-weight:700;font-size:15px;letter-spacing:-.01em;justify-self:start}
+.brand svg{width:26px;height:26px}
+.pill{display:flex;gap:2px;padding:4px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.pill a{padding:6px 14px;border-radius:999px;color:rgba(255,255,255,.82);font-size:13px;font-weight:500;transition:background-color .15s,color .15s}
+.pill a:hover{color:#fff;background:rgba(255,255,255,.1)}
+.pill a[aria-current="page"]{background:#fff;color:var(--fg)}
+.cta{justify-self:end;display:inline-flex;align-items:center;gap:10px;border-radius:999px;font-weight:600;font-size:14px;transition:background-color .15s,color .15s,border-color .15s}
+.cta .dot{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--pri);color:#fff}
+.cta .dot svg{width:14px;height:14px}
+.cta-light{background:#fff;color:var(--fg);padding:4px 4px 4px 16px}
+.cta-light:hover{background:#eef1fb}
+.cta-light:hover .dot{background:var(--pri-hover)}
+.cta-ghost{color:#fff;padding:10px 18px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.cta-ghost:hover{background:rgba(255,255,255,.16)}
+.cta-lg{font-size:15px}
+.cta-lg.cta-light{padding:5px 5px 5px 20px}
+.cta-lg .dot{width:34px;height:34px}
+
+.copy{position:relative;z-index:1;text-align:center;max-width:760px;margin:0 auto;padding:clamp(36px,8vh,88px) 0 0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.78);margin:0 0 18px}
+.eyebrow i{width:6px;height:6px;border-radius:50%;background:#8fb0ff;box-shadow:0 0 10px #8fb0ff}
+h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(34px,5.6vw,62px);line-height:1.06;letter-spacing:-.03em;font-weight:600;text-wrap:balance}
+.lede{text-shadow:0 1px 12px rgba(3,5,26,.6);margin:18px auto 0;max-width:540px;color:rgba(255,255,255,.8);font-size:clamp(15px,1.5vw,17px);line-height:1.55;text-wrap:pretty}
+.actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:28px}
+
+/* ---------- Product composition ---------- */
+.stagewrap{position:relative;max-width:1080px;width:100%;margin:clamp(40px,8vh,84px) auto 0;padding-bottom:24px}
+.sample{position:absolute;right:0;top:-30px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--warn-f);background:var(--warn-t);border-radius:4px;padding:2px 7px}
+.stage{position:relative;display:grid;grid-template-columns:1fr minmax(0,460px) 1fr;gap:24px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(22,22,31,.04),0 18px 40px -18px rgba(22,30,80,.28)}
+.side{display:flex;flex-direction:column;gap:16px;padding-top:56px}
+.side.r{padding-top:20px}
+.mini{padding:14px}
+.lbl{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mfg);margin:0 0 6px}
+.lbl svg{width:14px;height:14px}
+.big{font-size:24px;font-weight:600;letter-spacing:-.01em}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;white-space:nowrap}
+.badge svg{width:13px;height:13px}
+.b-ok{background:var(--ok-t);color:var(--ok-f)}.b-crit{background:var(--crit-t);color:var(--crit-f)}.b-warn{background:var(--warn-t);color:var(--warn-f)}.b-info{background:var(--info-t);color:var(--info-f)}
+.meter{display:flex;gap:3px;margin-top:10px}.meter i{flex:1;height:5px;border-radius:3px;background:var(--line)}.meter i.on{background:var(--ok)}
+.reason{display:flex;gap:8px;align-items:baseline;font-size:13px;margin:6px 0 0}
+.reason:before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--crit);transform:translateY(-1px)}
+.prec{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.prec:first-of-type{border-top:0}
+.prec span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* AI surface: 3px ice-to-blue line, AI content only */
+.ai{position:relative;overflow:hidden;border-radius:14px;padding:18px 18px 16px}
+.ai:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai)}
+.aihead{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+.aimark{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:#1e2f73;color:#fff}
+.aimark svg{width:13px;height:13px}
+.aihead h2{font-size:14px;font-weight:600;margin:0}
+.aihead .tid{margin-left:auto;font-size:12px;color:var(--mfg)}
+.ask{background:var(--muted);border-radius:10px 10px 10px 3px;padding:10px 12px;font-size:13px;color:var(--fg);margin:0 0 12px}
+.reply{font-size:15px;line-height:1.6;margin:0}
+.cite{display:inline-flex;align-items:center;gap:3px;font:500 11px/1 var(--mono);color:var(--info-f);background:var(--info-t);border-radius:4px;padding:3px 5px;vertical-align:1px;margin-left:2px}
+.cite svg{width:11px;height:11px}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;gap:6px;font:600 13px/1 Manrope,system-ui,sans-serif;border-radius:6px;padding:8px 12px;border:1px solid var(--line);background:#fff;color:var(--fg)}
+.btn:hover{border-color:#c9cad8;background:#fbfbfe}
+
+@media (max-width:1000px){
+  .stage{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .stage .center{grid-column:1/-1;order:-1;max-width:520px;margin:0 auto;width:100%}
+  .side,.side.r{padding-top:0}
+}
+@media (max-width:720px){
+  .nav{grid-template-columns:1fr auto}
+  .nav .pill{display:none}
+  .copy{padding-top:28px}
+  .stage{grid-template-columns:1fr;gap:12px}
+  .side{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .side .hide-sm{display:none}
+  .sample{top:-28px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- Capabilities: three vertical feature sections ---------- */
+/* Page tokens and .badge/.cite/.aimark/.mono/svg.i come from index.html. sd-motion.css supplies the
+   [data-generating] strip sweep and the sd-arrive keyframes; without it the section still settles. */
+.sv{padding:clamp(24px,6vh,64px) 16px 0}
+.sv-sec{max-width:1160px;margin:0 auto;min-height:min(88svh,880px);padding:clamp(56px,10vh,120px) 0;
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px);align-items:center}
+.sv-flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+.sv-flip .sv-copy{order:2}
+.sv-wide{grid-template-columns:minmax(0,1fr);justify-items:center;align-content:center;gap:clamp(32px,6vh,56px)}
+.sv-wide .sv-copy{text-align:center;max-width:720px}
+.sv-wide .sv-sub{margin-left:auto;margin-right:auto}
+.sv-copy{min-width:0}
+.sv-kicker{margin:0 0 14px;font-size:14px;font-weight:600;color:var(--pri)}
+.sv h2{margin:0;font-size:clamp(32px,3.6vw,50px);line-height:1.08;letter-spacing:-.03em;font-weight:600;text-wrap:balance}
+.sv-sub{margin:18px 0 0;max-width:34ch;font-size:clamp(16px,1.35vw,19px);line-height:1.5;color:var(--mfg);text-wrap:pretty}
+.sv-link{display:inline-flex;align-items:center;gap:6px;margin-top:26px;font-size:15px;font-weight:600;color:var(--pri);border-radius:4px;transition:color .15s}
+.sv-link:hover{color:var(--pri-hover)}
+.sv-link svg{width:16px;height:16px}
+
+/* Product stage: neutral canvas, white product surfaces */
+.sv-stage{position:relative;min-width:0;width:100%;background:var(--canvas);border-radius:24px;padding:clamp(20px,3.4vw,48px)}
+.sv-wide .sv-stage{max-width:1080px}
+.sv-card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,22,31,.04),0 12px 32px -18px rgba(22,30,80,.2)}
+.sv-id{font-size:13px;color:var(--mfg)}
+.sv-ask{margin:0;background:var(--muted);border-radius:14px 14px 14px 4px;padding:14px 16px;font-size:17px;line-height:1.5}
+.sv-lbl{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--mfg)}
+
+/* AI surface: 3px ice-to-blue line; sd-motion.css sweeps the strip while generating */
+.sv-ai{position:relative;overflow:hidden;border-radius:16px;padding:20px 22px}
+.sv-ai:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai)}
+.sv-aihead{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:14px;font-weight:600}
+.sv-stack{display:grid}
+.sv-stack>*{grid-area:1/1}
+.sv-skel{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.sv-skel i{display:block;height:12px;border-radius:6px;background:var(--muted)}
+
+/* 1. Auto-answer */
+.sv-answer{display:flex;flex-direction:column;gap:16px;padding:22px}
+.sv-answer .sv-ask{align-self:flex-start;max-width:88%}
+.sv-reply{margin:0;font-size:18px;line-height:1.65}
+.sv-reply .cite{font-size:12.5px;padding:4px 6px;vertical-align:2px}
+.sv-reply .cite svg{width:12px;height:12px}
+
+/* 2. Engineer handoff */
+.sv-handoff{display:flex;flex-direction:column;gap:16px}
+.sv-inbox{padding:8px 0}
+.sv-inbox .sv-lbl{padding:10px 20px 4px;margin:0}
+.sv-row{display:flex;align-items:center;gap:12px;min-width:0;padding:14px 20px;border-top:1px solid var(--line);font-size:16px}
+.sv-row:first-of-type{border-top:0}
+.sv-row .sv-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-row .sv-time{font-size:13px;color:var(--mfg)}
+.sv-row.sv-quiet{color:var(--mfg)}
+.sv-new .sv-t{font-weight:600}
+.sv-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.sv-brief p{margin:0;font-size:17px;line-height:1.6}
+
+/* 3. Software Factory */
+.sv-factory{display:grid;grid-template-columns:minmax(0,4fr) auto minmax(0,6fr);gap:20px;align-items:center}
+.sv-report{padding:20px}
+.sv-report .sv-lbl{justify-content:space-between}
+.sv-join{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid var(--line);color:var(--mfg)}
+.sv-join svg{width:18px;height:18px}
+.sv-finding h3{margin:0 0 6px;font-size:20px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+.sv-muted{margin:0;font-size:14px;color:var(--mfg)}
+.sv-diff{margin:16px 0 0;padding:12px 14px;border-radius:10px;background:var(--canvas);font:400 13.5px/1.7 var(--mono);color:var(--mfg);white-space:pre-wrap;overflow-wrap:anywhere}
+.sv-diff b{display:block;font-weight:500;color:var(--ok-f);background:var(--ok-t);margin:0 -14px;padding:0 14px}
+.sv-review{display:flex;align-items:center;gap:8px;margin:16px 0 0;font-size:14px;color:var(--warn-f)}
+.sv-review svg{width:16px;height:16px}
+
+/* Closing call to action */
+.sv-end{display:flex;flex-direction:column;align-items:center;gap:14px;padding:clamp(24px,6vh,64px) 0 clamp(72px,12vh,128px)}
+.sv-cta{display:inline-flex;align-items:center;gap:10px;border-radius:999px;background:var(--fg);color:#fff;font-size:15px;font-weight:600;padding:5px 5px 5px 22px;transition:background-color .15s}
+.sv-cta:hover{background:#2a2a38}
+.sv-cta .dot{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--pri);color:#fff}
+.sv-cta .dot svg{width:14px;height:14px}
+.sv-note{margin:0;font-size:13px;color:var(--mfg)}
+
+/* One in-view reveal per section. Without JS, without IntersectionObserver or with reduced motion,
+   every step is visible from the start. Hidden steps use opacity and transform only: no layout shift. */
+.sv.is-ready [data-s],.sv.is-ready [data-until]{transition:opacity var(--sd-step,200ms) var(--sd-ease,var(--ease)),transform var(--sd-step,200ms) var(--sd-ease,var(--ease))}
+.sv.is-ready [data-s]:not(.is-on){opacity:0;transform:translateY(6px)}
+.sv.is-ready [data-until].is-off{opacity:0}
+.sv:not(.is-ready) [data-until]{display:none}
+.sv.is-ready .sv-new.is-on{animation:sd-arrive var(--sd-arrive,900ms) var(--sd-ease,var(--ease))}
+
+@media (max-width:900px){
+  .sv-sec,.sv-flip{grid-template-columns:minmax(0,1fr);min-height:0;gap:28px;padding:48px 0}
+  .sv-flip .sv-copy{order:0}
+  .sv-factory{grid-template-columns:minmax(0,1fr)}
+  .sv-join{justify-self:center;transform:rotate(90deg)}
+}
+@media (max-width:520px){
+  .sv-stage{border-radius:18px;padding:14px}
+  .sv-answer,.sv-report{padding:16px}
+  .sv-ai{padding:18px 16px}
+  .sv-row{padding:12px 16px;font-size:15px}
+  .sv-inbox .sv-lbl{padding:8px 16px 4px}
+  .sv-reply{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .sv [data-s]{opacity:1!important;transform:none!important;animation:none!important}
+  .sv [data-until]{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="beam" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#b9d0ff"/><stop offset=".65" stop-color="#5b8eff"/><stop offset="1" stop-color="#8a5cf5"/></linearGradient>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></symbol>
+    <symbol id="i-signal" viewBox="0 0 24 24"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></symbol>
+  </defs>
+</svg>
+
+<header class="hero sky-focus sd-hero" id="overview">
+  <div class="sky" aria-hidden="true"><canvas id="stars"></canvas><div class="haze"></div><div class="fade"></div></div>
+
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="#overview" aria-label="SentinelDesk home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".75" y=".75" width="62.5" height="62.5" rx="13.25" fill="#fff" stroke="#a9c6f2" stroke-width="1.5"/><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#beam)" opacity=".9"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="#15151c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="#15151c"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="#15151c" stroke="#15151c" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="#15151c"/><path d="M10 51.5 H54" stroke="#15151c" stroke-width="3.6" stroke-linecap="round"/></svg>
+      SentinelDesk
+    </a>
+    <div class="pill">
+      <a href="#overview" aria-current="page">Overview</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="demo.html#detail">Evidence</a>
+      <a href="demo.html#run">Software Factory</a>
+    </div>
+    <a class="cta cta-light" href="demo.html#intake">Get a demo<span class="dot"><svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+  </nav>
+
+  <div class="copy">
+    <p class="eyebrow"><i aria-hidden="true"></i>Multilingual support triage</p>
+    <h1>Every answer, grounded in a case you already solved.</h1>
+    <p class="lede">SentinelDesk triages each ticket, drafts a reply cited to past resolutions, and hands anything uncertain to an engineer.</p>
+    <div class="actions">
+      <a class="cta cta-light cta-lg" href="demo.html#intake">Get a demo<span class="dot"><svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+      <a class="cta cta-ghost cta-lg" href="#capabilities">See capabilities</a>
+    </div>
+  </div>
+
+  <div class="stagewrap">
+    <span class="sample">Sample data</span>
+    <div class="stage">
+      <div class="side">
+        <div class="card mini">
+          <p class="lbl"><svg class="i" aria-hidden="true"><use href="#i-signal"/></svg>Priority</p>
+          <span class="badge b-warn"><svg class="i" aria-hidden="true"><use href="#i-signal"/></svg>Medium</span>
+          <p class="lbl" style="margin:12px 0 0">Confidence</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px"><strong>Confident</strong><span class="badge b-ok">Auto-draft</span></div>
+          <div class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+        </div>
+        <div class="card mini hide-sm">
+          <p class="lbl"><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg>Handed off <span class="mono" style="margin-left:auto">TKT-20431</span></p>
+          <span class="badge b-crit">Escalate</span>
+          <p class="reason">Outage affects many users</p>
+          <p class="reason">No past case covers it</p>
+        </div>
+      </div>
+
+      <article class="card ai center" aria-label="Sample grounded reply">
+        <div class="aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span><h2>Grounded reply</h2><span class="tid mono">TKT-26887</span></div>
+        <p class="ask">Can you break down the charges on my latest invoice? The total is higher than last month.</p>
+        <p class="reply">Your total rose because the Telehealth add-on started this cycle.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-21540</span> The full line-item breakdown is under Billing, then Invoices.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-18802</span></p>
+        <div class="foot">
+          <span class="badge b-ok"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>2 of 2 supported</span>
+          <a class="btn" href="demo.html#detail">Open in demo<svg class="i" aria-hidden="true" style="width:14px;height:14px"><use href="#i-arrow"/></svg></a>
+        </div>
+      </article>
+
+      <div class="side r">
+        <div class="card mini">
+          <p class="lbl"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Evidence</p>
+          <div class="prec"><span>Invoice breakdown request</span><span class="mono">0.91</span></div>
+          <div class="prec"><span>Add-on charge question</span><span class="mono">0.86</span></div>
+          <div class="prec"><span>VAT line on invoice</span><span class="mono">0.74</span></div>
+        </div>
+        <div class="card mini hide-sm">
+          <p class="lbl"><svg class="i" aria-hidden="true"><use href="#i-timer"/></svg>Time to draft</p>
+          <span class="big mono">1.6 s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Capabilities: three vertical feature sections. Sample data only; nothing is sent. -->
+  <div class="sv" id="capabilities">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <symbol id="sv-i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+        <symbol id="sv-i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+      </defs>
+    </svg>
+
+    <!-- 1. Auto-answer -->
+    <section class="sv-sec" data-sv="answer" aria-labelledby="sv-a-h">
+      <div class="sv-copy">
+        <p class="sv-kicker">Auto-answer</p>
+        <h2 id="sv-a-h">Answers that cite their source.</h2>
+        <p class="sv-sub">Routine questions get a reply grounded in a case you already solved.</p>
+        <a class="sv-link" href="demo.html#mine">See the customer view<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="sv-stage">
+        <div class="sv-card sv-answer">
+          <p class="sv-ask">How do I download last month's invoice as a PDF?</p>
+          <div class="sv-card sv-ai" data-s="1" data-gen="1-2">
+            <p class="sv-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Reply</p>
+            <div class="sv-stack">
+              <div class="sv-skel" data-until="2" aria-hidden="true"><i></i><i></i><i style="width:62%"></i></div>
+              <p class="sv-reply" data-s="2">Open Billing, then Invoices, and choose Download PDF next to last month.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-17318</span> To send copies to your accountant, add them under Billing contacts.<span class="cite"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>TKT-19940</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Engineer handoff -->
+    <section class="sv-sec sv-flip" data-sv="handoff" aria-labelledby="sv-b-h">
+      <div class="sv-copy">
+        <p class="sv-kicker">Engineer handoff</p>
+        <h2 id="sv-b-h">The hard ones go straight to an engineer.</h2>
+        <p class="sv-sub">Outages and new problems skip the auto-reply and arrive already written up.</p>
+        <a class="sv-link" href="demo.html#urgent">Open the engineer view<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="sv-stage sv-handoff">
+        <div class="sv-card sv-inbox">
+          <p class="sv-lbl"><svg class="i" aria-hidden="true"><use href="#sv-i-inbox"/></svg>Engineer inbox</p>
+          <div class="sv-row sv-new" data-s="1"><span class="badge b-crit"><svg class="i" aria-hidden="true"><use href="#i-signal"/></svg>High</span><span class="sv-t">VPN down for all remote clinicians</span><span class="mono sv-time">08:12</span></div>
+          <div class="sv-row sv-quiet"><span class="sv-dot" aria-hidden="true"></span><span class="sv-t">Single sign-on loop for one user</span><span class="mono sv-time">07:54</span></div>
+          <div class="sv-row sv-quiet"><span class="sv-dot" aria-hidden="true"></span><span class="sv-t">Add a clinic location to the account</span><span class="mono sv-time">07:31</span></div>
+        </div>
+        <div class="sv-card sv-ai sv-brief" data-s="2">
+          <p class="sv-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Handoff brief</p>
+          <p>Remote clinicians have had no VPN since 08:10 and cannot reach the EMR. No past case matches, so the customer got no automated reply.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Software Factory -->
+    <section class="sv-sec sv-wide" data-sv="factory" aria-labelledby="sv-c-h">
+      <div class="sv-copy">
+        <p class="sv-kicker">Software Factory</p>
+        <h2 id="sv-c-h">From bug report to a reviewable fix.</h2>
+        <p class="sv-sub">It reproduces the bug and drafts a change. An engineer decides what ships.</p>
+        <a class="sv-link" href="demo.html#run">Watch a run<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="sv-stage">
+        <div class="sv-factory">
+          <div class="sv-card sv-report">
+            <p class="sv-lbl"><span>Bug report</span><span class="mono sv-id">SD-4182</span></p>
+            <p class="sv-ask">My CSV export includes dates outside the range I picked.</p>
+          </div>
+          <span class="sv-join" aria-hidden="true"><svg class="i"><use href="#i-arrow"/></svg></span>
+          <div class="sv-card sv-ai sv-finding" data-s="1" data-gen="1-2">
+            <p class="sv-aihead"><span class="aimark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Issue found</p>
+            <div class="sv-stack">
+              <div class="sv-skel" data-until="2" aria-hidden="true"><i style="width:80%"></i><i style="width:46%"></i><i></i><i></i></div>
+              <div data-s="2">
+                <h3>CSV export ignores the selected date range.</h3>
+                <p class="sv-muted">Reproduced on sample data. One-line change drafted:</p>
+<pre class="sv-diff">  .where({ status: filters.status })
+<b>+ .whereBetween("created_at", [range.from, range.to])</b>  .orderBy("created_at")</pre>
+              </div>
+            </div>
+            <p class="sv-review" data-s="3"><svg class="i" aria-hidden="true"><use href="#sv-i-clock"/></svg>Waiting for engineer review · Not merged</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="sv-end">
+      <a class="sv-cta" href="demo.html#intake">Get a demo<span class="dot"><svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+      <p class="sv-note">Examples use sample tickets.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+// Static, seeded starfield. Drawn once per size; no continuous animation.
+(function(){
+  var cv=document.getElementById('stars'),ctx=cv.getContext('2d'),last='';
+  function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  var TEMPS=[[170,195,255],[205,220,255],[255,255,255],[255,244,228],[255,224,190],[255,205,160]];
+  function draw(){
+    var r=cv.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr),key=W+'x'+H;
+    if(!W||!H||key===last)return;last=key;cv.width=W;cv.height=H;
+    var R=rng(20261121);
+    // Deep sky toward a pale horizon glow
+    var g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#03051a');g.addColorStop(.32,'#081032');g.addColorStop(.52,'#16245c');g.addColorStop(.68,'#3c5aa6');g.addColorStop(.84,'#a7bdea');g.addColorStop(1,'#e9effb');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    var hz=ctx.createRadialGradient(W*.5,H*.82,0,W*.5,H*.82,W*.6);
+    hz.addColorStop(0,'rgba(190,170,255,.35)');hz.addColorStop(.5,'rgba(120,140,240,.12)');hz.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=hz;ctx.fillRect(0,0,W,H);
+    // Milky Way band: diagonal, layered soft clouds
+    var ax=-.1*W,ay=.5*H,bx=1.1*W,by=-.14*H,len=Math.hypot(bx-ax,by-ay),ux=(bx-ax)/len,uy=(by-ay)/len,nx=-uy,ny=ux,bw=Math.min(W,H)*.2;
+    var dens=Math.min(1,(W*H)/(dpr*dpr)/1296000);
+    function band(n,spread,alpha,cols,size){
+      ctx.globalCompositeOperation='lighter';n=Math.round(n*dens);
+      for(var i=0;i<n;i++){
+        var t=R(),o=(R()+R()+R()-1.5)*spread*bw,x=ax+ux*len*t+nx*o,y=ay+uy*len*t+ny*o,s=(size[0]+R()*size[1])*dpr,c=cols[(R()*cols.length)|0];
+        var rg=ctx.createRadialGradient(x,y,0,x,y,s);rg.addColorStop(0,'rgba('+c+','+alpha*(.4+R()*.6)+')');rg.addColorStop(1,'rgba('+c+',0)');
+        ctx.fillStyle=rg;ctx.fillRect(x-s,y-s,s*2,s*2);
+      }
+      ctx.globalCompositeOperation='source-over';
+    }
+    band(260,1.3,.05,['120,140,255','150,120,240','90,120,220'],[60,140]);
+    band(360,.8,.06,['200,190,255','255,210,230','170,190,255'],[24,60]);
+    band(160,.35,.07,['255,236,214','255,220,200','230,220,255'],[14,30]);
+    // Dust lanes along the core
+    for(var d=0;d<Math.round(70*dens);d++){
+      var t2=R(),o2=(R()-.5)*.5*bw,x2=ax+ux*len*t2+nx*o2,y2=ay+uy*len*t2+ny*o2,s2=(10+R()*34)*dpr;
+      var dg=ctx.createRadialGradient(x2,y2,0,x2,y2,s2);dg.addColorStop(0,'rgba(4,6,24,.14)');dg.addColorStop(1,'rgba(4,6,24,0)');
+      ctx.fillStyle=dg;ctx.fillRect(x2-s2,y2-s2,s2*2,s2*2);
+    }
+    // Stars: power-law sizes, color temperatures, denser in the band
+    function star(x,y,big){
+      var c=TEMPS[(R()*TEMPS.length)|0],m=Math.pow(R(),big?1:3.2),rad=(.35+m*(big?1.6:1.05))*dpr,a=.35+m*.65;
+      var fall=Math.max(0,1-y/(H*.9));a*=.35+.65*fall;
+      ctx.fillStyle='rgba('+c+','+a+')';ctx.beginPath();ctx.arc(x,y,rad,0,6.283);ctx.fill();
+      if(big||m>.75){var s=rad*(big?7:4),gl=ctx.createRadialGradient(x,y,0,x,y,s);gl.addColorStop(0,'rgba('+c+','+a*.45+')');gl.addColorStop(1,'rgba('+c+',0)');ctx.fillStyle=gl;ctx.fillRect(x-s,y-s,s*2,s*2)}
+    }
+    var area=(W*H)/(dpr*dpr),n=Math.round(area/520);
+    for(var i=0;i<n;i++)star(R()*W,Math.pow(R(),1.25)*H,false);
+    for(var j=0;j<n*.9;j++){var t3=R(),o3=(R()+R()-1)*.9*bw;star(ax+ux*len*t3+nx*o3,ay+uy*len*t3+ny*o3,false)}
+    for(var k=0;k<Math.round(area/42000);k++)star(R()*W,Math.pow(R(),1.6)*H*.7,true);
+  }
+  // Carry ?api= and ?app= into the walkthrough links; demo.html validates them.
+  if(location.search)document.querySelectorAll('a[href^="demo.html"]').forEach(function(a){var h=a.getAttribute('href'),i=h.indexOf('#');a.setAttribute('href',(i<0?h:h.slice(0,i))+location.search+(i<0?'':h.slice(i)))});
+  var to;addEventListener('resize',function(){clearTimeout(to);to=setTimeout(draw,120)});
+  draw();
+})();
+</script>
+<script>
+// Capabilities sections: sample data, local timers only, nothing is sent.
+// Each section plays its reveal once when its product stage reaches the middle of the viewport.
+// Normal scrolling throughout. Reduced motion, no JS or no IntersectionObserver: final states.
+(function(){
+  var root=document.getElementById('capabilities');if(!root)return;
+  var mq=matchMedia('(prefers-reduced-motion: reduce)');
+  var secs=[].slice.call(root.querySelectorAll('[data-sv]'));
+  // [ms after the stage enters, step]
+  var TL={answer:[[150,1],[1500,2]],handoff:[[150,1],[1000,2]],factory:[[150,1],[1600,2],[2300,3]]};
+  function last(s){var t=TL[s.dataset.sv];return t[t.length-1][1]}
+  function each(s,sel,fn){[].forEach.call(s.querySelectorAll(sel),fn)}
+  function set(s,at){
+    s.dataset.at=at;
+    each(s,'[data-s]',function(e){e.classList.toggle('is-on',+e.dataset.s<=at)});
+    each(s,'[data-until]',function(e){e.classList.toggle('is-off',at>=+e.dataset.until)});
+    each(s,'[data-gen]',function(e){var r=e.dataset.gen.split('-');if(at>=+r[0]&&at<+r[1]&&!mq.matches)e.setAttribute('data-generating','true');else e.removeAttribute('data-generating')});
+  }
+  function stop(s){(s._t||[]).forEach(clearTimeout);s._t=[]}
+  function finish(s){stop(s);s._done=true;set(s,last(s))}
+  function play(s){s._done=true;s._t=TL[s.dataset.sv].map(function(p){return setTimeout(function(){set(s,p[1])},p[0])})}
+  function settle(){root.classList.remove('is-ready');secs.forEach(finish)}
+  (mq.addEventListener?mq.addEventListener.bind(mq,'change'):mq.addListener.bind(mq))(function(){if(mq.matches){if(io)io.disconnect();settle()}});
+  if(mq.matches||!('IntersectionObserver' in window)){settle();return}
+  root.classList.add('is-ready');secs.forEach(function(s){set(s,0)});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    var s=e.target.closest('[data-sv]');if(s._done)return;
+    // Already scrolled past (anchor jump or reload mid-page): show the outcome without replaying.
+    if(!e.isIntersecting&&e.rootBounds&&e.boundingClientRect.bottom<e.rootBounds.top){io.unobserve(e.target);finish(s);return}
+    // Sections above one that starts are settled too, so a skipped section never stays blank.
+    if(e.isIntersecting){io.unobserve(e.target);secs.slice(0,secs.indexOf(s)).forEach(function(p){if(!p._done){io.unobserve(p.querySelector('.sv-stage'));finish(p)}});play(s)}
+  })},{rootMargin:'-35% 0px -35% 0px'});
+  secs.forEach(function(s){io.observe(s.querySelector('.sv-stage'))});
+})();
+</script>
+</body>
+</html>

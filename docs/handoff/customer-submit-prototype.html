@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelDesk Rough Prototypes</title>
+<style>
+:root{--ink:var(--foreground,#1d1d22);--mut:var(--muted-foreground,#62626d);--line:#d4d4dc;--card:var(--card,#fff);--sub:#f3f3f6;
+--blue:#3550e0;--bluet:#eceffe;--red:#b42318;--redt:#fdecea;--green:#1f7a3d;--greent:#e8f5ec;--amber:#8a5a00;--ambert:#fdf3dc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:var(--foreground,#ececf1);--mut:var(--muted-foreground,#a3a3ae);--line:#34343d;--card:var(--card,#17171c);--sub:#202027;
+--blue:#8ea0ff;--bluet:#1d2240;--red:#ff9b91;--redt:#3a1b19;--green:#7fd79a;--greent:#173022;--amber:#f2c66b;--ambert:#352a12}}
+:root[data-theme="dark"]{--ink:#ececf1;--mut:#a3a3ae;--line:#34343d;--card:#17171c;--sub:#202027;--blue:#8ea0ff;--bluet:#1d2240;--red:#ff9b91;--redt:#3a1b19;--green:#7fd79a;--greent:#173022;--amber:#f2c66b;--ambert:#352a12}
+*{box-sizing:border-box}
+html{background:#fafafa}@media (prefers-color-scheme:dark){html{background:#0f0f12}}
+body{max-width:1100px;margin:0 auto;padding:16px}
+body{margin:0;color:var(--ink);font:13px/1.45 var(--font-sans,ui-sans-serif,system-ui,-apple-system,sans-serif)}
+.mono{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace)}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.bar b{font-size:12px;color:var(--mut);font-weight:600;margin-right:2px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:5px 10px}
+button:hover{border-color:var(--mut)}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+button.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+button.pri:disabled{opacity:.45;cursor:not-allowed}
+button.on{border-color:var(--blue);background:var(--bluet);color:var(--blue)}
+button.ghost{border-color:transparent;background:none;color:var(--mut)}
+button.crit{background:var(--red);border-color:var(--red);color:#fff}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--mut);padding:7px 12px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue);font-weight:600}
+.tab .mono{font-size:11px;color:var(--mut);margin-left:4px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-left:6px;vertical-align:middle}
+.pane[hidden]{display:none}
+.dot[hidden]{display:none}
+#cust{max-width:520px}
+.pane{border:1.5px dashed var(--line);border-radius:10px;padding:12px;min-width:0}
+.ph{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12px;color:var(--mut)}
+.ph strong{color:var(--ink);font-size:13px}
+.url{margin-left:auto;font-size:11px}
+.mock{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--amber);background:var(--ambert);border-radius:4px;padding:1px 5px;vertical-align:middle}
+.msgs{display:flex;flex-direction:column;gap:8px}
+.me{align-self:flex-end;max-width:88%;background:var(--bluet);border-radius:12px 12px 2px 12px;padding:8px 10px}
+.sd{align-self:flex-start;max-width:92%;background:var(--sub);border-radius:12px 12px 12px 2px;padding:8px 10px}
+.sd .q{font-weight:600}
+.why{color:var(--mut);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical;min-height:70px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--card)}
+.ok{background:var(--greent);border-color:transparent;color:var(--green)}
+.urg{background:var(--redt);border-color:transparent;color:var(--red)}
+.hand{background:var(--bluet);border-color:transparent;color:var(--blue)}
+.ai{border-top:3px solid #c66bd7}
+.t{font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+td{padding:3px 0;border-top:1px solid var(--line)} td:last-child{text-align:right}
+.cite{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--mut)}
+.op{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:700px){.op{grid-template-columns:1.3fr 1fr}}
+.kv{display:grid;grid-template-columns:72px 1fr auto;gap:2px 8px;font-size:12px}
+.kv span:nth-child(3n+1){color:var(--mut)}
+.tier{font-size:11px;color:var(--mut)}
+.ev{display:flex;flex-direction:column;gap:6px}
+.evc{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px}
+.evc.c{border-color:var(--blue)}
+.sim{height:4px;background:var(--line);border-radius:2px;margin:4px 0}
+.sim i{display:block;height:4px;background:var(--mut);border-radius:2px}
+.empty{color:var(--mut);text-align:center;padding:28px 10px;border:1px dashed var(--line);border-radius:8px}
+h3{font-size:12px;margin:0 0 6px;color:var(--mut);font-weight:600}
+ul{margin:4px 0 0;padding-left:18px}
+.note{font-size:11px;color:var(--mut);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="bar" role="group" aria-label="Scenario">
+  <b>Scenario</b>
+  <button data-s="invoice">Invoice breakdown</button>
+  <button data-s="signout">Keeps signing out</button>
+  <button data-s="vpn">VPN outage</button>
+  <button class="ghost" data-reset>Reset</button>
+</div>
+<div class="tabs" role="tablist" aria-label="Pages">
+  <button class="tab" role="tab" id="t-c" aria-controls="p-c" data-tab="c">Customer<span class="mono">/submit</span></button>
+  <button class="tab" role="tab" id="t-o" aria-controls="p-o" data-tab="o">Operator<span class="mono" id="optab">/tickets/…</span><span class="dot" id="newdot" hidden></span></button>
+</div>
+<div>
+  <section class="pane" id="p-c" role="tabpanel" aria-labelledby="t-c">
+    <p class="ph"><strong>Customer</strong> support conversation</p>
+    <div id="cust"></div>
+  </section>
+  <section class="pane" id="p-o" role="tabpanel" aria-labelledby="t-o">
+    <p class="ph"><strong>Operator</strong> ticket detail <span class="url mono" id="opurl">/tickets/…</span> <span class="mock">ROUGH · real version is Toffy's /tickets/[id]</span></p>
+    <div id="oper"></div>
+  </section>
+</div>
+<p class="note">Rough prototype for review. Every result is sample data; <span class="mock">MOCK</span> marks simulated outcomes. Nothing is sent, paged or charged.</p>
+
+<script>
+var S={
+  invoice:{id:"TKT-26887",who:"Jana Weber · Weber Family Practice",text:"Can you break down the charges on my latest invoice? The total is higher than last month.",
+    q:{p:"Which invoice?",why:"So we can pull its line items.",o:["INV-2026-1104","INV-2026-1032"]},
+    tri:[["Type","Request","Confident"],["Queue","Billing","Confident"],["Priority","Low","Likely"]]},
+  signout:{id:"TKT-25160",who:"Jana Weber · Weber Family Practice",text:"The desktop app keeps signing me out every few minutes since I reset my password this morning.",
+    q:{p:"Who is affected?",why:"An outage goes to a different team.",o:["Just me","A few people","Everyone"]},
+    tri:[["Type","Incident","Confident"],["Queue","Technical support","Likely"],["Priority","Medium","Likely"]]},
+  vpn:{id:"TKT-20431",who:"Amara Okafor · Northside Family Clinic (critical care)",text:"VPN is down for all of our remote clinicians since 08:10. Nobody off-site can reach the EMR and our 09:00 telehealth appointments are at risk.",
+    q:null,tri:[["Type","Incident","Confident"],["Queue","Network & Access","Confident"],["Priority","High","Confident"]]}
+};
+var st;
+var tab="c",seen=false;
+function reset(k){st={k:k||"invoice",phase:"compose",ans:null,outcome:null,paged:false};tab="c";seen=false;render()}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+function decide(){
+  var c=S[st.k];
+  if(st.person) return "hand";
+  if(st.k==="vpn"||st.ans==="Everyone") return "urg";
+  if(st.k==="invoice") return st.ans==="INV-2026-1104"||st.ans==="INV-2026-1032"?"break":"hand";
+  if(st.k==="signout") return st.ans==="Just me"?"answer":"hand";
+  return "hand";
+}
+function outcomeCard(o){
+  if(o==="break") return '<div class="box ok"><span class="t">Invoice breakdown</span> · verified, read-only <span class="mock">MOCK</span>'+
+    '<table><tr><td>Practice plan, 12 seats</td><td class="mono">€216.00</td></tr><tr><td>Telehealth add-on (new since Oct)</td><td class="mono">€45.00</td></tr>'+
+    '<tr><td>Extra storage</td><td class="mono">€12.00</td></tr><tr><td>VAT 19%</td><td class="mono">€51.87</td></tr><tr><td><b>Total</b></td><td class="mono"><b>€324.87</b></td></tr></table></div>';
+  if(o==="answer") return '<div class="box ai"><span class="t">Suggested fix</span> · from 1 past ticket <span class="mock">MOCK</span><p style="margin:6px 0 0">A saved sign-in still holds your old password. <span class="cite mono">TKT-03990</span> Remove the saved entry from your keychain, then sign in again. <span class="cite mono">TKT-03990</span></p></div>';
+  if(o==="urg") return '<div class="box urg"><span class="t">Sent to on-call as urgent</span> <span class="mock">SIMULATED</span><ul><li>'+(st.k==="vpn"?"Outage on a critical-care account":"Outage affecting many people")+'</li></ul><div style="margin-top:4px">An engineer will contact you.</div></div>';
+  return '<div class="box hand"><span class="t">With our '+(st.k==="invoice"?"Billing":"Technical support")+' team</span><div>'+(st.person?"You asked for a person.":"This needs a person.")+' We’ll reply by email.</div></div>';
+}
+function customer(){
+  var c=S[st.k],h='<div class="msgs">';
+  if(st.phase==="compose"){
+    h+='<label class="why" for="req">How can we help?</label><textarea id="req">'+esc(c.text)+'</textarea>'+
+      '<div class="row"><button class="pri" data-a="go">'+(c.q?"Continue":"Send request")+'</button>'+
+      (c.q?'<span class="why">one question first</span>':'<span class="why">urgent: no questions</span>')+'</div></div>';
+    return h;
+  }
+  h+='<div class="me">'+esc(c.text)+'</div>';
+  if(c.q){
+    h+='<div class="sd"><div class="q">'+c.q.p+'</div><div class="why">'+c.q.why+'</div>';
+    if(st.phase==="ask"){
+      h+='<div class="chips">'+c.q.o.map(function(o){return '<button class="'+(st.ans===o?"on ":"")+(st.k==="invoice"?"mono":"")+'" data-ans="'+o+'">'+o+'</button>'}).join("")+'</div>';
+    }
+    h+='</div>';
+    if(st.ans&&st.phase!=="ask") h+='<div class="me">'+esc(st.ans)+'</div>';
+  }
+  if(st.phase==="ask"){
+    h+='<div class="row"><button class="pri" data-a="send" '+(st.ans?"":"disabled")+'>Send request</button><button data-a="person">Send to a person</button><button class="ghost" data-a="edit">Edit</button></div>';
+    return h+'</div>';
+  }
+  var o=decide();
+  h+='<div class="sd" style="width:92%"><div class="row" style="margin:0 0 6px"><span class="t">Request received</span><span class="mono" style="margin-left:auto">'+c.id+'</span></div>'+outcomeCard(o);
+  if((o==="break"||o==="answer")&&!st.solved) h+='<div class="row"><button class="pri" data-a="solved">This solves it</button><button data-a="person2">Talk to a person</button></div>';
+  if(st.solved) h+='<div class="row" style="color:var(--green)">Marked solved</div>';
+  h+='<div class="row"><button class="ghost" data-tab="o">Open as operator: '+c.id+'</button></div></div></div>';
+  return h;
+}
+function operator(){
+  var c=S[st.k];
+  document.getElementById("opurl").textContent="/tickets/"+(st.phase==="done"?c.id:"…");
+  document.getElementById("optab").textContent="/tickets/"+(st.phase==="done"?c.id:"…");
+  if(st.phase!=="done") return '<div class="empty">No ticket yet. It appears here when the customer sends the request.<br><span class="mono">'+c.id+'</span> reserved for this request.</div>';
+  var o=decide(),labels={break:"Customer self-served: invoice breakdown",answer:"Customer got a grounded answer",urg:"Urgent handoff to on-call",hand:"Needs a person"};
+  var h='<div class="row" style="margin:0 0 8px"><span class="mono t">'+c.id+'</span><span class="why">'+esc(c.who)+'</span></div>';
+  if(o==="urg"){
+    h+='<div class="box urg" role="status"><span class="t">Escalate to on-call</span><ul><li>'+(st.k==="vpn"?"Outage pattern: 4 tickets in 18 min":"Customer says everyone is affected")+'</li><li>High priority, clinical impact</li><li>No auto-reply on outages</li></ul>'+
+      '<div class="row">'+(st.paged?'<span>On-call paged at 08:16 <span class="mock">SIMULATED</span></span>':'<button class="crit" data-a="page">Page on-call</button><span class="mock">SIMULATED</span>')+'</div></div>';
+  } else {
+    h+='<div class="box '+(o==="hand"?"hand":"ok")+'"><span class="t">'+labels[o]+'</span>'+(o==="hand"?'<div class="row"><button class="pri">Assign to me</button><span class="mock">MOCK</span></div>':' <span class="mock">MOCK</span>')+'</div>';
+  }
+  h+='<div class="op" style="margin-top:10px"><div>';
+  h+='<h3>Customer message</h3><div class="box" style="margin-bottom:10px">'+esc(c.text)+'</div>';
+  if(c.q) h+='<h3>Asked before submit</h3><div class="box" style="margin-bottom:10px">'+c.q.p+' <b>'+(st.person&&!st.ans?"skipped, asked for a person":esc(st.ans||""))+'</b></div>';
+  h+='<h3>Triage</h3><div class="kv">'+c.tri.map(function(r){return '<span>'+r[0]+'</span><span>'+r[1]+'</span><span class="tier">'+r[2]+'</span>'}).join("")+'</div>';
+  h+='<h3 style="margin-top:10px">What the customer saw</h3><div class="why">'+labels[o]+'</div></div>';
+  h+='<div><h3>Evidence</h3><div class="ev">'+evidence(o)+'</div></div></div>';
+  return h;
+}
+function evidence(o){
+  var cards;
+  if(st.k==="invoice") cards=[["INV-2026-1104","Billing record (sample)",1,true,"Line items and VAT, read directly"],["INV-2026-1032","Billing record (sample)",1,false,"Previous month, for comparison"]];
+  else if(st.k==="signout") cards=[["TKT-03990",".88",.88,o==="answer","Cached credentials caused a sign-in loop; cleared the keychain entry."],["TKT-02256",".52",.52,false,"Telehealth calls drop after night change"]];
+  else cards=[["TKT-04187",".89",.89,true,"Expired gateway certificate; renewed, restored in 40 min."],["TKT-02256",".74",.74,true,"Overnight firewall rule blocked media ports."],["TKT-03990",".61",.61,false,"Single user VPN loop after password reset."]];
+  return cards.map(function(e){return '<div class="evc'+(e[3]?" c":"")+'"><div class="row" style="margin:0"><span class="mono">'+e[0]+'</span><span class="why" style="margin-left:auto">'+(e[3]?"cited":"retrieved")+'</span></div>'+
+    (typeof e[1]==="string"&&e[1].charAt(0)==="."?'<div class="sim" aria-label="similarity '+e[1]+'"><i style="width:'+Math.round(e[2]*100)+'%"></i></div>':'<div class="why">'+e[1]+'</div>')+'<div class="why">'+e[4]+'</div></div>'}).join("")+'<span class="mock" style="align-self:flex-start">MOCK</span>';
+}
+function render(){
+  document.querySelectorAll("[data-s]").forEach(function(b){b.classList.toggle("on",b.dataset.s===st.k);b.setAttribute("aria-pressed",b.dataset.s===st.k)});
+  document.getElementById("cust").innerHTML=customer();
+  document.getElementById("oper").innerHTML=operator();
+  if(tab==="o")seen=true;
+  ["c","o"].forEach(function(t){var on=tab===t;document.getElementById("t-"+t).setAttribute("aria-selected",on);document.getElementById("t-"+t).tabIndex=on?0:-1;document.getElementById("p-"+t).hidden=!on});
+  document.getElementById("newdot").hidden=!(st.phase==="done"&&!seen);
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  if(b.dataset.s){reset(b.dataset.s);return}
+  if(b.dataset.tab){var ta0=document.getElementById("req");if(ta0)S[st.k].text=ta0.value;tab=b.dataset.tab;render();return}
+  if(b.hasAttribute("data-reset")){reset(st.k);return}
+  if(b.dataset.ans){st.ans=b.dataset.ans;render();return}
+  var ta=document.getElementById("req");if(ta)S[st.k].text=ta.value;
+  switch(b.dataset.a){
+    case "go":st.phase=S[st.k].q?"ask":"done";break;
+    case "send":st.phase="done";break;
+    case "person":st.person=true;st.phase="done";break;
+    case "person2":st.person=true;break;
+    case "edit":st.phase="compose";st.ans=null;break;
+    case "solved":st.solved=true;break;
+    case "page":st.paged=true;break;
+    default:return;
+  }
+  render();
+});
+reset("invoice");
+</script>
+</body>
+</html>

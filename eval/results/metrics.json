@@ -1,0 +1,32 @@
+{
+ "n_test": 12353,
+ "triage_ms_per_ticket_batched": 0.098,
+ "type_macro_f1": 0.8274,
+ "type_n_scored": 9768,
+ "queue_macro_f1": 0.8056,
+ "queue_n_scored": 12353,
+ "priority_macro_f1": 0.6928,
+ "priority_n_scored": 12353,
+ "hp_incident_n": 1692,
+ "hp_incident_recall": 0.9054,
+ "hp_incident_recall_pred_high_and_incident": 0.8966,
+ "share_flagged_high": 0.5325,
+ "hp_threshold": 0.31,
+ "retrieval_n": 500,
+ "retrieval_same_queue_in_top5": 0.706,
+ "retrieval_same_queue_top1": 0.55,
+ "retrieval_ms_median": 8.6,
+ "e2e_n": 20,
+ "e2e_latency_ms_mean": 5867.4,
+ "e2e_latency_ms_median": 5712.3,
+ "e2e_latency_ms_p95": 9021.4,
+ "e2e_latency_ms_max": 9021.4,
+ "e2e_grounded_share": 0.9,
+ "e2e_escalated_share": 0.65,
+ "e2e_stage_sources": [
+  "draft:real",
+  "gate:real",
+  "retrieve:real",
+  "triage:real"
+ ]
+}
