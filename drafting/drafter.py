@@ -17,7 +17,7 @@ EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 # Tuned on 10 test.parquet tickets (subject+body only) against the real index: real draft sentences
 # passed 32/32 at 0.5 and 31/32 at 0.6 and 0.7 (lowest supported claim 0.76); fabricated claims scored
 # against the same precedents passed 3/60 at 0.5, 1/60 at 0.6 (max 0.647), 0/60 at 0.7.
-SUPPORT_THRESHOLD = 0.7
+SUPPORT_THRESHOLD = 0.65  # round 2 (was 0.7), tuned on the red-team set
 LANG_NAME = {"en": "English", "de": "German"}
 
 SYSTEM = (
