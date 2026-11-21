@@ -1,0 +1,123 @@
+/*
+ * Direction B palette: "Prism Voltage".
+ * The four Gemini meanings, pushed toward more electric hues: rose-red (critical),
+ * tangerine (caution), mint (safe) and electric blue (action, the one accent).
+ * Scoped to .dir-b so shadcn components inside the wrapper re-theme. Portaled content
+ * (hover cards, selects, tooltips) gets the class passed directly to re-theme too.
+ */
+
+.dir-b {
+  --font-google-sans: var(--font-inter-b);
+  font-family: var(--font-inter-b), system-ui, sans-serif;
+  /* Inter's tnum also widens hyphens, so numbers stay tabular through font-mono instead. */
+  font-feature-settings: "cv11" 1;
+
+  --gemini-red: #f43f5e;
+  --gemini-yellow: #ff8a1f;
+  --gemini-green: #14d39a;
+  --gemini-blue: #3d5afe;
+  --ai-gradient: var(--gemini-gradient);
+  --gemini-gradient: linear-gradient(
+    100deg,
+    var(--gemini-blue) 0%,
+    var(--gemini-green) 38%,
+    var(--gemini-yellow) 70%,
+    var(--gemini-red) 100%
+  );
+
+  --background: #ffffff;
+  --canvas: #f7f7f9;
+  --foreground: #16171c;
+  --card: #ffffff;
+  --card-foreground: #16171c;
+  --popover: #ffffff;
+  --popover-foreground: #16171c;
+  --primary: #3049f2;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f1f4;
+  --secondary-foreground: #16171c;
+  --muted: #f2f3f6;
+  --muted-foreground: #5d6270;
+  --accent: #eef0f5;
+  --accent-foreground: #16171c;
+  --destructive: #c0143c;
+  --border: #e5e6eb;
+  --input: #c9ccd4;
+  --ring: #3049f2;
+
+  --critical: #e8264f;
+  --critical-fg: #c0143c;
+  --critical-tint: #ffeef2;
+  --warning: #ff8a1f;
+  --warning-fg: #a8430a;
+  --warning-tint: #fff2e6;
+  --success: #0fb886;
+  --success-fg: #037a56;
+  --success-tint: #e3faf2;
+  --info: #3049f2;
+  --info-fg: #2a40d6;
+  --info-tint: #edf0ff;
+
+  --chart-1: var(--gemini-blue);
+  --chart-2: var(--gemini-green);
+  --chart-3: var(--gemini-yellow);
+  --chart-4: var(--gemini-red);
+  --chart-5: #8b90a0;
+
+  /* Accent wash for the focused row and applied suggestions. */
+  --selected: #eef0fe;
+}
+
+.dark .dir-b,
+.dir-b.dark {
+  --gemini-red: #ff5c7a;
+  --gemini-yellow: #ff9d42;
+  --gemini-green: #3ff0b4;
+  --gemini-blue: #6b85ff;
+
+  --background: #0e0f12;
+  --canvas: #0a0b0d;
+  --foreground: #e6e7eb;
+  --card: #121317;
+  --card-foreground: #e6e7eb;
+  --popover: #17181d;
+  --popover-foreground: #e6e7eb;
+  --primary: #7b8fff;
+  --primary-foreground: #0a0f2e;
+  --secondary: #1c1e23;
+  --secondary-foreground: #e6e7eb;
+  --muted: #1a1b20;
+  --muted-foreground: #8b909e;
+  --accent: #1d1f25;
+  --accent-foreground: #e6e7eb;
+  --destructive: #ff8da3;
+  --border: #22242a;
+  --input: #2e3038;
+  --ring: #7b8fff;
+
+  --critical: #ff5c7a;
+  --critical-fg: #ff8da3;
+  --critical-tint: #34121c;
+  --warning: #ff9d42;
+  --warning-fg: #ffb470;
+  --warning-tint: #33200c;
+  --success: #3ff0b4;
+  --success-fg: #5cf2c0;
+  --success-tint: #0b2e24;
+  --info: #7b8fff;
+  --info-fg: #a3b2ff;
+  --info-tint: #161c40;
+
+  --chart-5: #6b7080;
+
+  --selected: #181b2c;
+}
+
+/* Uncited sentence in a Gemini draft: dotted tangerine underline, never color alone. */
+.dir-b .uncited {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--warning);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}

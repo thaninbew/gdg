@@ -1,0 +1,159 @@
+/*
+ * Direction D · Copilot Canvas. Palette "Dusk Sweep".
+ * Scoped to .dir-d so shadcn components re-theme without touching globals.css.
+ * Status hues stay clear red / amber / green / blue. Only the AI gradient sweeps
+ * coral -> rose -> violet -> blue, and it appears only on Gemini-produced surfaces.
+ */
+
+.dir-d {
+  --font-google-sans: var(--font-jakarta);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+
+  --ai-coral: #f0644a;
+  --ai-rose: #d9468f;
+  --ai-violet: #8a5cf5;
+  --ai-blue: #3478f6;
+  --ai-gradient: linear-gradient(
+    100deg,
+    var(--ai-coral) 0%,
+    var(--ai-rose) 30%,
+    var(--ai-violet) 62%,
+    var(--ai-blue) 100%
+  );
+  --ai-glow-opacity: 0.09;
+
+  /* Keep the shared Gemini utilities consistent with this direction. */
+  --gemini-red: #e5544b;
+  --gemini-yellow: #e9a514;
+  --gemini-green: #2fa368;
+  --gemini-blue: #3478f6;
+  --gemini-gradient: var(--ai-gradient);
+
+  --background: #ffffff;
+  --canvas: #f6f6fa;
+  --foreground: #16161f;
+  --card: #ffffff;
+  --card-foreground: #16161f;
+  --popover: #ffffff;
+  --popover-foreground: #16161f;
+  --primary: #3550e0;
+  --primary-foreground: #ffffff;
+  --secondary: #efeff5;
+  --secondary-foreground: #16161f;
+  --muted: #f1f1f6;
+  --muted-foreground: #5b5e70;
+  --accent: #ededf4;
+  --accent-foreground: #16161f;
+  --border: #e3e3ec;
+  --input: #cdceda;
+  --ring: #3550e0;
+
+  --critical: #d93a3a;
+  --critical-fg: #b42323;
+  --critical-tint: #fdecec;
+  --warning: #f0a81c;
+  --warning-fg: #8a5000;
+  --warning-tint: #fef4da;
+  --success: #1f9254;
+  --success-fg: #146c3c;
+  --success-tint: #e5f4eb;
+  --info: #3550e0;
+  --info-fg: #2e45c4;
+  --info-tint: #eceffe;
+
+  --chart-1: #3478f6;
+  --chart-2: #2fa368;
+  --chart-3: #e9a514;
+  --chart-4: #e5544b;
+  --chart-5: #8a8da0;
+
+  --radius: 0.625rem;
+}
+
+.dark .dir-d,
+.dir-d.dark {
+  --ai-coral: #ff7a5c;
+  --ai-rose: #e862a8;
+  --ai-violet: #a07bff;
+  --ai-blue: #5b8eff;
+  --ai-glow-opacity: 0.13;
+
+  --gemini-red: #f0605c;
+  --gemini-yellow: #f4be4f;
+  --gemini-green: #4cc283;
+  --gemini-blue: #5b8eff;
+
+  --background: #0e0e14;
+  --canvas: #0a0a0f;
+  --foreground: #ececf3;
+  --card: #14141c;
+  --card-foreground: #ececf3;
+  --popover: #1a1a24;
+  --popover-foreground: #ececf3;
+  --primary: #8c9eff;
+  --primary-foreground: #0b1033;
+  --secondary: #1f1f2a;
+  --secondary-foreground: #ececf3;
+  --muted: #1b1b25;
+  --muted-foreground: #a2a4b8;
+  --accent: #232331;
+  --accent-foreground: #ececf3;
+  --border: #272836;
+  --input: #363847;
+  --ring: #8c9eff;
+
+  --critical: #f0605c;
+  --critical-fg: #ff9c96;
+  --critical-tint: #3a1719;
+  --warning: #f4be4f;
+  --warning-fg: #f6cc6e;
+  --warning-tint: #33270f;
+  --success: #4cc283;
+  --success-fg: #72d69f;
+  --success-tint: #11301f;
+  --info: #8c9eff;
+  --info-fg: #a8b5ff;
+  --info-tint: #181d3d;
+
+  --chart-1: #5b8eff;
+  --chart-2: #4cc283;
+  --chart-3: #f4be4f;
+  --chart-4: #f0605c;
+  --chart-5: #6f7286;
+}
+
+/* The one AI surface: a 3px sweep on top and a soft wash that fades into the card. */
+.dir-d .ai-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+}
+.dir-d .ai-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--ai-gradient);
+}
+.dir-d .ai-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 180px;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--ai-gradient);
+  opacity: var(--ai-glow-opacity);
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+/* Original AI mark: a gradient squircle. Not a star or sparkle. */
+.dir-d .ai-mark {
+  background: var(--ai-gradient);
+}
+
+.dir-d .latency-draft {
+  background-color: var(--ai-violet);
+}
