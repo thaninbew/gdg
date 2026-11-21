@@ -31,35 +31,18 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .crit{background:var(--crit);border-color:var(--crit);color:#fff;font-weight:600}
 .sel{border-color:var(--pri);background:var(--info-t);color:var(--info-f)}
 
-/* presenter strip, outside app chrome */
-.pres{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
-.where{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 220px}
-.n{font-size:12px;color:var(--mfg)}
-.loc{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.role{font-size:11px;font-weight:700;letter-spacing:.03em;border-radius:4px;padding:1px 6px;white-space:nowrap}
-.role.c{background:var(--ok-t);color:var(--ok-f)}
-.role.e{background:var(--info-t);color:var(--info-f)}
-.role.t{background:var(--muted);color:var(--mfg)}
-.ctrls{display:flex;gap:6px}
-.dots{display:flex;gap:4px;margin:0 0 10px}
-.dots i{flex:1;height:3px;border-radius:2px;background:var(--line)}
-.dots i.on{background:var(--pri)}
-.switch{font-size:12px;color:var(--info-f);background:var(--info-t);border-radius:6px;padding:5px 9px;margin:0 0 10px}
-.foot{font-size:11px;color:var(--mfg);margin-top:8px}
 .simtag{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--warn-f);background:var(--warn-t);border-radius:4px;padding:1px 5px;vertical-align:middle;white-space:nowrap}
 
 /* app frame */
 .app{border:1px solid var(--line);border-radius:10px;background:var(--canvas);overflow:hidden}
 .chrome{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--card)}
 .chrome .brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}
-.chrome .url{margin-left:auto;font-size:11px;color:var(--mfg)}
-.phl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mfg);border:1px dashed var(--mfg);border-radius:4px;padding:0 5px;white-space:nowrap}
 .body{display:flex;min-height:380px}
 .side{width:150px;flex:none;border-right:1px solid var(--line);background:var(--card);padding:10px 8px;display:flex;flex-direction:column;gap:2px}
 .side button{border:0;background:none;text-align:left;color:var(--mfg);padding:6px 8px;font-size:13px}
 .side button.on{background:var(--muted);color:var(--fg);font-weight:600}
 .main{flex:1;min-width:0;padding:16px}
-@media (max-width:560px){.body{flex-direction:column}.side{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);padding:6px}.main{padding:12px}.chrome .url{display:none}}
+@media (max-width:560px){.body{flex-direction:column}.side{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);padding:6px}.main{padding:12px}}
 h1{font-size:18px;font-weight:600;margin:0 0 12px}
 h2{font-size:13px;font-weight:600;margin:0 0 8px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
@@ -94,16 +77,8 @@ td{padding:6px 0;border-top:1px solid var(--line)}td:last-child{text-align:right
 .reason:before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--crit);transform:translateY(-1px)}
 .toast{font-size:12px;margin-top:8px;color:var(--mfg)}
 
-/* title */
-.title{text-align:center;padding:48px 16px 40px}
-.title svg{width:72px;height:72px}
-.title h1{font-size:24px;margin:14px 0 6px}
-.title p{color:var(--mfg);max-width:420px;margin:0 auto 22px}
 [hidden]{display:none!important}
 /* additions for the landing-linked flow */
-.pres .home{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:var(--fg);text-decoration:none;padding:4px 6px;border-radius:6px}
-.pres .home:hover{background:var(--muted)}
-.pres .home svg{width:18px;height:18px}
 svg.i{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px}
 .backlink{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--info-f);font-weight:600;padding:4px 0;margin:0 0 10px}
 .backlink:hover{text-decoration:underline}
@@ -124,26 +99,45 @@ svg.i{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .ais[data-generating="true"]:before{background-size:200% 100%;animation:sweep 1.4s linear infinite}
 @keyframes sweep{from{background-position:0 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.ais[data-generating="true"]:before{animation:none}}
-body{padding:16px;max-width:1040px;margin:0 auto;background:var(--canvas)}
-#live iframe{display:block;width:100%;height:max(720px,calc(100svh - 150px));border:1px solid var(--line);border-radius:10px;background:#fff}
-.warn{font-size:12px;color:var(--warn-f);background:var(--warn-t);border-radius:6px;padding:5px 9px;margin:0 0 10px}
+.warn{font-size:12px;color:var(--warn-f);background:var(--warn-t);border-radius:6px;padding:3px 8px}
+/* Full-height product view above a quiet presenter bar */
+html,body{height:100%}
+body{background:var(--canvas);overflow:hidden}
+/* One fixed-height demo toolbar on top. Back, label and Next sit in fixed slots so nothing moves between steps. */
+.bar{position:relative;z-index:1;height:49px;display:grid;grid-template-columns:minmax(0,1fr) 92px 360px 92px minmax(0,1fr);align-items:center;column-gap:8px;padding:0 24px;border-bottom:1px solid var(--line);background:var(--card);font-size:13px}
+#stage{position:relative;height:calc(100svh - 49px);overflow:hidden}
+#stage>[data-pane]{position:absolute;inset:0;overflow:auto}
+#stage iframe{display:block;width:100%;height:100%;border:0;background:var(--canvas)}
+#app.app{border:0;border-radius:0;display:flex;flex-direction:column;height:100%}
+#app .body{flex:1;min-height:0}
+.bar .home{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--fg);text-decoration:none;padding:4px 6px;border-radius:6px;justify-self:start}
+.bar .home:hover{background:var(--muted)}
+.bar .home span{display:inline-flex;width:18px;height:18px}
+.bar .nav{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:92px;height:32px;padding:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;font-size:13px;transition:background-color .15s,border-color .15s}
+.bar .nav:hover:not(:disabled){background:var(--muted)}
+.bar .nav:disabled{color:var(--mfg);opacity:.55;cursor:default}
+.bar .nav:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+.bar .lab{display:flex;align-items:baseline;justify-content:center;gap:8px;width:360px;min-width:0;overflow:hidden;white-space:nowrap;color:var(--fg)}
+.bar .lab b{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.bar .lab .mono{flex:none;color:var(--mfg);font-size:12px}
+.bar .side-r{justify-self:end;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;white-space:nowrap}
+.bar .simtag{font-size:10px}
 </style>
 </head>
 <body>
-<div class="pres" aria-label="Presenter controls">
-  <a class="home" href="index.html" aria-label="Back to the SentinelDesk landing page"><span style="display:inline-flex;width:20px;height:20px" id="homelogo"></span>SentinelDesk</a>
-  <div class="where"><span class="role" id="role"></span><span class="loc" id="loc"></span><span class="n mono" id="num"></span></div>
-  <div class="ctrls">
-    <button id="back">Back</button>
-    <button id="next" class="pri">Next</button>
-    <button id="reset" class="ghost">Reset</button>
-  </div>
-</div>
-<div class="dots" id="dots" aria-hidden="true"></div>
-<div class="switch" id="switch" hidden></div>
-<div class="app" id="app"></div>
-<div id="live" hidden></div>
-<p class="foot" id="foot"></p>
+<nav class="bar" aria-label="Demo steps">
+  <a class="home" href="index.html" aria-label="SentinelDesk home"><span id="homelogo"></span>SentinelDesk</a>
+  <button class="nav" id="back" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back</span></button>
+  <span class="lab" id="lab" aria-live="polite"><span class="mono" id="num"></span><b id="loc"></b></span>
+  <button class="nav" id="next" type="button"><span>Next</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+  <div class="side-r" id="foot"></div>
+</nav>
+<main id="stage">
+  <div class="app" id="app" data-pane="app"></div>
+  <div data-pane="support" hidden></div>
+  <div data-pane="console" hidden></div>
+  <div data-pane="factory" hidden></div>
+</main>
 
 <script>
 // ---- Edit here: data and step list ----
@@ -160,16 +154,19 @@ var D={
   kpis:["Tickets received","Answered with evidence","Handed to an engineer","Median time to answer"]
 };
 var STEPS=[
-  {k:"intake", role:"c",loc:"New request", path:"/submit"},
-  {k:"ask",    role:"c",loc:"One question",path:"/submit"},
-  {k:"mine",   role:"c",loc:"My requests", path:"/requests"},
-  {k:"inbox",  role:"e",loc:"Inbox",       path:"/tickets"},
-  {k:"detail", role:"e",loc:"Ticket detail",path:"/tickets/"},
-  {k:"dash",   role:"e",loc:"Operations",  path:"/dashboard", opt:true},
-  {k:"run",    role:"e",loc:"Software Factory · Run", opt:true},
-  {k:"finding",role:"e",loc:"Software Factory · Finding", opt:true}
+  {k:"intake", role:"c",loc:"Customer · New request"},
+  {k:"ask",    role:"c",loc:"Customer · One question"},
+  {k:"mine",   role:"c",loc:"Customer · My requests"},
+  {k:"inbox",  role:"e",loc:"Engineer · Inbox"},
+  {k:"detail", role:"e",loc:"Engineer · Ticket detail"},
+  {k:"run",    role:"e",loc:"Software Factory · separate example SD-4182",pane:"factory"},
+  {k:"finding",role:"e",loc:"Software Factory · SD-4182 finding",pane:"factory"}
 ];
-var ROLE={c:"CUSTOMER",e:"ENGINEER"};
+// Real pages from the web app, shown when it answers on APP. They are separate runs, never the same ticket.
+var LIVE_STEPS=[
+  {k:"support",role:"c",loc:"Customer · Support",pane:"support",src:"/submit",title:"SentinelDesk support, /submit"},
+  {k:"console",role:"e",loc:"Engineer · Console · separate run",pane:"console",src:"/console",title:"SentinelDesk engineer console, /console"}
+];
 // Optional real handoff: demo.html?api=http://HOST:8000 posts to POST /triage {subject?, body}.
 // Only explicit http loopback origins are accepted, so a shared link can never send ticket text elsewhere.
 // Allowed: http://localhost|127.0.0.1|[::1][:port] with no credentials, path, query or hash.
@@ -198,7 +195,7 @@ function myId(){return API?"NEW-0001":D.id}
 function tid(){return S.urgent?D.urgent.id:myId()}
 function handed(){return S.human||(live()&&S.api.res.escalate)}
 function submitted(){return S.sent||S.human||S.api.state!=="idle"}
-function srcTag(){if(!live())return '<span class="simtag">SAMPLE</span>';var src=S.api.res.sources||{},m=Object.keys(src).filter(function(k){return src[k]!=="real"});
+function srcTag(){if(!live())return '';var src=S.api.res.sources||{},m=Object.keys(src).filter(function(k){return src[k]!=="real"});
   return m.length?'<span class="mocktag" title="Stages not backed by the real model">Mock: '+esc(m.join(", "))+'</span>':'<span class="livetag">LIVE API</span>'}
 function status(){if(S.api.state==="loading")return '<span class="badge b-mut">Checking</span>';if(S.api.state==="error")return '<span class="badge b-crit">Not sent</span>';
   return handed()?'<span class="badge b-info">With an engineer</span>':'<span class="badge b-ok">Answered</span>'}
@@ -236,10 +233,10 @@ inbox:function(){var mine=handed()?'<span class="badge b-info">Needs engineer</s
   '<button class="r" data-a="open" data-v="1" data-sd-row><span class="mono" data-sd-ticket="'+D.urgent.id+'">'+D.urgent.id+'</span><span class="subj">'+esc(D.urgent.text)+'</span><span class="badge b-crit">Urgent</span></button>'+
   '<div class="r skr" aria-hidden="true">'+sk(5)+sk(9)+'<span class="badge b-mut">Low</span></div><div class="r skr" aria-hidden="true">'+sk(5)+sk(7)+'<span class="badge b-mut">Low</span></div></div>'},
 detail:function(){var tog='<div class="row" style="margin:0 0 12px"><button class="'+(S.urgent?'':'sel')+'" data-a="case" data-v="0">'+myId()+'</button><button class="'+(S.urgent?'sel':'')+'" data-a="case" data-v="1">'+D.urgent.id+' <span class="badge b-crit">Urgent</span></button></div>';
-  if(S.urgent){var U=D.urgent;return '<h1 class="mono" data-sd-ticket="'+U.id+'">'+U.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(U.who)+'</p>'+esc(U.text)+'</div><div class="panel ais"><h2>Handoff brief <span class="simtag">SAMPLE</span></h2>'+sk(9,7,5)+'<div class="row"><button class="crit" data-a="page">Page on-call</button></div>'+(S.paged?'<p class="toast" role="status"><span class="simtag">SIMULATED</span> On-call paged. Nothing was sent.</p>':'')+'</div></div><div><div class="panel" role="status"><h2>Why handed off</h2>'+U.reasons.map(function(r){return '<div class="reason">'+r+'</div>'}).join("")+'</div></div></div>'}
+  if(S.urgent){var U=D.urgent;return '<h1 class="mono" data-sd-ticket="'+U.id+'">'+U.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(U.who)+'</p>'+esc(U.text)+'</div><div class="panel ais"><h2>Handoff brief</h2>'+sk(9,7,5)+'<div class="row"><button class="crit" data-a="page">Page on-call</button></div>'+(S.paged?'<p class="toast" role="status"><span class="simtag">SIMULATED</span> On-call paged. Nothing was sent.</p>':'')+'</div></div><div><div class="panel" role="status"><h2>Why handed off</h2>'+U.reasons.map(function(r){return '<div class="reason">'+r+'</div>'}).join("")+'</div></div></div>'}
   if(live())return '<div class="dhead"><h1 class="mono" data-sd-ticket="'+myId()+'">'+myId()+'</h1>'+srcTag()+'</div>'+tog+R.liveDetail();
   var ans=S.human?'<div class="panel" role="status"><h2>Handoff</h2><div class="reason">Customer asked for a person</div>'+sk(7,5)+'</div>'
-   :'<div class="panel ais"><h2>Sent answer <span class="simtag">SAMPLE</span></h2><p class="lbl">Invoice <span class="mono">'+esc(S.pick||D.options[0])+'</span></p><p class="sent">Line items for the selected invoice, with VAT and total.'+cite(D.evidence[0][0])+'</p><p class="sent">The Telehealth add-on is new this cycle.'+cite(D.evidence[1][0])+'</p></div>';
+   :'<div class="panel ais"><h2>Sent answer</h2><p class="lbl">Invoice <span class="mono">'+esc(S.pick||D.options[0])+'</span></p><p class="sent">Line items for the selected invoice, with VAT and total.'+cite(D.evidence[0][0])+'</p><p class="sent">The Telehealth add-on is new this cycle.'+cite(D.evidence[1][0])+'</p></div>';
   return '<h1 class="mono" data-sd-ticket="'+D.id+'">'+D.id+'</h1>'+tog+'<div class="grid d"><div><div class="panel"><p class="lbl">'+esc(D.who)+'</p>'+esc(S.text)+(S.pick?'<p class="lbl" style="margin-top:8px">'+D.question+' <span class="mono">'+esc(S.pick)+'</span></p>':'')+'</div>'+ans+'</div><div><div class="panel"><h2>Evidence</h2>'+D.evidence.map(function(e){return '<div class="ev"><span class="mono">'+e[0]+'</span> · '+e[1]+sk(9,5)+'</div>'}).join("")+'</div></div></div>'},
 liveDetail:function(){var r=S.api.res,t=r.triage||{},cited=(r.draft&&r.draft.cited_ticket_ids)||[],reasons=r.reasons||[];
   var chips='<div class="chips">'+prio(t.priority)+'<span class="badge b-mut">'+esc(t.type)+'</span><span class="badge b-mut">'+esc(t.queue)+'</span><span class="badge b-mut mono">'+esc(String(t.language||"").toUpperCase())+'</span></div>';
@@ -249,50 +246,48 @@ liveDetail:function(){var r=S.api.res,t=r.triage||{},cited=(r.draft&&r.draft.cit
   var precs=(r.precedents||[]).slice().sort(function(a,b){return (cited.indexOf(b.ticket_id)>=0)-(cited.indexOf(a.ticket_id)>=0)});
   var ev=precs.length?precs.map(function(p){return '<div class="ev"><span class="mono">'+esc(p.ticket_id)+'</span> <span class="mono lbl">'+(+p.similarity||0).toFixed(2)+'</span>'+(cited.indexOf(p.ticket_id)>=0?' <span class="badge b-ok">Cited</span>':'')+'<div>'+esc(p.subject)+'</div><p class="clamp">'+esc(p.answer_snippet)+'</p></div>'}).join(""):'<p class="lbl">No past case matched.</p>';
   return '<div class="grid d"><div><div class="panel"><p class="lbl">Submitted from the demo</p>'+chips+esc(S.text)+'</div>'+mid+'</div><div><div class="panel"><h2>Evidence</h2>'+ev+'</div></div></div>'},
-dash:function(){return '<h1>Operations</h1><div class="grid k">'+D.kpis.map(function(k){return '<div class="panel kpi"><p class="lbl">'+k+'</p><div class="v mono">—</div></div>'}).join("")+'</div><div class="panel"><h2>Tickets over time</h2><div class="blk" style="height:140px"></div></div><div class="panel"><h2>Handoff reasons</h2>'+sk(7,5,3)+'</div>'},
-run:function(){return '<iframe class="ff" src="factory.html#run" title="Software Factory run"></iframe>'},
-finding:function(){return '<iframe class="ff" src="factory.html#finding" title="Software Factory finding"></iframe>'}
 };
 
 // ---- Shell ----
 function chrome(st){
   var cust=st.role==="c",nav;
   if(cust) nav='<nav class="side" aria-label="Help"><button class="'+(st.k!=="mine"?'on':'')+'" data-a="go" data-v="intake">New request</button><button class="'+(st.k==="mine"?'on':'')+'" data-a="go" data-v="mine">My requests</button></nav>';
-  else nav='<nav class="side" aria-label="Console"><button class="'+(st.k==="inbox"||st.k==="detail"?'on':'')+'" data-a="go" data-v="inbox">Inbox</button><button class="'+(st.k==="dash"?'on':'')+'" data-a="go" data-v="dash">Dashboard</button><button data-a="go" data-v="run">Software Factory</button></nav>';
-  var path=st.path+(st.k==="detail"?tid():st.k==="mine"&&S.open?"/"+myId():"");
-  return '<div class="chrome"><span class="brand"><span style="width:20px;height:20px;display:inline-flex">'+LOGO+'</span>SentinelDesk'+(cust?' Help':' Console')+'</span><span class="phl">Page placeholder</span><span class="url mono">'+path+'</span></div><div class="body">'+nav+'<div class="main" data-sd-main>'+R[st.k]()+'</div></div>'}
+  else nav='<nav class="side" aria-label="Console"><button class="'+(st.k==="inbox"||st.k==="detail"?'on':'')+'" data-a="go" data-v="inbox">Inbox</button><button data-a="go" data-v="run">Software Factory</button></nav>';
+  return '<div class="chrome"><span class="brand"><span style="width:20px;height:20px;display:inline-flex">'+LOGO+'</span>SentinelDesk'+(cust?' Help':' Console')+'</span></div><div class="body">'+nav+'<div class="main" data-sd-main>'+R[st.k]()+'</div></div>'}
 
 function render(focusSel){
-  var st=step(),app=document.getElementById("app");
-  var live=document.getElementById("live"),sup=st.k==="support";
-  app.hidden=sup;live.hidden=!sup;
-  if(sup&&live.dataset.shown!=="1"){live.dataset.shown="1";SDMotion.enter(live)}else if(!sup)live.dataset.shown="";
-  if(sup&&!live.firstChild)live.innerHTML='<iframe src="'+esc(APP)+'/submit" title="SentinelDesk support, existing /submit page"></iframe>';
-  var fac=st.k==="run"||st.k==="finding",pend=S.pend;S.pend=false;
-  if(!sup)SDMotion.swap(app,fac?R[st.k]():chrome(st),{key:st.k,role:st.role,ticket:fac?"":st.k==="detail"?tid():myId(),view:st.k==="mine"&&S.open?myId():"",pending:pend});
-  var r=document.getElementById("role");r.className="role "+st.role;r.textContent=ROLE[st.role]+(st.opt?" · OPTIONAL":"");
+  var st=step(),app=document.getElementById("app"),pane=st.pane||"app",stage=document.getElementById("stage");
+  var prev=stage.dataset.pane;stage.dataset.pane=pane;
+  [].forEach.call(stage.children,function(el){el.hidden=el.dataset.pane!==pane});
+  var el=stage.querySelector('[data-pane="'+pane+'"]');
+  if(st.src&&!el.firstChild)el.innerHTML='<iframe src="'+esc(APP)+st.src+'" title="'+esc(st.title)+'"></iframe>';
+  if(pane==="factory"){var f=el.firstChild;
+    if(!f)el.innerHTML='<iframe src="factory.html#'+st.k+'" title="Software Factory, sample run"></iframe>';
+    else if(f.contentWindow&&f.contentWindow.location.hash!=="#"+st.k){var keep=document.activeElement;f.contentWindow.location.hash=st.k;
+      // Factory focuses its own heading on route change; keep the presenter's focus on the bar.
+      if(keep&&keep.closest&&keep.closest(".bar"))setTimeout(function(){keep.focus()},60)}}
+  if(prev!==pane&&pane!=="app")SDMotion.enter(el);
+  var pend=S.pend;S.pend=false;
+  if(pane==="app")SDMotion.swap(app,chrome(st),{key:st.k,role:st.role,ticket:st.k==="detail"?tid():myId(),view:st.k==="mine"&&S.open?myId():"",pending:pend});
   document.getElementById("loc").textContent=st.loc+(st.k==="detail"?" · "+tid():st.k==="mine"&&S.open?" · "+myId():"");
   document.getElementById("num").textContent=(S.i+1)+"/"+STEPS.length;
   var nextBtn=document.getElementById("next");
-  nextBtn.textContent=S.i===STEPS.length-1?"Finish":"Next";
+  nextBtn.firstChild.textContent=S.i===STEPS.length-1?"Finish":"Next";
   nextBtn.disabled=st.k==="ask"&&!submitted();
-  document.getElementById("dots").innerHTML=STEPS.map(function(_,i){return '<i class="'+(i<=S.i?'on':'')+'"></i>'}).join("");
-  var sw=document.getElementById("switch"),swt="";
-  if(st.k==="inbox")swt=REAL?"Now the engineer's view. Console pages are placeholders with the sample ticket "+myId()+".":"Now the engineer's view, same ticket "+myId()+".";
-  else if(sup)swt="Customer's view: the existing /submit page. Send a request, then open it under My requests.";
-  else if(st.k==="intake")swt="Customer's view. Edit the request if you like.";
-  else if(st.k==="run")swt="New example: SD-4182, a CSV export bug, separate from "+myId()+". Watch the Software Factory trace it to code and hand it to engineering.";
-  else if(st.k==="finding")swt="SD-4182 finding: evidence, proposed fix and the handoff prompt.";
-  if(swt&&(sw.hidden||sw.textContent!==swt)){sw.hidden=false;sw.textContent=swt;SDMotion.enter(sw)}else if(!swt)sw.hidden=true;
-  document.getElementById("foot").innerHTML=(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': only http://localhost, 127.0.0.1 or [::1] with an optional port.</span> ':'')+(REAL?'<span class="livetag">APP</span> Customer step is <span class="mono">'+esc(APP)+'/submit</span>. ':'')+(API?'<span class="livetag">API</span> Requests go to <span class="mono">'+esc(API)+'/triage</span>. Other pages use sample data. Nothing is sent to customers.':'<span class="simtag">SAMPLE</span> Placeholder pages with sample data. Nothing is sent. Arrow keys move between steps.');
+  // Identify sample data once, in the bar. Real pages carry their own Mock badges; Factory marks itself "Demo run".
+  var tag=pane==="app"?(API?'<span class="livetag">API</span><span class="mono">'+esc(API)+'/triage</span>':'<span class="simtag">SAMPLE DATA</span>'):'';
+  document.getElementById("foot").innerHTML=(REFUSED.length?'<span class="warn" role="alert">Ignored ?'+REFUSED.join(" and ?")+': loopback http only</span>':'')+tag;
   var ta=document.getElementById("txt");if(ta)ta.addEventListener("input",function(){S.text=ta.value});
   if(location.hash.slice(1)!==st.k)history.replaceState(null,"","#"+st.k);
-  if(focusSel){var f=app.querySelector(focusSel);if(f)f.focus()}
+  if(focusSel){var f2=app.querySelector(focusSel);if(f2)f2.focus()}
 }
 function idx(k){for(var i=0;i<STEPS.length;i++)if(STEPS[i].k===k)return i;return -1}
 function go(k,focusSel){var i=idx(k);if(i<0)return;S.i=i;S.open=false;render(focusSel)}
 // Deep links from the landing page land on a coherent state: later steps assume the sample request was sent.
-function enter(k){if(REAL&&(k==="intake"||k==="ask"||k==="mine"))k="support";var i=idx(k);if(i<0)i=0;if(i>=idx("mine")&&!submitted()){S.sent=true;S.pick=D.options[0]}S.i=i;S.open=false;render()}
+var TO_LIVE={intake:"support",ask:"support",mine:"support",inbox:"console",detail:"console",urgent:"console",dash:"console"},
+    TO_SAMPLE={support:"intake",console:"inbox",dash:"inbox"};
+function enter(k){if(REAL&&TO_LIVE[k])k=TO_LIVE[k];if(!REAL&&TO_SAMPLE[k])k=TO_SAMPLE[k];
+  if(k==="urgent"){S.urgent=true;k="detail"}var i=idx(k);if(i<0)i=0;if(i>=idx("mine")&&!submitted()){S.sent=true;S.pick=D.options[0]}S.i=i;S.open=false;render()}
 function next(){
   var k=step().k;
   if(S.i===STEPS.length-1){location.href="index.html";return}
@@ -327,7 +322,6 @@ document.addEventListener("click",function(e){
 });
 document.getElementById("next").onclick=next;
 document.getElementById("back").onclick=back;
-document.getElementById("reset").onclick=function(){fresh();render()};
 document.getElementById("homelogo").innerHTML=LOGO;
 document.addEventListener("keydown",function(e){
   if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
@@ -340,7 +334,7 @@ addEventListener("hashchange",function(){var k=location.hash.slice(1);if(k&&k!==
 function start(){fresh();enter(location.hash.slice(1))}
 function probe(){if(!APP)return Promise.resolve(false);var c=new AbortController(),t=setTimeout(function(){c.abort()},1500);
   return fetch(APP+"/submit",{mode:"no-cors",signal:c.signal}).then(function(){return true},function(){return false}).finally(function(){clearTimeout(t)})}
-probe().then(function(ok){if(ok){REAL=true;STEPS.splice(0,3,{k:"support",role:"c",loc:"Support",path:"/submit"})}start()});
+probe().then(function(ok){if(ok){REAL=true;STEPS.splice(0,5,LIVE_STEPS[0],LIVE_STEPS[1])}start()});
 </script>
 </body>
 </html>
