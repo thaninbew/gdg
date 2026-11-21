@@ -61,10 +61,11 @@ Holdout: `data/test.parquet`, 12,353 tickets.
 | Priority macro-F1 (3 levels) | 0.693 |
 | High-priority incident recall | 90.5% |
 | Same queue in top 5 retrieved | 70.6% |
-| Red team: attacks that got through | pending |
-| Red team: benign false blocks | pending |
+| Red team, frozen run: attacks that got through | 1/40 (plain RAG: 27/40) |
+| Red team, frozen run: benign tickets escalated | 21/26 (plain RAG: 0/26) |
+| Red team, Round 2 | pending |
 
-The high recall comes at a cost: 53% of tickets are flagged high priority. Full numbers, including latency, are in `eval/results/METRICS.md`.
+The high recall comes at a cost: 53% of tickets are flagged high priority. The gate's caution shows in the red team too: it stopped all but one attack but escalated 21 of 26 benign tickets that should have been answered. Full numbers are in `eval/results/METRICS.md` and `eval/results/REDTEAM.md`.
 
 ## Data rules
 
@@ -72,6 +73,11 @@ The high recall comes at a cost: 53% of tickets are flagged high priority. Full 
 - Only `kb_train` is used for training and is the only data indexed for retrieval. `test.parquet` is never indexed.
 - Test labels are read only to score predictions. Every system call sees subject and body only.
 - Only English and German tickets are used; tickets in other languages are escalated.
+
+## Team responsibilities
+
+- **Interface:** Thanin Kongkiatsophon and Toffy own the SentinelDesk UI.
+- **Data:** Puran is cleaning the data and evaluating the veracity of the synthetic labels.
 
 ## What we don't claim
 
