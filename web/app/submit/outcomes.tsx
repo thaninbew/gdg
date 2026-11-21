@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon, LightbulbIcon, ShieldCheckIcon, SirenIcon, UsersRoundIcon } from "lucide-react"
+import { CheckIcon, FileTextIcon, LightbulbIcon, SirenIcon, UsersRoundIcon } from "lucide-react"
 
 import { AISurface } from "@/components/sentinel/ai"
 import { Badge } from "@/components/ui/badge"
@@ -39,9 +39,9 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <ShieldCheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
+        <FileTextIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <h2 className="text-sm font-semibold">Invoice breakdown</h2>
-        <Badge variant="success">Verified, read-only</Badge>
+        <Badge variant="outline">Sample record, read-only</Badge>
         <span className="ml-auto font-mono text-[0.8125rem] text-muted-foreground">{invoice.id}</span>
       </div>
       <p className="mt-1 text-[0.8125rem] text-muted-foreground">
@@ -83,13 +83,15 @@ export function Breakdown({ invoice, previous }: { invoice: Invoice; previous: I
 
 export type Source = { id: string; subject: string }
 
-export function Answer({ sentences }: { sentences: { text: string; source: Source | null }[] }) {
+export function Answer({ sentences, sample = false }: { sentences: { text: string; source: Source | null }[]; sample?: boolean }) {
   const sources = [...new Map(sentences.flatMap((s) => (s.source ? [[s.source.id, s.source] as const] : []))).values()]
   return (
     <AISurface
       title="Answer"
       action={
-        sources.length ? (
+        sample ? (
+          <Badge variant="outline">Sample answer</Badge>
+        ) : sources.length ? (
           <Badge variant="outline">From {sources.length === 1 ? "1 past ticket" : `${sources.length} past tickets`}</Badge>
         ) : null
       }

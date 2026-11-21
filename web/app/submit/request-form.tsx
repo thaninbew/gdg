@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { CircleCheckIcon, FlaskConicalIcon, SendIcon, SirenIcon, UserRoundIcon } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { CircleCheckIcon, FlaskConicalIcon, SendIcon, UserRoundIcon } from "lucide-react"
 
 import { ConfidenceMeter } from "@/components/sentinel/confidence"
 import { Wordmark } from "@/components/sentinel/logo"
@@ -18,40 +18,37 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Priority } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-import {
-  ACCOUNTS,
-  SAMPLES,
-  analyze,
-  handoff,
-  resolve,
-  ticketId,
-  type AccountId,
-  type Analysis,
-  type Outcome,
-  type Topic,
-} from "./logic"
+import { ACCOUNTS, SAMPLES, analyze, handoff, resolve, ticketId, type AccountId, type Analysis, type Outcome, type Topic } from "./logic"
 import { Answer, Breakdown, Handoff, Review, Urgent } from "./outcomes"
-import { mockStages, probe, toOutcome, triage, type Triaged } from "./pipeline"
+import { mockStages, probe, toOutcome, triage } from "./pipeline"
 import { TOPICS } from "./topics"
 
 type Backend = "checking" | "online" | "offline"
-type Via = { kind: "pipeline"; mock: string[] } | { kind: "local"; fallback: boolean }
-type Done = { id: string; outcome: Outcome; via: Via }
+type Classification = { type: string; typeConf: number; queue: string; queueConf: number; priority: Priority }
+type Via = { kind: "pipeline"; mock: string[] } | { kind: "local"; fallback: boolean } | { kind: "person" }
+type Done = { id: string; outcome: Outcome; via: Via; cls: Classification | null }
 type Mine = { id: string; title: string; outcome: Outcome }
 
-// Local stand-in for the classifier when the backend is offline.
+// Offline stand-in for the classifier. Labelled "Local rules" wherever it shows.
 const LOCAL_CLASS: Record<Topic | "none", { type: string; queue: string; priority: Priority }> = {
-  billing: { type: "Request", queue: "Billing & Payments", priority: "low" },
-  broken: { type: "Incident", queue: "Technical support", priority: "medium" },
-  question: { type: "Request", queue: "Customer service", priority: "low" },
-  improvement: { type: "Change", queue: "Product", priority: "low" },
-  none: { type: "Request", queue: "Customer service", priority: "low" },
+  billing: { type: "Request", queue: "Billing and Payments", priority: "low" },
+  broken: { type: "Incident", queue: "Technical Support", priority: "medium" },
+  question: { type: "Request", queue: "Customer Service", priority: "low" },
+  improvement: { type: "Change", queue: "Product Support", priority: "low" },
+  none: { type: "Request", queue: "Customer Service", priority: "low" },
+}
+
+function localClassification(a: Analysis, chosen: Topic | null): Classification {
+  const c = a.critical ? { type: "Incident", queue: "Technical Support", priority: "high" as Priority } : LOCAL_CLASS[a.topic ?? "none"]
+  const conf = chosen || a.critical ? 0.9 : a.topic ? 0.75 : 0.5
+  return { ...c, typeConf: conf, queueConf: conf }
 }
 
 function matchOption(a: Analysis, typed: string) {
@@ -77,16 +74,12 @@ export function RequestForm() {
   const [sending, setSending] = useState(false)
   const [mine, setMine] = useState<Mine[]>([])
   const [backend, setBackend] = useState<Backend>("checking")
-  const [live, setLive] = useState<{ key: string; result: Triaged } | null>(null)
-  const [classifying, setClassifying] = useState(false)
   const account = ACCOUNTS[accountId]
 
+  // Only the one missing-detail question is worked out while typing; classification waits for Send.
   const full = `${title} ${text}`.trim()
   const a = useMemo(() => (full ? analyze(full, topic, accountId) : null), [full, topic, accountId])
   const q = a?.question ?? null
-  const answerText = q && answer.trim() && a ? `${q.prompt} ${matchOption(a, answer)}` : ""
-  const body = [text.trim(), answerText].filter(Boolean).join("\n\n")
-  const key = `${title.trim()}\u0000${body}`
   const ready = Boolean(text.trim()) && (!q || Boolean(answer.trim())) && !sending
 
   useEffect(() => {
@@ -97,42 +90,38 @@ export function RequestForm() {
     }
   }, [])
 
-  // Classify as the customer types, once they pause.
-  const inflight = useRef<AbortController | null>(null)
-  useEffect(() => {
-    if (backend !== "online" || done || text.trim().length < 12 || live?.key === key) return
-    const t = setTimeout(() => {
-      inflight.current?.abort()
-      const ctrl = new AbortController()
-      inflight.current = ctrl
-      setClassifying(true)
-      triage(title.trim(), body, ctrl.signal)
-        .then((result) => setLive({ key, result }))
-        .catch(() => {})
-        .finally(() => !ctrl.signal.aborted && setClassifying(false))
-    }, 700)
-    return () => clearTimeout(t)
-  }, [backend, done, text, title, body, key, live?.key])
-
   async function submit(person = false) {
     if (!a) return
     const id = ticketId(full, accountId, sampleId)
     const ans = q && !person ? matchOption(a, answer) : null
     let d: Done
     if (person) {
-      d = { id, outcome: handoff(a.topic, "You asked for a person."), via: { kind: "local", fallback: false } }
+      d = { id, outcome: handoff(a.topic, "You asked for a person."), via: { kind: "person" }, cls: null }
     } else if (backend === "online") {
       setSending(true)
+      // No clarification field in the contract: the answer travels as body context.
+      const body = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
       try {
-        const r = live?.key === key ? live.result : await triage(title.trim(), body)
-        d = { id, outcome: toOutcome(r, full, a, ans, accountId), via: { kind: "pipeline", mock: mockStages(r) } }
+        const r = await triage(title.trim(), body)
+        d = {
+          id,
+          outcome: toOutcome(r, a),
+          via: { kind: "pipeline", mock: mockStages(r) },
+          cls: {
+            type: r.triage.type,
+            typeConf: r.triage.type_conf,
+            queue: r.triage.queue,
+            queueConf: r.triage.queue_conf,
+            priority: r.triage.priority,
+          },
+        }
       } catch {
-        d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: true } }
+        d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: true }, cls: localClassification(a, topic) }
       } finally {
         setSending(false)
       }
     } else {
-      d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: false } }
+      d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: false }, cls: localClassification(a, topic) }
     }
     setDone(d)
     setMine((m) => [{ id: d.id, title: title.trim() || text.trim(), outcome: d.outcome }, ...m.filter((x) => x.id !== d.id)])
@@ -143,24 +132,7 @@ export function RequestForm() {
     setText(t)
     setAnswer("")
     setDone(null)
-    setLive(null)
   }
-
-  const liveResult = backend === "online" && live && !done ? live.result : null
-  const shownTopic = topic ?? a?.topic ?? null
-  const predicted = (() => {
-    if (!a || done) return null
-    if (q && !answer.trim()) return "one detail first"
-    const ans = q ? matchOption(a, answer) : null
-    const o = liveResult ? toOutcome(liveResult, full, a, ans, accountId) : resolve(full, a, ans, accountId)
-    if (o.kind === "urgent") return "straight to on-call"
-    if (o.kind === "action") return "invoice breakdown now"
-    if (o.kind === "answer") return "answer right away"
-    if (o.kind === "review") return "product review"
-    return `to ${o.team}`
-  })()
-  const localCls = a ? (a.critical ? { type: "Incident", queue: "Network & Access", priority: "high" as Priority } : LOCAL_CLASS[a.topic ?? "none"]) : null
-  const localConf = !a ? 0 : topic || a.critical ? 0.92 : a.topic ? 0.78 : 0.5
 
   return (
     <div className="min-h-svh bg-canvas">
@@ -190,7 +162,7 @@ export function RequestForm() {
                     onSelect={() => {
                       setAccountId(s.account)
                       setSampleId(s.id)
-                      setTopic(null)
+                      setTopic(s.topic)
                       reset(s.text)
                     }}
                   >
@@ -221,7 +193,7 @@ export function RequestForm() {
               <div role="status">
                 {done.outcome.kind === "urgent" ? <Urgent reasons={done.outcome.reasons} /> : null}
                 {done.outcome.kind === "action" ? <Breakdown invoice={done.outcome.invoice} previous={done.outcome.previous} /> : null}
-                {done.outcome.kind === "answer" ? <Answer sentences={done.outcome.sentences} /> : null}
+                {done.outcome.kind === "answer" ? <Answer sentences={done.outcome.sentences} sample={done.outcome.sample} /> : null}
                 {done.outcome.kind === "handoff" ? <Handoff team={done.outcome.team} reason={done.outcome.reason} /> : null}
                 {done.outcome.kind === "review" ? <Review /> : null}
               </div>
@@ -232,11 +204,9 @@ export function RequestForm() {
                     {done.via.mock.length ? <Badge variant="outline">Mock: {done.via.mock.join(", ")}</Badge> : null}
                   </>
                 ) : (
-                  <>
-                    <Badge variant="outline">Local rules</Badge>
-                    {done.outcome.kind === "urgent" ? "Simulated: nobody was paged." : null}
-                  </>
+                  <Badge variant="outline">{done.via.kind === "person" ? "Your choice" : "Local rules"}</Badge>
                 )}
+                <span>Demo: not saved, no one notified.</span>
               </p>
               <div>
                 <Button
@@ -315,21 +285,15 @@ export function RequestForm() {
                   </ToggleGroup>
                 </fieldset>
               ) : null}
-              {a?.critical ? (
-                <p role="status" className="flex items-center gap-2 border-t bg-critical-tint px-4 py-2 text-[0.8125rem] text-critical-fg">
-                  <SirenIcon className="size-3.5 shrink-0" aria-hidden="true" />
-                  Urgent: goes straight to on-call, no questions
-                </p>
-              ) : null}
               <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
                 <ToggleGroup
                   type="single"
                   variant="outline"
                   size="sm"
                   spacing={1}
-                  value={shownTopic ?? ""}
+                  value={topic ?? ""}
                   onValueChange={(v) => setTopic((v || null) as Topic | null)}
-                  aria-label="Topic"
+                  aria-label="Topic, optional"
                   className="flex-wrap"
                 >
                   {TOPICS.map(({ id, label, Icon }) => (
@@ -338,25 +302,16 @@ export function RequestForm() {
                         <ToggleGroupItem
                           value={id}
                           aria-label={label}
-                          className={cn(
-                            "data-[state=on]:border-foreground/25 data-[state=on]:bg-muted data-[state=on]:text-foreground",
-                            !topic && "data-[state=on]:border-dashed"
-                          )}
+                          className="data-[state=on]:border-foreground/25 data-[state=on]:bg-muted data-[state=on]:text-foreground"
                         >
                           <Icon aria-hidden="true" />
-                          <span className={cn("hidden", (shownTopic === id || !shownTopic) && "md:inline")}>{label}</span>
+                          <span className={cn("hidden", topic === id && "sm:inline")}>{label}</span>
                         </ToggleGroupItem>
                       </TooltipTrigger>
                       <TooltipContent>{label}</TooltipContent>
                     </Tooltip>
                   ))}
                 </ToggleGroup>
-                {!topic && a?.topic ? <span className="sr-only">Suggested topic</span> : null}
-                {topic ? (
-                  <Button type="button" variant="link" size="xs" className="text-muted-foreground" onClick={() => setTopic(null)}>
-                    Auto-detect
-                  </Button>
-                ) : null}
                 <div className="ml-auto flex items-center gap-2">
                   {q ? (
                     <Button type="button" variant="ghost" size="sm" onClick={() => void submit(true)}>
@@ -375,7 +330,7 @@ export function RequestForm() {
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="outline">Demo</Badge>
             {backend === "online"
-              ? "Local pipeline connected. Nothing is paged or charged."
+              ? "Sends to the local pipeline. Nothing is saved, paged or charged."
               : "Local rules and sample data. Nothing is sent, paged or charged."}
           </p>
         </div>
@@ -383,47 +338,41 @@ export function RequestForm() {
         <aside className="flex min-w-0 flex-col gap-4">
           <section
             aria-label="Classification"
-            aria-busy={classifying}
-            data-generating={classifying}
-            className={cn("p-4", liveResult ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
+            aria-busy={sending}
+            data-generating={sending}
+            className={cn("p-4", sending || done?.via.kind === "pipeline" ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
           >
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold">Classification</h2>
               <Badge variant="outline" className="ml-auto">
-                {backend === "online" ? (liveResult && mockStages(liveResult).includes("triage") ? "Mock" : "Pipeline") : "Local rules"}
+                {done?.via.kind === "pipeline"
+                  ? done.via.mock.includes("triage")
+                    ? "Mock"
+                    : "Pipeline"
+                  : backend === "online"
+                    ? "Pipeline"
+                    : "Local rules"}
               </Badge>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {backend === "checking"
-                ? "Connecting…"
-                : backend === "online"
-                  ? liveResult && liveResult.timings_ms.total_ms >= 50
-                    ? `${(liveResult.timings_ms.total_ms / 1000).toFixed(1)} s`
-                    : "Classifies as you type"
-                  : "Pipeline offline"}
-            </p>
-            {liveResult ? (
-              <ClassRows
-                type={liveResult.triage.type}
-                typeConf={liveResult.triage.type_conf}
-                queue={liveResult.triage.queue}
-                queueConf={liveResult.triage.queue_conf}
-                priority={liveResult.triage.priority}
-              />
-            ) : localCls && backend !== "online" ? (
-              <ClassRows type={localCls.type} typeConf={localConf} queue={localCls.queue} queueConf={localConf} priority={localCls.priority} />
+            {sending ? (
+              <div className="mt-3 flex flex-col gap-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+            ) : done?.cls ? (
+              <ClassRows {...done.cls} />
             ) : (
-              <p className="mt-3 text-[0.8125rem] text-muted-foreground">Start typing to classify.</p>
-            )}
-            {predicted ? (
-              <p className="mt-4 border-t pt-3 text-[0.8125rem]">
-                <span className="text-muted-foreground">On send: </span>
-                {predicted}
+              <p className="mt-2 text-[0.8125rem] text-muted-foreground">
+                {done ? "Not classified: sent straight to a person." : backend === "offline" ? "Pipeline offline. Runs on send." : "Runs when you send."}
               </p>
-            ) : null}
+            )}
           </section>
           <section className="rounded-lg border bg-card p-4" aria-label="My requests">
-            <h2 className="text-sm font-semibold">My requests</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">My requests</h2>
+              <span className="ml-auto text-xs text-muted-foreground">This session</span>
+            </div>
             {mine.length ? (
               <ul className="mt-2 flex flex-col">
                 {mine.map((m) => {
@@ -451,19 +400,7 @@ export function RequestForm() {
   )
 }
 
-function ClassRows({
-  type,
-  typeConf,
-  queue,
-  queueConf,
-  priority,
-}: {
-  type: string
-  typeConf: number
-  queue: string
-  queueConf: number
-  priority: Priority
-}) {
+function ClassRows({ type, typeConf, queue, queueConf, priority }: Classification) {
   return (
     <dl className="mt-3 flex flex-col gap-3 text-[0.8125rem]">
       <div className="flex flex-col gap-1">

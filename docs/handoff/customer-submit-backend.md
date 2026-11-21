@@ -15,9 +15,9 @@ Branch `feat/customer-submit` (PR #21). `/submit` calls the team API through a s
 
 | Piece | Status |
 |---|---|
-| Live classification panel and the send decision | **Wired to `POST /triage`** (`web/app/submit/pipeline.ts`). Verified against `api/server.py` running with `MOCK=triage,retrieve,gate,draft`; the real classifier, Chroma and Gemma have not been exercised from the page. The page shows a Mock badge whenever `sources` reports a stage as not real |
+| Classification panel and the send decision | **Wired to `POST /triage`** (`web/app/submit/pipeline.ts`). Verified against `api/server.py` running with `MOCK=triage,retrieve,gate,draft`; the real classifier, Chroma and Gemma have not been exercised from the page. The page shows a Mock badge whenever `sources` reports a stage as not real |
 | Pre-submit question, ticket IDs, offline fallback | **Local.** `web/app/submit/logic.ts` (`analyze`, `resolve`, `ticketId`) |
-| Invoice breakdown, the precedent `TKT-03990`, simulated paging, the sample product review | **Fixture.** Sample records in `logic.ts`, labelled Mock, Simulated or Sample on screen |
+| Invoice breakdown, sample answer, simulated paging, sample product review | **Fixture, offline only.** Sample records in `logic.ts`, labelled Sample, Simulated or Local rules on screen. No dataset ticket IDs are cited |
 | Clarifying-question endpoint | **Missing.** The backend has no clarify call; `/submit` asks fixed template questions |
 | Ticket persistence and ID | **Missing.** `pipeline.run()` returns no ticket ID and stores nothing. `/submit` IDs are a local hash, so the same ID does not yet appear in Toffy's `/tickets/[id]` (his fixtures use other IDs) |
 | Customer to operator link | **Missing between branches.** Only the rough prototype shows it, synthetically |
@@ -58,12 +58,13 @@ An empty body returns 422. `web/lib/types.ts` on `main` does not yet include `ke
 
 ## Wiring (implemented in `pipeline.ts`)
 
-- While typing (700 ms pause): `POST /triage` with `subject` = Title and `body` = details plus any answered question. The panel shows type, queue and priority.
-- On **Send request**, the latest response decides:
+- Nothing is classified while typing. On **Send request**: `POST /triage` with `subject` = Title and `body` = details plus the answered question as plain text (for example `Which invoice? INV-2026-1104`), since the contract has no clarification field.
+- The response decides:
   - an on-call, outage, security or critical-service reason gives urgent
-  - `!escalate && draft.grounded` gives an answer citing the draft sentences' `source_ticket_id`s
-  - anything else gives a handoff to `triage.queue`
-- The invoice breakdown stays local because there is no billing API.
+  - `escalate`, `!draft.grounded` or no supported sentence citing a returned precedent gives a handoff to `triage.queue`
+  - otherwise an answer, citing only `supported` sentences whose `source_ticket_id` is in `precedents`
+  - local samples never override the backend; the invoice breakdown appears only offline (no billing API)
+- Receipts say "Demo: not saved, no one notified": there is no ticket store, and My requests lives in the browser session.
 
 ## Still missing
 
