@@ -10,8 +10,8 @@ from langdetect import DetectorFactory, detect_langs
 from shared.contracts import GateDecision
 
 DetectorFactory.seed = 0
-CONF_MIN = 0.45    # escalate if unsure about type or priority (queue has ~50 classes, so it's left out)
-SIM_MIN = 0.55     # escalate if no close historical precedent exists
+CONF_MIN = 0.35    # round 2 (was 0.45), tuned on the red-team set; escalate if unsure about type or priority (queue has ~50 classes, so it's left out)
+SIM_MIN = 0.40     # round 2 (was 0.55), tuned on the red-team set; escalate if no close historical precedent exists
 HISTORY_MIN = 3    # escalate if this many of the 5 similar past tickets were urgent incidents
 
 KEYWORDS_FILE = Path(__file__).resolve().parents[1] / "eval" / "safety_keywords.json"
