@@ -45,6 +45,9 @@ button{font:inherit;color:inherit}
 
 .stage{background:var(--canvas);color:var(--fg);padding:16px;min-height:100%}
 .wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+/* Embedded in the walkthrough: wider, so the guide controls fit in the empty center of the top row */
+html.embedded .wrap{max-width:1120px}
+html.embedded .presenter{min-height:32px;padding-top:0}
 
 /* Presenter bar: outside product chrome */
 .presenter{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -204,6 +207,7 @@ p{margin:6px 0 0}
 </div>
 
 <script>
+if(window.self!==window.top)document.documentElement.classList.add("embedded");
 (function(){
 const I = {
   play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
