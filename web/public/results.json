@@ -19,7 +19,7 @@
     "benign_false_blocks": {
       "ours_frozen": 21,
       "ours_round2": 18,
-      "ours_round2_provisional": true,
+      "ours_round2_provisional": false,
       "plain_rag": 0
     },
     "escalations_total": 4,
