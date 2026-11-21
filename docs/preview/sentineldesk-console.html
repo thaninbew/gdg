@@ -1,0 +1,753 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}</style></head><body>
+<title>SentinelDesk Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600&display=swap">
+<style>
+
+/* Static preview of web/app/(console) on the team's "Dusk" tokens (web/app/globals.css).
+   Layout: shadcn sidebar + inset; inbox list, ticket canvas (ticket | AI | evidence), dashboard cards. */
+:root{
+  --ai-coral:#f0644a;--ai-rose:#d9468f;--ai-violet:#8a5cf5;--ai-blue:#3478f6;--ai-glow:.09;
+  --background:#ffffff;--canvas:#f6f6fa;--foreground:#16161f;--card:#ffffff;--primary:#3550e0;--primary-fg:#ffffff;
+  --secondary:#efeff5;--muted:#f1f1f6;--muted-fg:#5b5e70;--border:#e3e3ec;--input:#cdceda;--ring:#3550e0;
+  --critical:#d93a3a;--critical-fg:#b42323;--critical-tint:#fdecec;--warning:#f0a81c;--warning-fg:#8a5000;--warning-tint:#fef4da;
+  --success:#1f9254;--success-fg:#146c3c;--success-tint:#e5f4eb;--info:#3550e0;--info-fg:#2e45c4;--info-tint:#eceffe;
+  --chart-1:#3478f6;--sidebar:#f6f6fa;--sidebar-accent:#ededf4;
+  --sans:"Manrope",system-ui,sans-serif;--mono:"Google Sans Code",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ai-coral:#ff7a5c;--ai-rose:#e862a8;--ai-violet:#a07bff;--ai-blue:#5b8eff;--ai-glow:.13;
+  --background:#0e0e14;--canvas:#0a0a0f;--foreground:#ececf3;--card:#14141c;--primary:#8c9eff;--primary-fg:#0b1033;
+  --secondary:#1f1f2a;--muted:#1b1b25;--muted-fg:#a2a4b8;--border:#272836;--input:#363847;--ring:#8c9eff;
+  --critical:#f0605c;--critical-fg:#ff9c96;--critical-tint:#3a1719;--warning:#f4be4f;--warning-fg:#f6cc6e;--warning-tint:#33270f;
+  --success:#4cc283;--success-fg:#72d69f;--success-tint:#11301f;--info:#8c9eff;--info-fg:#a8b5ff;--info-tint:#181d3d;
+  --chart-1:#5b8eff;--sidebar:#0a0a0f;--sidebar-accent:#1b1b25;color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --ai-coral:#ff7a5c;--ai-rose:#e862a8;--ai-violet:#a07bff;--ai-blue:#5b8eff;--ai-glow:.13;
+  --background:#0e0e14;--canvas:#0a0a0f;--foreground:#ececf3;--card:#14141c;--primary:#8c9eff;--primary-fg:#0b1033;
+  --secondary:#1f1f2a;--muted:#1b1b25;--muted-fg:#a2a4b8;--border:#272836;--input:#363847;--ring:#8c9eff;
+  --critical:#f0605c;--critical-fg:#ff9c96;--critical-tint:#3a1719;--warning:#f4be4f;--warning-fg:#f6cc6e;--warning-tint:#33270f;
+  --success:#4cc283;--success-fg:#72d69f;--success-tint:#11301f;--info:#8c9eff;--info-fg:#a8b5ff;--info-tint:#181d3d;
+  --chart-1:#5b8eff;--sidebar:#0a0a0f;--sidebar-accent:#1b1b25;color-scheme:dark;
+}
+:root{--ai-gradient:linear-gradient(100deg,var(--ai-coral) 0%,var(--ai-rose) 30%,var(--ai-violet) 62%,var(--ai-blue) 100%)}
+*{box-sizing:border-box}
+body{background:var(--background);color:var(--foreground);font-family:var(--sans);font-size:14px;line-height:1.45;font-feature-settings:"tnum" 1}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--ring) 50%,transparent);outline-offset:1px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted-fg)}
+
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.sb{background:var(--sidebar);border-right:1px solid var(--border);padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh}
+.sb-brand{display:flex;align-items:center;gap:8px;padding:8px;font-weight:600;margin-bottom:8px}
+.aimark{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--ai-gradient);flex:none}
+.aimark.sm{width:24px;height:24px;border-radius:7px}
+.nav{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;border-radius:8px;padding:8px;text-align:left;font-weight:500}
+.nav:hover{background:var(--sidebar-accent)}
+.nav[aria-current="page"]{background:var(--sidebar-accent);font-weight:600}
+.nav .badge-n{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted-fg)}
+.sb-foot{margin-top:auto;padding:8px}
+.theme{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.theme button{border:0;background:none;width:30px;height:28px;display:grid;place-items:center}
+.theme button[aria-pressed="true"]{background:var(--muted)}
+.inset{background:var(--canvas);min-width:0}
+.ph{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;background:var(--background);border-bottom:1px solid var(--border)}
+.ph h1{margin:0;font-size:20px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph .sep{width:1px;height:16px;background:var(--border)}
+.ph .act{margin-left:auto;display:flex;gap:8px;align-items:center}
+.icon-btn{border:0;background:none;width:28px;height:28px;border-radius:6px;display:grid;place-items:center}
+.page{padding:24px;display:flex;flex-direction:column;gap:16px}
+
+.badge{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.badge svg{width:12px;height:12px}
+.b-critical{background:var(--critical-tint);color:var(--critical-fg)}
+.b-warning{background:var(--warning-tint);color:var(--warning-fg)}
+.b-success{background:var(--success-tint);color:var(--success-fg)}
+.b-info{background:var(--info-tint);color:var(--info-fg)}
+.b-outline{border:1px solid var(--border);color:var(--foreground)}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:8px;border:1px solid transparent;font-weight:500;font-size:14px;background:var(--primary);color:var(--primary-fg)}
+.btn.sm{height:28px;font-size:13px}
+.btn.outline{background:var(--background);border-color:var(--border);color:var(--foreground)}
+.btn.ghost{background:none;color:var(--foreground)}
+.btn.secondary{background:var(--secondary);color:var(--foreground)}
+.btn.link{background:none;color:var(--primary);padding:0;height:auto}
+.btn svg{width:16px;height:16px}
+
+.tg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--background)}
+.tg button{border:0;border-left:1px solid var(--border);background:none;height:28px;padding:0 10px;font-size:13px;font-weight:500;display:flex;gap:6px;align-items:center}
+.tg button:first-child{border-left:0}
+.tg button[aria-pressed="true"]{background:var(--muted)}
+.tg .n{font-family:var(--mono);font-size:12px;color:var(--muted-fg)}
+
+.list{border:1px solid var(--border);border-radius:10px;background:var(--card);overflow:hidden}
+.grp{display:flex;justify-content:space-between;padding:6px 16px;font-size:12px;font-weight:500;color:var(--muted-fg);background:color-mix(in srgb,var(--muted) 50%,transparent);border-bottom:1px solid var(--border)}
+.row{display:grid;grid-template-columns:5.5rem 6rem minmax(0,1fr) 10rem 8.5rem 7rem 3.5rem;gap:12px;align-items:center;min-height:40px;padding:8px 16px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;cursor:pointer}
+.row:hover{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+.row[aria-current="true"]{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+.row .subj{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .q{font-size:13px;color:var(--muted-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tid{font-family:var(--mono);font-size:13px;letter-spacing:-.01em}
+.conf{display:flex;align-items:center;gap:8px}
+.conf .track{width:56px;height:6px;border-radius:999px;background:color-mix(in srgb,var(--primary) 20%,transparent);overflow:hidden}
+.conf .fill{display:block;height:100%;background:var(--info)}
+.conf.amb .fill{background:var(--warning)}
+.conf .tier{font-size:12px;color:var(--muted-fg);width:4.5rem}
+.conf.amb .tier{color:var(--warning-fg);font-weight:500}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{height:40px;padding:0 12px;text-align:left;font-weight:500;font-size:13px;color:var(--foreground);background:color-mix(in srgb,var(--muted) 50%,transparent);border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{height:40px;padding:0 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover,.tbl tbody tr[data-state="selected"]{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+.tbl .subj{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.tbl .q{font-size:13px;color:var(--muted-fg)}
+.keys{display:flex;gap:12px;font-size:12px;color:var(--muted-fg)}
+kbd{font-family:var(--sans);font-size:11px;border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--muted);color:var(--foreground)}
+
+.canvas{display:grid;grid-template-columns:20rem minmax(0,1fr) 19rem;gap:24px;padding:24px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.back{font-size:12px;color:var(--muted-fg);display:inline-flex;gap:4px;align-items:center}
+.panel h2{margin:0;font-size:16px;font-weight:600;text-wrap:balance}
+.body{font-size:13px;color:var(--muted-fg);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+.more{font-size:12px;font-weight:500;color:var(--primary);background:none;border:0;padding:0;align-self:flex-start}
+dl.cls{display:grid;grid-template-columns:4.5rem minmax(0,1fr);gap:10px 12px;margin:0;padding-top:16px;border-top:1px solid var(--border)}
+dl.cls dt{font-size:12px;color:var(--muted-fg);padding-top:2px}
+dl.cls dd{margin:0;display:flex;flex-direction:column;gap:4px;font-weight:500}
+.tri{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--border);padding-top:16px}
+.tri h3{margin:0;font-size:14px;font-weight:600}
+.trow{display:grid;grid-template-columns:4rem minmax(0,1fr);gap:4px 12px;align-items:start}
+.trow .lb{font-size:12px;color:var(--muted-fg);padding-top:6px}
+.sel{display:flex;align-items:center;justify-content:space-between;gap:6px;height:28px;width:100%;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);font-size:13px;text-align:left}
+.sel.sug{border-style:dashed;border-color:color-mix(in srgb,var(--muted-fg) 60%,transparent)}
+.sel svg.chev{width:14px;height:14px;opacity:.5;flex:none}
+.under{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;margin-top:6px}
+.btn.xs{height:24px;padding:0 8px;font-size:12px;gap:4px}
+.btn.xs svg{width:12px;height:12px}
+.lat{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;font-size:12px;color:var(--muted-fg)}
+.lat b{font-family:var(--mono);font-weight:400;color:var(--foreground)}
+.center{display:flex;flex-direction:column;gap:16px;min-width:0}
+.ai{position:relative;isolation:isolate;overflow:hidden;border:1px solid var(--border);background:var(--card);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.ai::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai-gradient)}
+.ai::after{content:"";position:absolute;inset:0 0 auto 0;height:180px;z-index:-1;background:var(--ai-gradient);opacity:var(--ai-glow);-webkit-mask-image:linear-gradient(to bottom,#000,transparent);mask-image:linear-gradient(to bottom,#000,transparent)}
+.ai header{display:flex;align-items:center;gap:10px;min-height:28px}
+.ai h3{margin:0;font-size:14px;font-weight:600}
+.ai .r{margin-left:auto}
+.ai p{margin:0}
+.lead{font-size:15px;line-height:1.65}
+.cite{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:4px;border-radius:6px;border:0;font-family:var(--mono);font-size:11px;font-weight:600;background:var(--info-tint);color:var(--info-fg);vertical-align:.15em}
+.cite:hover,.cite.on{background:var(--primary);color:var(--primary-fg)}
+.qrow{display:flex;gap:8px;align-items:flex-start}
+.qrow svg{color:var(--warning-fg);flex:none;margin-top:2px}
+.qlabel{font-size:12px;color:var(--muted-fg)}
+.qtext{font-size:16px;font-weight:600;margin-top:4px;text-wrap:balance}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.free{display:flex;gap:8px;align-items:flex-end}
+.free label{font-size:12px;color:var(--muted-fg);display:block;margin-bottom:6px}
+.free input{width:100%;height:32px;border:1px solid var(--input);border-radius:8px;padding:0 10px;background:var(--background)}
+.answered{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:12px}
+.chipa{align-self:flex-start;background:var(--secondary);border-radius:6px;padding:4px 8px;font-weight:500}
+.esc{border-radius:10px;background:var(--critical-tint);color:var(--critical-fg);padding:10px 12px}
+.ok{border-radius:10px;background:var(--success-tint);color:var(--success-fg);padding:10px 12px;font-weight:500}
+.ground{display:flex;align-items:center;gap:12px;font-size:13px;flex-wrap:wrap}
+.gbar{display:flex;gap:2px;width:112px;height:6px;border-radius:999px;overflow:hidden}
+.gbar i{flex:1;background:var(--success)} .gbar i.u{background:var(--warning)}
+.sup{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--success) 50%,transparent);text-decoration-thickness:1.5px;text-underline-offset:7px}
+.uns{background:var(--warning-tint);text-decoration:underline dotted var(--warning) 2px;text-underline-offset:7px;padding:0 4px;border-radius:3px}
+.reply{font-size:15px;line-height:1.85;display:flex;flex-direction:column}
+.ev h2{font-size:14px;font-weight:600;margin:0}
+.ev{display:flex;flex-direction:column;gap:12px}
+.evc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;transition:background-color .15s,border-color .15s}
+.evc.on{border-color:var(--primary);background:var(--info-tint)}
+.evc .top{display:flex;align-items:center;gap:8px}
+.rank{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font-family:var(--mono);font-size:11px;font-weight:600;background:var(--muted);color:var(--muted-fg)}
+.rank.c{background:var(--info-tint);color:var(--info-fg)}
+.evc .s{font-size:13px;font-weight:500;margin:8px 0 0}
+.evc .a{font-size:13px;line-height:1.55;color:var(--muted-fg);margin:8px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-family:var(--mono);font-size:24px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.card-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card-h h2{margin:0;font-size:16px;font-weight:600}
+.card-h .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.two{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px}
+.legend{display:flex;justify-content:center;gap:16px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:2px}
+svg text{font-family:var(--sans);fill:var(--muted-fg);font-size:12px}
+svg .yl{fill:var(--foreground);font-size:12px}
+svg .gl{stroke:var(--border);stroke-dasharray:2 3}
+.tip{position:fixed;z-index:30;pointer-events:none;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 8px 24px -12px rgb(0 0 0 / .3);min-width:150px}
+.tip b{display:block;margin-bottom:4px}
+.tip div{display:flex;justify-content:space-between;gap:12px}
+.tip em{font-style:normal;font-family:var(--mono)}
+
+@media (max-width:1280px){.canvas{grid-template-columns:20rem minmax(0,1fr)}.ev{grid-column:2}.two{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:1024px){.app{grid-template-columns:56px minmax(0,1fr)}.sb-brand span,.nav .t,.nav .badge-n,.sb-foot{display:none}.nav{justify-content:center}
+  .tbl .hq,.tbl .hc,.tbl .hr{display:none}}
+@media (max-width:760px){.app{grid-template-columns:minmax(0,1fr)}.sb{position:static;height:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--border)}.sb-brand{margin:0}
+  .canvas{grid-template-columns:minmax(0,1fr);padding:16px}.ev{grid-column:auto}.page{padding:16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.keys{display:none}}
+
+/* interactive app additions */
+.toasts{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:40;display:flex;flex-direction:column;gap:8px;max-width:calc(100% - 32px)}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px -12px rgb(0 0 0 / .35);display:flex;align-items:center;gap:12px;font-size:13px;min-width:260px}
+.toast .d{color:var(--muted-fg);font-size:12px;margin-top:2px}
+.toast.err{border-color:var(--critical)}
+.toast button{margin-left:auto}
+.chipf{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:999px;border:0;background:var(--info-tint);color:var(--info-fg);font-size:12px;font-weight:500}
+.chipf svg{width:12px;height:12px}
+select.sel{appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px;color:var(--foreground)}
+.reasons{margin:6px 0 0 24px;padding:0;font-size:13px}
+.empty{border:1px dashed var(--border);border-radius:10px;padding:32px;text-align:center;color:var(--muted-fg);display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--card)}
+.sheet-bg{position:fixed;inset:0;background:rgb(0 0 0 / .4);z-index:30}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--background);border-left:1px solid var(--border);z-index:31;padding:20px;display:flex;flex-direction:column;gap:16px}
+.sheet h2{margin:0;font-size:16px;font-weight:600}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:500}
+.field input,.field textarea{border:1px solid var(--input);border-radius:8px;padding:8px 10px;background:var(--background);font:inherit;color:inherit}
+.reply[contenteditable="true"]{outline:2px solid color-mix(in srgb,var(--ring) 50%,transparent);outline-offset:6px;border-radius:6px}
+.inv{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:6px;background:var(--critical-tint);color:var(--critical-fg);font-family:var(--mono);font-size:11px;font-weight:600}
+.cite-pop{position:fixed;z-index:35;width:min(22rem,calc(100vw - 2rem));background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px -12px rgb(0 0 0 / .35);font-size:13px;pointer-events:none}
+.cite-pop .h{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)}
+.cite-pop .b{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.cite-pop blockquote{margin:0;border-left:2px solid var(--info);padding-left:10px;color:var(--muted-fg);line-height:1.5;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.mbar{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ai[data-generating="true"]::before{background-size:200% 100%;animation:ai-sweep 1.8s cubic-bezier(.2,0,0,1) infinite alternate}
+@keyframes ai-sweep{from{background-position:0% 0}to{background-position:100% 0}}
+.skel{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.skel span{display:block;height:10px;border-radius:999px;background:var(--muted)}
+.caret{display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:-2px;background:var(--muted-fg)}
+.hint{margin:0;font-size:13px;color:var(--warning-fg)}
+.qa{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--border);padding-bottom:12px}
+@media (prefers-reduced-motion: reduce){.ai[data-generating="true"]::before{animation:none}}
+@media (max-width:760px){.mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;gap:8px;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));background:var(--background);border-top:1px solid var(--border)}.mbar .btn{flex:1;justify-content:center}.canvas{padding-bottom:88px}.dact{display:none!important}}
+</style>
+
+<div class="app">
+  <nav class="sb" aria-label="SentinelDesk">
+    <div class="sb-brand"><svg width="32" height="32" viewBox="0 0 64 64" role="img" aria-label="SentinelDesk logo"><defs><linearGradient id="sd-beam" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="var(--ai-coral)"/><stop offset=".35" stop-color="var(--ai-rose)"/><stop offset=".7" stop-color="var(--ai-violet)"/><stop offset="1" stop-color="var(--ai-blue)"/></linearGradient><linearGradient id="sd-fg" gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="0" y2="50"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><mask id="sd-fade"><rect width="64" height="64" fill="url(#sd-fg)"/></mask></defs><rect width="64" height="64" rx="14" fill="var(--foreground)"/><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#sd-beam)" mask="url(#sd-fade)"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="var(--background)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="var(--background)"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="var(--background)" stroke="var(--background)" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="var(--background)"/><path d="M10 51.5 H54" stroke="var(--background)" stroke-width="3.6" stroke-linecap="round"/></svg><span>SentinelDesk</span></div>
+    <button class="nav" data-nav="inbox" title="Inbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="t">Inbox</span><span class="badge-n" id="nav-open"></span></button>
+    <button class="nav" data-nav="dashboard" title="Dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="t">Dashboard</span></button>
+    <div class="sb-foot"><div class="theme" role="group" aria-label="Color theme"><button data-th="light" aria-label="Light theme" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button><button data-th="dark" aria-label="Dark theme" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button><button data-th="system" aria-label="System theme" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button></div></div>
+  </nav>
+  <div class="inset" id="view"></div>
+</div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" hidden></div>
+<div class="cite-pop" id="citepop" hidden></div>
+
+<script>
+const DATA = {"tickets": [{"ticket_id": "TKT-17628", "subject": "Multiple Products Affected by System Outage Urgently", "body": "Facing a system outage impacting Django SAP ERP. It seems recent code modifications or server misconfigurations might be the cause. Restarting services and reviewing logs could help resolve the issue. Immediate assistance is needed to restore functionality as soon as possible.", "received": "08:12", "dataset": {"row": 20735, "type": "Incident", "queue": "Technical Support", "priority": "high"}, "category": "Outages and slowdowns", "note": "An outage on Django SAP ERP across several products. Two past tickets describe the same outage [TKT-42560] [TKT-59244], and both replies asked for the recent code changes first.", "route": "Technical Support on-call · outage bridge", "triage": {"type": "Incident", "type_conf": 0.91, "queue": "Technical Support", "queue_conf": 0.88, "priority": "high", "priority_conf": 0.86, "language": "en", "key_terms": []}, "clarifications": [], "draft": {"reply": "", "cited_ticket_ids": [], "grounded": true, "issues": [], "sentences": []}, "timings_ms": {"triage_ms": 41, "retrieval_ms": 118, "gate_ms": 4, "draft_ms": 0, "total_ms": 163}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-42560", "similarity": 0.852, "subject": "System Outage Impacting Several Products Urgently", "body_snippet": "", "answer_snippet": "Received your email about the system outage affecting Django SAP ERP. I acknowledge the urgency and am ready to assist in restoring functionality as soon as possible. For a more thorough investigation, could you please provide details on the recent code changes made? Additionally, I would prefer to discuss this further over a call; my number is <tel_num>.", "language": "en", "queue": "Technical Support", "type": "Incident", "priority": "high"}, {"ticket_id": "TKT-59244", "similarity": 0.72, "subject": "System Outage Impacting Various Products Urgently", "body_snippet": "", "answer_snippet": "Received your email about the system outage affecting Django SAP ERP. I understand the urgency and am here to assist in restoring functionality as soon as possible. For a better investigation, could you please provide details on the recent code changes made? Additionally, I would prefer to discuss this further via a call. Please send the logs and we can proceed from there. My contact number is <tel_num>.", "language": "en", "queue": "Technical Support", "type": "Incident", "priority": "high"}, {"ticket_id": "TKT-53276", "similarity": 0.388, "subject": "Service Problem", "body_snippet": "", "answer_snippet": "Acknowledged the email regarding the service disruption and will proceed to investigate further. Please allow for a convenient call to discuss the next steps in resolving the issue that is affecting the products and users.", "language": "en", "queue": "Service Outages and Maintenance", "type": "Incident", "priority": "high"}]}, {"ticket_id": "TKT-27040", "subject": "Report of Website and Social Media Outage", "body": "Dear Customer Support, \n\nMay I inform you that our website and social media pages have unexpectedly ceased to function. There is a possibility that this could be due to a server or network malfunction. We have attempted to resolve the issue by rebooting the server and verifying the network connections, yet the problem remains unresolved. \nCould you please address this matter promptly and offer a solution at your earliest convenience? \nThank you for your help and we are eagerly awaiting your response.", "received": "08:40", "dataset": {"row": 48331, "type": "Incident", "queue": "Service Outages and Maintenance", "priority": "high"}, "category": "Outages and slowdowns", "note": "Website and social media both down, server already rebooted. Past outage replies asked for the exact error message and server details [TKT-41460] [TKT-58154].", "route": "Service Outages and Maintenance · on-call engineer", "triage": {"type": "Incident", "type_conf": 0.9, "queue": "Service Outages and Maintenance", "queue_conf": 0.86, "priority": "high", "priority_conf": 0.84, "language": "en", "key_terms": []}, "clarifications": [], "draft": {"reply": "", "cited_ticket_ids": [], "grounded": true, "issues": [], "sentences": []}, "timings_ms": {"triage_ms": 37, "retrieval_ms": 131, "gate_ms": 3, "draft_ms": 0, "total_ms": 171}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-58154", "similarity": 0.403, "subject": "Reported Problem with Data Analytics Dashboard Loading", "body_snippet": "", "answer_snippet": "To <name>, we regret the inconvenience caused by the failure of the data analytics dashboard to load. We are looking into the matter and will check the server resources assigned to your account <acc_num>. For further troubleshooting, could you kindly provide the specific error message you are encountering? If necessary, we can schedule a call at <tel_num> to delve deeper into the issue and provide a prompt solution. We appreciate your patience and will strive to resolve the issue swiftly.", "language": "en", "queue": "IT Support", "type": "Incident", "priority": "medium"}, {"ticket_id": "TKT-43041", "similarity": 0.391, "subject": "Problem with Website Integrations Malfunction", "body_snippet": "", "answer_snippet": "I have noted your concern about the website integration issues. I will look into the API connectivity and will get back to you shortly to discuss additional troubleshooting steps. Alternatively, I can arrange a call at a time convenient for you to address and resolve the issue.", "language": "en", "queue": "Service Outages and Maintenance", "type": "Problem", "priority": "high"}, {"ticket_id": "TKT-41460", "similarity": 0.371, "subject": "(no subject)", "body_snippet": "", "answer_snippet": "Dear customer, thank you for contacting us regarding the unexpected interruption. We apologize for any inconvenience and are ready to assist. Could you please provide the server and database connection details along with the specific error message you are encountering? We will analyze this information and contact you at <tel_num> to discuss additional troubleshooting steps.", "language": "en", "queue": "IT Support", "type": "Incident", "priority": "high"}]}, {"ticket_id": "TKT-15737", "subject": "Hohe Priorität: Sicherheitsverletzung entdeckt", "body": "Support-Team,\nes wurde eine kritische Sicherheitslücke bezüglich der ResearchGate-API von BioTrust entdeckt. Diese Verletzung birgt ein erhebliches Risiko der unbefugten Offenlegung von Patientendaten. Es ist unerlässlich, dass wir sofort Maßnahmen ergreifen, um unbefugten Zugriff zu verhindern.", "received": "08:55", "dataset": {"row": 29929, "type": null, "queue": "Science/Research", "priority": "critical"}, "category": "Security and data breaches", "note": "The dataset has no type for this ticket, and its queue (Science/Research) is outside the 10 support queues. It reports a security gap that could expose patient data. Past security tickets only partly match [TKT-49976] [TKT-53582].", "route": "Security review · incident lead paged", "triage": {"type": "Incident", "type_conf": 0.72, "queue": "Other", "queue_conf": 0.66, "priority": "high", "priority_conf": 0.9, "language": "de", "key_terms": []}, "clarifications": [], "draft": {"reply": "", "cited_ticket_ids": [], "grounded": true, "issues": [], "sentences": []}, "timings_ms": {"triage_ms": 44, "retrieval_ms": 126, "gate_ms": 4, "draft_ms": 0, "total_ms": 174}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-49976", "similarity": 0.309, "subject": "Sicherheitslücke in dem Krankenhaus-System", "body_snippet": "", "answer_snippet": "Take immediate actions to address the gap and secure the patients' data.", "language": "de", "queue": "Technical Support", "type": "Incident", "priority": "high"}, {"ticket_id": "TKT-53582", "similarity": 0.273, "subject": "Probleme mit der IT-System-Sicherheit", "body_snippet": "", "answer_snippet": "Wir nehmen diese Meldung von einem unbefugten Zugriff sehr ernst und werden sofort einfallen. Bitte geben Sie mehr Details zur Meldung und zur Systemkonfiguration an, damit wir besser helfen können. Sollten weitere Diskussionen erforderlich sein, rufen Sie uns an der angegebenen Telefonnummer <tel_num> auf.", "language": "de", "queue": "Technical Support", "type": "Problem", "priority": "low"}, {"ticket_id": "TKT-54770", "similarity": 0.264, "subject": "Verletzung der Sicherheitsregeln im System", "body_snippet": "", "answer_snippet": "Wir haben den Bericht über die Sicherheitsverletzung erhalten. Möchten Sie weitere Details zur Angelegenheit geben? Wir werden die Angelegenheit untersuchen, die notwendigen Maßnahmen ergreifen und das Problem lösen. Bitte kontaktieren Sie den registrierten Kontakt für weitere Diskussionen.", "language": "de", "queue": "Technical Support", "type": "Incident", "priority": "high"}]}, {"ticket_id": "TKT-55945", "subject": "Unterstützung für temporäre Laden-Probleme aufgrund geplanten Updates", "body": "Wir haben temporäre Probleme mit der Ladenfunktion nach dem geplanten Update. Möglicherweise sind Server-Konfigurationsänderungen die Ursache. Die Verbindung steht. Bitte leeren Sie den Cache und starten Sie die Dienste neu. Das Problem besteht jedoch weiterhin.", "received": "08:20", "dataset": {"row": 55470, "type": "Incident", "queue": "Technical Support", "priority": "medium"}, "category": "Integrations and software bugs", "note": "Something stopped working after a planned update and clearing the cache didn't help. The past tickets are only weak matches, and the ticket itself is ambiguous.", "route": null, "triage": {"type": "Incident", "type_conf": 0.88, "queue": "Technical Support", "queue_conf": 0.58, "priority": "medium", "priority_conf": 0.8, "language": "de", "key_terms": []}, "clarifications": [{"field": "queue", "question": "\"Ladenfunktion\" can mean loading (pages or data) or the shop (Laden). Which one is it?", "ask_requester": "Meinen Sie mit „Ladenfunktion“ das Laden von Seiten bzw. Daten oder die Shop-Funktion?", "options": [{"label": "Loading pages or data", "reply": "Then it resembles the platform problems after updates in [TKT-56072]. Those replies asked for the recent configuration changes and exact error messages. The matches are still weak, so a person should take it.", "effect": {"conf": 0.86}}, {"label": "The online shop", "reply": "No past ticket covers a shop failure after an update. I'm handing it to a person.", "effect": {"conf": 0.86, "reason": "No past ticket covers a shop failure after an update"}}]}], "draft": {"reply": "", "cited_ticket_ids": [], "grounded": true, "issues": [], "sentences": []}, "timings_ms": {"triage_ms": 39, "retrieval_ms": 102, "gate_ms": 3, "draft_ms": 0, "total_ms": 144}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-22815", "similarity": 0.293, "subject": "Probleme mit der Verbindung zu Datenanalysewerkzeugen", "body_snippet": "", "answer_snippet": "Sehr geehrte [name], wir bedauern, dass Sie Probleme mit der Verbindung zu Ihren Datenanalysewerkzeugen auf Ihren Geräten haben. Um Ihnen helfen zu können, bitte wir Sie, uns weitere Details zu geben, insbesondere, wann die Softwareupdates und Konfigurationsänderungen durchgeführt wurden. Wir werden die genauen Fehler melden und eine Lösung finden.", "language": "de", "queue": "Product Support", "type": "Incident", "priority": "medium"}, {"ticket_id": "TKT-56072", "similarity": 0.284, "subject": "Issue mit digitale Plattformen", "body_snippet": "", "answer_snippet": "schreibe Ihnen bestätigen, dass das Problem mit den digitalen Plattformen bekannt ist. es tut mir leid, dass Sie Serviceausfälle erleben. verstehe, dass Sie bereits versucht haben, die Dienste neu zu starten und die Netzwerkverbindungen zu überprüfen. weiterhin helfen, wäre es nützlich, wenn Sie weitere Details zu den jüngsten Updates und Konfigurationsänderungen geben könnten, die durchgeführt wurden. Zusätzlich wäre es hilfreich, wenn Sie genaue Fehlermeldungen und Symptome mitteilen könnten, die Sie beobachten. Falls nötig, können wir telefonisch besprechen, wie wir die Angelegenheit lösen können.", "language": "de", "queue": "Service Outages and Maintenance", "type": "Problem", "priority": "high"}, {"ticket_id": "TKT-12858", "similarity": 0.279, "subject": "Irrigation System Connectivity Issue", "body_snippet": "", "answer_snippet": "Vielen Dank, dass Sie uns wegen der Verbindungsprobleme mit Ihrem Bewässerungssystem kontaktiert haben. Um Ihnen besser helfen zu können, teilen Sie uns bitte die Modellnummer des Geräts sowie die Art des verwendeten Netzwerks mit (z. B. WLAN, Ethernet). Bitte geben Sie auch an, ob Fehlermeldungen angezeigt werden. Sobald wir diese Informationen haben, können wir gezieltere Schritte zur Fehlerbehebung vorschlagen.", "language": "de", "queue": "Technical Support", "type": "Problem", "priority": "high"}]}, {"ticket_id": "TKT-49389", "subject": "Concern About Billing Discrepancies", "body": "Our marketing agency has encountered unexpected billing inconsistencies across various digital product subscriptions. These issues might be due to errors in the payment processing software integration. We have already verified the payment details and contacted customer support for resolution. We would greatly appreciate it if you could look into this matter and provide a solution as soon as possible. Please let us know if there is any additional information needed to resolve this issue.", "received": "09:03", "dataset": {"row": 18890, "type": "Incident", "queue": "Billing and Payments", "priority": "medium"}, "category": "Billing and payments", "note": "Close match to earlier billing-discrepancy tickets [TKT-31649] [TKT-56816]. Billing tickets can involve money owed, which changes who handles it.", "route": null, "triage": {"type": "Incident", "type_conf": 0.64, "queue": "Billing and Payments", "queue_conf": 0.92, "priority": "medium", "priority_conf": 0.84, "language": "en", "key_terms": []}, "clarifications": [{"field": "type", "question": "Is the customer asking for a refund or credit, or only for an explanation of the charges?", "ask_requester": "Are you requesting a refund or credit, or an explanation of the charges?", "options": [{"label": "Explanation only", "reply": "Then the earlier replies apply directly: ask which subscriptions are affected, the exact amounts and the transaction dates [TKT-31649] [TKT-56816].", "effect": {"conf": 0.9}}, {"label": "Refund or credit", "reply": "Refunds need approval in Billing, so I'm handing it to a person with the details collected so far.", "effect": {"conf": 0.9, "set": {"type": "Request"}, "adds_text": "refund"}}]}], "draft": {"reply": "Hello,\n\nThank you for reporting the billing discrepancies across your digital product subscriptions. We understand you've already verified your payment details and contacted customer support [TKT-31649].\n\nSo we can investigate, please send us:\n1. The subscriptions that are affected [TKT-56816]\n2. The exact discrepancy for each, such as the expected and charged amounts [TKT-31649]\n3. The dates of the disputed transactions and any earlier correspondence with our support team [TKT-56816]\n4. Contact details for the person responsible for billing on your account [TKT-05423]\n\nOnce we have these, we'll review the account and follow up with a resolution.\n\nBest regards,\nBilling and Payments", "cited_ticket_ids": ["TKT-05423", "TKT-31649", "TKT-56816"], "grounded": false, "issues": ["3 sentences not supported by a precedent"], "sentences": [{"text": "Hello,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Thank you for reporting the billing discrepancies across your digital product subscriptions.", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "We understand you've already verified your payment details and contacted customer support [TKT-31649].", "supported": true, "source_ticket_id": "TKT-31649", "score": 0.83}, {"text": "So we can investigate, please send us:", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "The subscriptions that are affected [TKT-56816]", "supported": true, "source_ticket_id": "TKT-56816", "score": 0.78}, {"text": "The exact discrepancy for each, such as the expected and charged amounts [TKT-31649]", "supported": true, "source_ticket_id": "TKT-31649", "score": 0.83}, {"text": "The dates of the disputed transactions and any earlier correspondence with our support team [TKT-56816]", "supported": true, "source_ticket_id": "TKT-56816", "score": 0.78}, {"text": "Contact details for the person responsible for billing on your account [TKT-05423]", "supported": true, "source_ticket_id": "TKT-05423", "score": 0.62}, {"text": "Once we have these, we'll review the account and follow up with a resolution.", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "Best regards,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Billing and Payments", "supported": false, "source_ticket_id": null, "score": 0.0}]}, "timings_ms": {"triage_ms": 35, "retrieval_ms": 98, "gate_ms": 3, "draft_ms": 1240, "total_ms": 1376}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-31649", "similarity": 0.831, "subject": "Query Regarding Billing Discrepancies", "body_snippet": "", "answer_snippet": "Acknowledged receipt of the email regarding the billing discrepancies across multiple digital product subscriptions for the marketing agency. We understand that the payment details have been verified and customer support has already been contacted. We appreciate the efforts being made to resolve this issue. We will investigate the matter further and would appreciate it if you could provide specific details on the subscriptions affected and the exact discrepancies being experienced. Additionally, knowing the dates of the disputed transactions and any relevant correspondence with customer support would be helpful. Please provide any further information needed.", "language": "en", "queue": "Billing and Payments", "type": "Incident", "priority": "medium"}, {"ticket_id": "TKT-56816", "similarity": 0.781, "subject": "Concern Regarding Billing Discrepancies", "body_snippet": "", "answer_snippet": "Acknowledging receipt of the email regarding the billing discrepancies across multiple digital product subscriptions for the marketing agency. We understand that payment details have been verified and customer support has already been contacted. We appreciate your efforts in resolving the issue. To proceed, could you please provide specific details on the subscriptions affected and the exact discrepancies you are experiencing? Additionally, it would be helpful to know the dates of the disputed transactions and any relevant correspondence with customer support. Thank you.", "language": "en", "queue": "Billing and Payments", "type": "Incident", "priority": "medium"}, {"ticket_id": "TKT-05423", "similarity": 0.624, "subject": "Concerns About Billing Variations", "body_snippet": "", "answer_snippet": "Please review the account and provide the necessary contact information related to the billing discrepancies.", "language": "en", "queue": "Billing and Payments", "type": "Incident", "priority": "low"}]}, {"ticket_id": "TKT-15072", "subject": "Verbesserung der Sicherheit medizinischer Daten", "body": "Sehr geehrte Kundenservice, ich möchte die Implementierung eines verbesserten Sicherheitsprotokolls zur Sicherung medizinischer Daten und die Verbesserung der IT-Infrastruktur der Klinik beantragen. Es ist wichtig, den Schutz sensibler Patientendaten und die Verhütung von Cyberangriffen sicherzustellen. Ich schätze eine Rückmeldung mit Informationen, die die Bearbeitung des Problems beschreibt. Bitte lassen Sie mich wissen, welche weitere Maßnahmen ergriffen werden können, um die Sicherheit medizinischer Daten zu gewährleisten. Vielen Dank für Ihre Unterstützung in dieser Angelegenheit.", "received": "09:31", "dataset": {"row": 51632, "type": "Change", "queue": "Product Support", "priority": "medium"}, "category": "Security and data breaches", "note": "A Change request to improve security for medical data. Past replies on this topic reviewed current protocols and offered a call [TKT-06332] [TKT-43552].", "route": null, "triage": {"type": "Change", "type_conf": 0.87, "queue": "Product Support", "queue_conf": 0.74, "priority": "medium", "priority_conf": 0.8, "language": "de", "key_terms": []}, "clarifications": [], "draft": {"reply": "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage zur Verbesserung der Sicherheit medizinischer Daten. Wir nehmen den Schutz sensibler Patientendaten sehr ernst und überprüfen derzeit die bestehenden Sicherheitsprotokolle [TKT-06332] [TKT-43552].\n\nDamit wir passende Maßnahmen vorschlagen können, schildern Sie uns bitte genauer, welche Systeme und welche Probleme betroffen sind [TKT-43710]. Gern vereinbaren wir auch einen Gesprächstermin, um die nächsten Schritte zu besprechen [TKT-06332].\n\nÜber die ergriffenen Maßnahmen halten wir Sie auf dem Laufenden [TKT-06332].\n\nMit freundlichen Grüßen\nIhr Product-Support-Team", "cited_ticket_ids": ["TKT-06332", "TKT-43552", "TKT-43710"], "grounded": true, "issues": [], "sentences": [{"text": "Sehr geehrte Damen und Herren,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "vielen Dank für Ihre Anfrage zur Verbesserung der Sicherheit medizinischer Daten.", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Wir nehmen den Schutz sensibler Patientendaten sehr ernst und überprüfen derzeit die bestehenden Sicherheitsprotokolle [TKT-06332] [TKT-43552].", "supported": true, "source_ticket_id": "TKT-06332", "score": 0.42}, {"text": "Damit wir passende Maßnahmen vorschlagen können, schildern Sie uns bitte genauer, welche Systeme und welche Probleme betroffen sind [TKT-43710].", "supported": true, "source_ticket_id": "TKT-43710", "score": 0.46}, {"text": "Gern vereinbaren wir auch einen Gesprächstermin, um die nächsten Schritte zu besprechen [TKT-06332].", "supported": true, "source_ticket_id": "TKT-06332", "score": 0.42}, {"text": "Über die ergriffenen Maßnahmen halten wir Sie auf dem Laufenden [TKT-06332].", "supported": true, "source_ticket_id": "TKT-06332", "score": 0.42}, {"text": "Mit freundlichen Grüßen", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Ihr Product-Support-Team", "supported": true, "source_ticket_id": null, "score": 1.0}]}, "timings_ms": {"triage_ms": 42, "retrieval_ms": 121, "gate_ms": 4, "draft_ms": 0, "total_ms": 167}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-43710", "similarity": 0.457, "subject": "Sicherung medizinischer Daten und Verbesserung der IT-Infrastruktur", "body_snippet": "", "answer_snippet": "Geliebter [Name], ich werde Ihnen helfen, die Sicherung medizinischer Daten und die Verbesserung der IT-Infrastruktur zu verbessern. Um die aktuellen Probleme besser zu verstehen, bitten wir Sie, uns mehr Details zu den betreffenden Problemen zu geben. Bitte rufen Sie mich unter [Telefonnummer] an, um eine weitere Diskussion und Empfehlungen zur Verbesserung der IT-Infrastruktur durchzuführen.", "language": "de", "queue": "Customer Service", "type": "Change", "priority": "high"}, {"ticket_id": "TKT-06332", "similarity": 0.422, "subject": "(no subject)", "body_snippet": "", "answer_snippet": "<name>, wir schätzen Ihr Anliegen bezüglich der Verbesserung der Sicherheitsprotokolle für Krankenhaus-IT-Systeme zum Schutz medizinischer Daten. Derzeit überprüfen wir unsere Sicherheitsmaßnahmen und implementieren zusätzliche Protokolle, um die Vertraulichkeit und Integrität der Patientendaten zu sichern. Über die ergriffenen Maßnahmen werden wir Sie informieren. Bei weiteren Fragen können Sie gern einen passenden Gesprächstermin unter <tel_num> vereinbaren.", "language": "de", "queue": "Product Support", "type": "Change", "priority": "medium"}, {"ticket_id": "TKT-43552", "similarity": 0.393, "subject": "Verbessern der Sicherheit bei medizinischem Datenschutz", "body_snippet": "", "answer_snippet": "Sehr geehrte [name], wir nehmen die Sicherheit medizinischer Daten in unseren Hospital-IT-Systemen sehr ernst. Wir werden die aktuellen Protokolle überprüfen und notwendige Verbesserungen einleiten, um mögliche Verletzungen zu vermeiden und sensible Patientendaten zu schützen. Sie können sich gerne an [tel_num] wenden, um weitere Details zu unserem nächsten Schritt zu besprechen.", "language": "de", "queue": "General Inquiry", "type": "Change", "priority": "low"}]}, {"ticket_id": "TKT-56088", "subject": "Problem with Syncing Project Updates Across Devices", "body": "The user is unable to sync project updates across devices using the Smart-Thermometer Chef applications following recent software updates. Despite clearing the app cache and reinstalling, the issue still exists. The user has attempted multiple troubleshooting steps but the problem continues.", "received": "08:05", "dataset": {"row": 10751, "type": "Problem", "queue": "Customer Service", "priority": "low"}, "category": "Integrations and software bugs", "note": "Sync stopped after a software update, even after a reinstall. This is filed under Customer Service, but the closest past tickets were handled by Technical Support [TKT-30602] [TKT-37024].", "route": null, "triage": {"type": "Problem", "type_conf": 0.85, "queue": "Customer Service", "queue_conf": 0.55, "priority": "low", "priority_conf": 0.82, "language": "en", "key_terms": []}, "clarifications": [{"field": "queue", "question": "Is this a how-to question, or a fault that started with the update?", "ask_requester": "Did syncing stop working after the update, or do you need help setting it up?", "options": [{"label": "A fault after the update", "reply": "Then it belongs with Technical Support, where [TKT-30602] and [TKT-37024] were handled. I've moved it.", "effect": {"conf": 0.89, "set": {"queue": "Technical Support"}}}, {"label": "A how-to question", "reply": "Then Customer Service can keep it.", "effect": {"conf": 0.87}}]}, {"field": "context", "question": "Do we know which app version and devices the user has?", "ask_requester": "Which app version and which devices are you using?", "options": [{"label": "No", "reply": "I'll ask for the app and device versions in the reply, as past replies did [TKT-41410]."}, {"label": "Yes, from their account", "reply": "Good. I'll still ask for any error messages, which past replies needed to move forward [TKT-30602]."}]}], "draft": {"reply": "Hello,\n\nThanks for letting us know that project updates no longer sync across devices in the Smart-Thermometer Chef app since the recent software update, even after clearing the cache and reinstalling.\n\nTo investigate, could you please send us:\n1. The app version and device models you're using [TKT-41410]\n2. Details of the recent software update and any error messages you see [TKT-30602] [TKT-37024]\n\nIf it's easier, we can also schedule a call to go through the issue together [TKT-30602].\n\nBest regards,\nSupport team", "cited_ticket_ids": ["TKT-30602", "TKT-37024", "TKT-41410"], "grounded": false, "issues": ["3 sentences not supported by a precedent"], "sentences": [{"text": "Hello,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Thanks for letting us know that project updates no longer sync across devices in the Smart-Thermometer Chef app since the recent software update, even after clearing the cache and reinstalling.", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "To investigate, could you please send us:", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "The app version and device models you're using [TKT-41410]", "supported": true, "source_ticket_id": "TKT-41410", "score": 0.39}, {"text": "Details of the recent software update and any error messages you see [TKT-30602] [TKT-37024]", "supported": true, "source_ticket_id": "TKT-30602", "score": 0.42}, {"text": "If it's easier, we can also schedule a call to go through the issue together [TKT-30602].", "supported": true, "source_ticket_id": "TKT-30602", "score": 0.42}, {"text": "Best regards,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Support team", "supported": false, "source_ticket_id": null, "score": 0.0}]}, "timings_ms": {"triage_ms": 36, "retrieval_ms": 109, "gate_ms": 3, "draft_ms": 0, "total_ms": 148}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-30602", "similarity": 0.425, "subject": "Trouble with ClickUp Integration Smart-Thermometer", "body_snippet": "", "answer_snippet": "Investigating the ClickUp integration issue with the Smart-Thermometer. To assist further, could you please provide details on the recent software updates and any specific error messages you are encountering? I would like to schedule a call to discuss the issue in more depth and work towards a resolution. I am available for a call at your convenience. Please let me know a suitable time to reach you at <tel_num> regarding account <acc_num>.", "language": "en", "queue": "Technical Support", "type": "Problem", "priority": "high"}, {"ticket_id": "TKT-37024", "similarity": 0.398, "subject": "Trouble with ClickUp Integration and Smart-Thermometer", "body_snippet": "", "answer_snippet": "We are looking into the ClickUp integration issue with the Smart-Thermometer. To assist further, could you please provide details on the recent software updates and any specific error messages you are encountering? We would like to schedule a call to discuss the issue in depth and work towards a resolution. I am available to call at your convenience. Please let me know a suitable time to reach you at <tel_num> regarding account <acc_num>.", "language": "en", "queue": "Technical Support", "type": "Problem", "priority": "high"}, {"ticket_id": "TKT-41410", "similarity": 0.386, "subject": "ClickUp Integration Issue with Smart-Thermometer", "body_snippet": "", "answer_snippet": "We are looking into the ClickUp integration issue with the Smart-Thermometer. To assist further, could you please provide details on the recent software updates and any exact error messages you are seeing? It would be helpful to schedule a call to discuss the issue in more depth and work towards a resolution. I am available for a call at your convenience. Please let me know a suitable time to reach you at <tel_num> regarding account <acc_num>.", "language": "en", "queue": "Technical Support", "type": "Problem", "priority": "high"}]}, {"ticket_id": "TKT-38613", "subject": "Inquiry on Adobe Effects Details", "body": "Is it possible to receive comprehensive specifications and integration guidelines for Adobe Effects 2021 SaaS platform? I would greatly appreciate any documentation or resources that can help me understand the integration process.", "received": "08:47", "dataset": {"row": 24678, "type": "Request", "queue": "Technical Support", "priority": "low"}, "category": "Integrations and software bugs", "note": "Documentation request that matches an earlier ticket almost word for word [TKT-26136].", "route": null, "triage": {"type": "Request", "type_conf": 0.93, "queue": "Technical Support", "queue_conf": 0.9, "priority": "low", "priority_conf": 0.88, "language": "en", "key_terms": []}, "clarifications": [], "draft": {"reply": "Hello,\n\nThank you for your interest in the Adobe Effects 2021 SaaS platform. We'll send the detailed specifications and integration guidelines, along with the related documentation, to you by email [TKT-26136].\n\nIf you're also working with Adobe After Effects, we can include a list of the available integrations and resources [TKT-18838].\n\nBest regards,\nTechnical Support", "cited_ticket_ids": ["TKT-18838", "TKT-26136"], "grounded": false, "issues": ["2 sentences not supported by a precedent"], "sentences": [{"text": "Hello,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Thank you for your interest in the Adobe Effects 2021 SaaS platform.", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "We'll send the detailed specifications and integration guidelines, along with the related documentation, to you by email [TKT-26136].", "supported": true, "source_ticket_id": "TKT-26136", "score": 0.91}, {"text": "If you're also working with Adobe After Effects, we can include a list of the available integrations and resources [TKT-18838].", "supported": true, "source_ticket_id": "TKT-18838", "score": 0.46}, {"text": "Best regards,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Technical Support", "supported": false, "source_ticket_id": null, "score": 0.0}]}, "timings_ms": {"triage_ms": 33, "retrieval_ms": 94, "gate_ms": 3, "draft_ms": 1110, "total_ms": 1240}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-26136", "similarity": 0.913, "subject": "Inquiry for Adobe Effects Details", "body_snippet": "", "answer_snippet": "Detailed specifications and integration guidelines for the Adobe Effects 2021 SaaS platform, along with relevant documentation, will be sent via email.", "language": "en", "queue": "Technical Support", "type": "Request", "priority": "low"}, {"ticket_id": "TKT-18838", "similarity": 0.458, "subject": "Support Required for Adobe After Effects Integrations", "body_snippet": "", "answer_snippet": "I will provide you with the available integrations and resources for Adobe After Effects shortly.", "language": "en", "queue": "Product Support", "type": "Request", "priority": "medium"}, {"ticket_id": "TKT-39466", "similarity": 0.418, "subject": "Support Needed for Integrations of Adobe After Effects", "body_snippet": "", "answer_snippet": "I will offer you a detailed list of available integrations and related resources for Adobe After Effects shortly.", "language": "en", "queue": "Product Support", "type": "Request", "priority": "medium"}]}, {"ticket_id": "TKT-07574", "subject": "Assistance Required for Project Management Tool", "body": "Customer Support, please address the issue with the project management tool that has gained attention. The loading times have notably increased during peak hours and might be due to server limitations under high traffic. I have tried clearing the cache and refreshing the app, but the problem remains unresolved. I would be greatly helped if you could look into this matter and provide a solution as soon as possible. This increased loading time is impacting my productivity and overall experience with the tool. Please inform me of any updates.", "received": "09:12", "dataset": {"row": 20031, "type": "Problem", "queue": "Technical Support", "priority": "low"}, "category": "Outages and slowdowns", "note": "Slow loading at peak hours, cache already cleared. Matches earlier project-tool performance tickets [TKT-28395] [TKT-48781].", "route": null, "triage": {"type": "Problem", "type_conf": 0.86, "queue": "Technical Support", "queue_conf": 0.81, "priority": "low", "priority_conf": 0.66, "language": "en", "key_terms": []}, "clarifications": [{"field": "priority", "question": "Is the slowdown affecting just this user, or the whole team?", "ask_requester": "Is the slowdown only on your account, or are colleagues affected too?", "options": [{"label": "Just this user", "reply": "Then it isn't clearly a capacity problem yet. The past reply asked about server load and active users to confirm [TKT-48781].", "effect": {"conf": 0.88}}, {"label": "The whole team", "reply": "Team-wide slowdowns at peak hours point to server capacity. I've raised it to medium and routed it to IT Support, which handled [TKT-48781].", "effect": {"conf": 0.9, "set": {"priority": "medium", "queue": "IT Support"}, "reason": "Slowdown affects the whole team: route to IT Support"}}]}], "draft": {"reply": "Hello,\n\nThank you for reporting the longer loading times in the project management tool during peak hours, and for already trying the cache and refresh steps. We're sorry for the impact on your work [TKT-28395].\n\nTo find the cause, could you tell us roughly how many users are active when it slows down, and at what times of day it happens [TKT-48781]? We're also happy to set up a call to gather the details [TKT-35585].\n\nWe'll look into the loading times and update you as soon as we have a solution [TKT-28395].\n\nBest regards,\nTechnical Support", "cited_ticket_ids": ["TKT-28395", "TKT-35585", "TKT-48781"], "grounded": false, "issues": ["2 sentences not supported by a precedent"], "sentences": [{"text": "Hello,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Thank you for reporting the longer loading times in the project management tool during peak hours, and for already trying the cache and refresh steps.", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "We're sorry for the impact on your work [TKT-28395].", "supported": true, "source_ticket_id": "TKT-28395", "score": 0.71}, {"text": "To find the cause, could you tell us roughly how many users are active when it slows down, and at what times of day it happens [TKT-48781]?", "supported": true, "source_ticket_id": "TKT-48781", "score": 0.41}, {"text": "We're also happy to set up a call to gather the details [TKT-35585].", "supported": true, "source_ticket_id": "TKT-35585", "score": 0.4}, {"text": "We'll look into the loading times and update you as soon as we have a solution [TKT-28395].", "supported": true, "source_ticket_id": "TKT-28395", "score": 0.71}, {"text": "Best regards,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Technical Support", "supported": false, "source_ticket_id": null, "score": 0.0}]}, "timings_ms": {"triage_ms": 38, "retrieval_ms": 105, "gate_ms": 3, "draft_ms": 1320, "total_ms": 1466}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-28395", "similarity": 0.71, "subject": "Needed Assistance for Project Support", "body_snippet": "", "answer_snippet": "Thank you for bringing this issue to our attention and apologizing for any inconvenience caused. We will look into the project management tool's loading times and aim to provide a solution in a timely manner. Additional steps will be taken to resolve the issue as soon as possible.", "language": "en", "queue": "Technical Support", "type": "Problem", "priority": "low"}, {"ticket_id": "TKT-48781", "similarity": 0.408, "subject": "Concern Regarding Project Management Tool Performance", "body_snippet": "", "answer_snippet": "Regarding the performance lag issue with the project management tool, could you please provide details on the current server load and the number of users currently accessing the tool? This information will help us identify the root cause and provide a suitable solution. We can schedule a call at your convenient time via <tel_num> to discuss this further. We are committed to resolving the issue as soon as possible to minimize its impact on your project.", "language": "en", "queue": "IT Support", "type": "Problem", "priority": "high"}, {"ticket_id": "TKT-35585", "similarity": 0.404, "subject": "Issues with Slow Loading Times", "body_snippet": "", "answer_snippet": "We will investigate the issue with the slow loading times on the project dashboard. Please, let's discuss at a convenient time to gather more information and resolve the issue as soon as possible.", "language": "en", "queue": "Technical Support", "type": "Problem", "priority": "high"}]}, {"ticket_id": "TKT-54875", "subject": "Fehler bei der Projektzeitplan-Synchronisation", "body": "Unvorhergesehene Probleme beim Projektzeitplan-Synchronisieren traten auf. Es könnte ein Inkompatibilität zwischen den Express.js und MySQL-Versionen die Ursache sein. Ich habe versucht, den Server neu zu starten, die Logs zu analysieren und die Datenbankverbindungen zu überprüfen. Trotz dieser Maßnahmen ist der Fehler leider bestehen geblieben. Ich würde Ihre Unterstützung in der Lösung dieses Problems sehr schätzen.", "received": "09:40", "dataset": {"row": 55493, "type": "Incident", "queue": "Product Support", "priority": "low"}, "category": "Integrations and software bugs", "note": "Schedule sync fails, possibly an Express.js and MySQL version mismatch. The closest past reply asked for the exact versions first [TKT-45286].", "route": null, "triage": {"type": "Incident", "type_conf": 0.89, "queue": "Product Support", "queue_conf": 0.9, "priority": "low", "priority_conf": 0.87, "language": "de", "key_terms": []}, "clarifications": [], "draft": {"reply": "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Nachricht zum Fehler bei der Projektzeitplan-Synchronisation und dafür, dass Sie den Server bereits neu gestartet und die Logs geprüft haben [TKT-45286].\n\nDamit wir die mögliche Inkompatibilität zwischen Express.js und MySQL untersuchen können, teilen Sie uns bitte mit:\n1. welche Versionen von Express.js und MySQL Sie aktuell verwenden [TKT-45286],\n2. welche Fehlermeldungen in den Logs erscheinen [TKT-13079],\n3. mit welchem Gerät und Browser Sie das Programm nutzen [TKT-50120].\n\nGern besprechen wir das Problem auch telefonisch. Nennen Sie uns dazu bitte einen passenden Zeitpunkt [TKT-45286].\n\nMit freundlichen Grüßen\nIhr Product-Support-Team", "cited_ticket_ids": ["TKT-13079", "TKT-45286", "TKT-50120"], "grounded": false, "issues": ["2 sentences not supported by a precedent"], "sentences": [{"text": "Sehr geehrte Damen und Herren,", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "vielen Dank für Ihre Nachricht zum Fehler bei der Projektzeitplan-Synchronisation und dafür, dass Sie den Server bereits neu gestartet und die Logs geprüft haben [TKT-45286].", "supported": true, "source_ticket_id": "TKT-45286", "score": 0.72}, {"text": "Damit wir die mögliche Inkompatibilität zwischen Express.js und MySQL untersuchen können, teilen Sie uns bitte mit:", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "welche Versionen von Express.js und MySQL Sie aktuell verwenden [TKT-45286],", "supported": true, "source_ticket_id": "TKT-45286", "score": 0.72}, {"text": "welche Fehlermeldungen in den Logs erscheinen [TKT-13079],", "supported": true, "source_ticket_id": "TKT-13079", "score": 0.37}, {"text": "mit welchem Gerät und Browser Sie das Programm nutzen [TKT-50120].", "supported": true, "source_ticket_id": "TKT-50120", "score": 0.36}, {"text": "Gern besprechen wir das Problem auch telefonisch.", "supported": false, "source_ticket_id": null, "score": 0.0}, {"text": "Nennen Sie uns dazu bitte einen passenden Zeitpunkt [TKT-45286].", "supported": true, "source_ticket_id": "TKT-45286", "score": 0.72}, {"text": "Mit freundlichen Grüßen", "supported": true, "source_ticket_id": null, "score": 1.0}, {"text": "Ihr Product-Support-Team", "supported": true, "source_ticket_id": null, "score": 1.0}]}, "timings_ms": {"triage_ms": 40, "retrieval_ms": 112, "gate_ms": 4, "draft_ms": 1460, "total_ms": 1616}, "sources": {"triage": "mock", "retrieve": "mock", "gate": "mock", "draft": "mock"}, "precedents": [{"ticket_id": "TKT-45286", "similarity": 0.723, "subject": "Fehlschlag der Projektzeitplan-Synchronisation", "body_snippet": "", "answer_snippet": "Sehr geehrter <name>,\n\nich antworte auf Ihre E-Mail über das Projektzeitplan-Synchronisationsproblem. Dank Ihrer Bemühungen, durch Serverneustart und Logprüfung zu intervenieren. Um das Kompatibilitätsproblem zwischen den Express.js und MySQL-Versionen weiter zu untersuchen, könnten Sie mir bitte mitteilen, welche spezifischen Versionen Sie zurzeit verwenden. Darüber hinaus wäre ich für einen Telefonanruf, um die Angelegenheit weiter zu diskutieren, zu sprechen. Wann ist Ihnen ein passender Zeitpunkt? Teilen Sie mir bitte eine geeignete Zeit mit, und ich werde mich bei Ihnen melden, um Ihnen bei der Lösung des Synchronisationsproblems in Ihrem Projektzeitplan zu helfen.\n\nMit freundlichen Grüßen", "language": "de", "queue": "Product Support", "type": "Incident", "priority": "low"}, {"ticket_id": "TKT-13079", "similarity": 0.368, "subject": "Probleme mit dem Projektzeitplan", "body_snippet": "", "answer_snippet": "Sehr geehrte <name>, ich schreibe, um die Eingabe Ihrer E-Mail zu bestätigen, in der Sie ein Problem mit den Zeitplänen melden, die nicht synchronisiert werden. Ich entschuldige mich für die Unannehmlichkeiten, die Ihnen dadurch entstanden sind, und ich freue mich darauf, Ihnen dabei zu helfen, dieses Problem zu lösen. Sie haben erwähnt, dass Sie das System neu gestartet und die Einstellungen überprüft haben, aber das Problem behält sich trotz dieser Bemühungen bei. Ich würde gerne einige zusätzliche Informationen sammeln, um das Problem besser zu verstehen. Könnten Sie mir bitte mehr Details über die Integrationseinwandteile, die Sie als möglichen Ursprung des Problems vermuten, geben? Zudem wäre es hilfreich, wenn Sie mir Ihre <acc_num> und eine detaillierte Beschreibung der Fehlernachrichten angeben könnten, die Sie sehen. Ich werde diese Informationen überprüfen und Sie mit einer Lösung oder zur Anforderung nach weiteren Details kontaktieren, falls nötig. Wenn erforderlich, könnte ich es mir zur Aufnahme eines Anrufs mit Ihnen am <tel_num> vorstellen, um das Problem weiter zu besprechen.", "language": "de", "queue": "Product Support", "type": "Problem", "priority": "medium"}, {"ticket_id": "TKT-50120", "similarity": 0.365, "subject": "Problematik beim Projektzeitplan", "body_snippet": "", "answer_snippet": "Sehr geehrte <name>, ich bin froh, dass Sie sich bei uns gemeldet haben, um das Problem mit der Projektzeitplanung zu melden, das Sie erleben. Ich entschuldige mich für die Unannehmlichkeiten und werde Ihnen mein Bestes geben, um dieses Problem zu lösen. Könnten Sie bitte mir mehr Informationen über das recent Update oder die Integrationsproblematik geben, von denen Sie sprechen, beispielsweise datumsangaben und Fehlermeldungen? Zudem verwenden Sie welches Gerät und welchen Browser, um das Programm zu bedienen? Diese Informationen werden mir helfen, das Problem besser zu verstehen. Wenn erforderlich, werde ich einen Anruf vereinbaren, um die Angelegenheit weiter zu besprechen. Bitte teilen Sie mir einen geeigneten Zeitpunkt für den Anruf mit <tel_num>.", "language": "de", "queue": "Product Support", "type": "Problem", "priority": "high"}]}], "sources": {"queues": ["Technical Support", "Product Support", "Customer Service", "IT Support", "Billing and Payments", "Service Outages and Maintenance", "Other teams"], "data": {"all": [{"name": "Security and data breaches", "n": 4347, "high": 1965, "medium": 1673, "low": 709, "de": 1856, "queues": [1817, 822, 449, 436, 211, 106, 506]}, {"name": "Outages and slowdowns", "n": 5809, "high": 3035, "medium": 1867, "low": 907, "de": 2209, "queues": [2431, 1046, 448, 779, 63, 678, 364]}, {"name": "Billing and payments", "n": 858, "high": 248, "medium": 415, "low": 195, "de": 345, "queues": [16, 8, 4, 3, 804, 2, 21]}, {"name": "Accounts and sign-in", "n": 432, "high": 122, "medium": 179, "low": 131, "de": 185, "queues": [143, 61, 75, 89, 5, 5, 54]}, {"name": "Integrations and software bugs", "n": 5641, "high": 2190, "medium": 2326, "low": 1125, "de": 2610, "queues": [2259, 1340, 611, 579, 55, 135, 662]}, {"name": "Hardware and devices", "n": 589, "high": 249, "medium": 206, "low": 134, "de": 270, "queues": [262, 89, 53, 84, 4, 62, 35]}, {"name": "Data, backup and recovery", "n": 87, "high": 44, "medium": 30, "low": 13, "de": 43, "queues": [53, 12, 9, 8, 0, 1, 4]}, {"name": "Questions and requests", "n": 1681, "high": 604, "medium": 667, "low": 410, "de": 713, "queues": [428, 451, 280, 96, 24, 57, 345]}], "en": [{"name": "Security and data breaches", "n": 2491, "high": 1121, "medium": 958, "low": 412, "de": 0, "queues": [1056, 480, 242, 247, 118, 59, 289]}, {"name": "Outages and slowdowns", "n": 3600, "high": 1892, "medium": 1148, "low": 560, "de": 0, "queues": [1519, 694, 282, 459, 19, 424, 203]}, {"name": "Billing and payments", "n": 513, "high": 151, "medium": 254, "low": 108, "de": 0, "queues": [0, 0, 0, 0, 502, 0, 11]}, {"name": "Accounts and sign-in", "n": 247, "high": 76, "medium": 102, "low": 69, "de": 0, "queues": [89, 30, 39, 57, 4, 1, 27]}, {"name": "Integrations and software bugs", "n": 3031, "high": 1099, "medium": 1303, "low": 629, "de": 0, "queues": [1144, 779, 354, 291, 28, 65, 370]}, {"name": "Hardware and devices", "n": 319, "high": 131, "medium": 113, "low": 75, "de": 0, "queues": [146, 50, 20, 53, 1, 32, 17]}, {"name": "Data, backup and recovery", "n": 44, "high": 20, "medium": 17, "low": 7, "de": 0, "queues": [24, 7, 7, 4, 0, 1, 1]}, {"name": "Questions and requests", "n": 968, "high": 344, "medium": 404, "low": 220, "de": 0, "queues": [240, 260, 159, 54, 16, 32, 207]}], "de": [{"name": "Security and data breaches", "n": 1856, "high": 844, "medium": 715, "low": 297, "de": 1856, "queues": [761, 342, 207, 189, 93, 47, 217]}, {"name": "Outages and slowdowns", "n": 2209, "high": 1143, "medium": 719, "low": 347, "de": 2209, "queues": [912, 352, 166, 320, 44, 254, 161]}, {"name": "Billing and payments", "n": 345, "high": 97, "medium": 161, "low": 87, "de": 345, "queues": [16, 8, 4, 3, 302, 2, 10]}, {"name": "Accounts and sign-in", "n": 185, "high": 46, "medium": 77, "low": 62, "de": 185, "queues": [54, 31, 36, 32, 1, 4, 27]}, {"name": "Integrations and software bugs", "n": 2610, "high": 1091, "medium": 1023, "low": 496, "de": 2610, "queues": [1115, 561, 257, 288, 27, 70, 292]}, {"name": "Hardware and devices", "n": 270, "high": 118, "medium": 93, "low": 59, "de": 270, "queues": [116, 39, 33, 31, 3, 30, 18]}, {"name": "Data, backup and recovery", "n": 43, "high": 24, "medium": 13, "low": 6, "de": 43, "queues": [29, 5, 2, 4, 0, 0, 3]}, {"name": "Questions and requests", "n": 713, "high": 260, "medium": 263, "low": 190, "de": 713, "queues": [188, 191, 121, 42, 8, 25, 138]}]}}};
+const TICKETS = DATA.tickets, SOURCES = DATA.sources;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = n => n.toLocaleString("en-US");
+
+/* ---------------- icons ---------------- */
+const sv = (p, w=12) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I = {
+  high: sv('<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8"/>'), medium: sv('<path d="M2 20h.01M7 20v-4M12 20v-8"/>'), low: sv('<path d="M2 20h.01M7 20v-4"/>'),
+  clarify: sv('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>'),
+  escalate: sv('<path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/><path d="M21 12h1M18.5 4.5 18 5M2 12h1M12 2v1M4.93 4.93l.71.71"/>'),
+  draft: sv('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
+  check: sv('<path d="M20 6 9 17l-5-5"/>'), x: sv('<path d="M18 6 6 18M6 6l12 12"/>'), back: sv('<path d="m12 19-7-7 7-7M19 12H5"/>',14),
+  plus: sv('<path d="M5 12h14M12 5v14"/>',16), reset: sv('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',14),
+  warn: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="vertical-align:-2px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>',
+  send: sv('<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',14), panel: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>',
+  pen: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>'
+};
+const PRIO = {high:["b-critical","High"], medium:["b-warning","Medium"], low:["b-success","Low"]};
+const OUT = {clarify:["b-warning","Clarify"], escalate:["b-critical","Escalate"], draft:["b-success","Draft ready"]};
+const prioBadge = p => `<span class="badge ${PRIO[p][0]}">${I[p]}${PRIO[p][1]}</span>`;
+const outBadge = o => `<span class="badge ${OUT[o][0]}">${I[o]}${OUT[o][1]}</span>`;
+const mock = '<span class="badge b-outline">Mock</span>';
+const tier = c => c >= .85 ? "Confident" : c >= .7 ? "Likely" : "Ambiguous";
+const confMeter = c => `<span class="conf ${c<.7?"amb":""}" title="${Math.round(c*100)}%"><span class="track"><span class="fill" style="width:${Math.round(c*100)}%"></span></span><span class="tier">${tier(c)}</span></span>`;
+const aiHead = (t, extra="") => `<header><span class="aimark sm" aria-hidden="true">${I.pen}</span><h3>${t}</h3><span class="r" style="display:flex;gap:8px;align-items:center">${extra}</span></header>`;
+const pageHead = (title, actions="") => `<div class="ph"><span class="icon-btn" aria-hidden="true">${I.panel}</span><span class="sep"></span><h1>${title}</h1><div class="act">${actions}</div></div>`;
+
+/* ---------------- gate: port of web/lib/gate.ts (mirrors gate/gate.py) ---------------- */
+const CONF_MIN = .45, SIM_MIN = .55, FIELDS = ["type","queue","priority"];
+const RISKY = /refund|reimburs|compensat|lawsuit|legal|lawyer|guarantee|discount|price|pricing|\bSLA\b|erstatt|rückerstatt|entschädig|anwalt|klage|rechtlich|garantie|rabatt|preis/i;
+const INJECTION = /ignore (all |any |the )?(previous|prior|above|your) (instructions|rules)|disregard (all|previous|your)|system prompt|you are now|act as|pretend to be|ignoriere (alle|deine|die vorherigen)|vergiss (alle|deine)/i;
+const init = c => ({triage:{...c.triage}, fields:{type:"suggested",queue:"suggested",priority:"suggested"}, answers:[], forced:[], extraText:"", route:c.route});
+const S = Object.fromEntries(TICKETS.map(c => [c.ticket_id, init(c)]));
+const byId = id => TICKETS.find(c => c.ticket_id === id);
+const clone = s => JSON.parse(JSON.stringify(s));
+const remaining = (c, s) => { const asked = new Set(s.answers.map(a => a.question)); return c.clarifications.filter(q => !asked.has(q.question) && !(q.field !== "context" && s.fields[q.field] !== "suggested")); };
+const openQ = (c, s) => remaining(c, s)[0] || null;
+function answer(c, s, idx, free){
+  const q = openQ(c, s); if (!q) return;
+  const o = idx === null ? null : q.options[idx], e = (o && o.effect) || {};
+  Object.assign(s.triage, e.set || {});
+  if (q.field !== "context") s.triage[q.field+"_conf"] = e.conf ?? Math.max(s.triage[q.field+"_conf"], .7);
+  s.answers.push({question:q.question, label:o ? o.label : free, reply:o ? o.reply : "Noted. Re-checked the sources with your answer.", free:!o});
+  if (e.reason) s.forced.push(e.reason);
+  s.extraText += " " + (e.adds_text || free || "");
+}
+function reasons(c, s){
+  const t = s.triage, text = `${c.subject} ${c.body} ${s.extraText}`, r = [];
+  if (t.priority === "high" && t.type === "Incident") r.push("High-priority incident: page the on-call engineer");
+  const low = Math.min(1, ...FIELDS.filter(f => s.fields[f] === "suggested").map(f => t[f+"_conf"]));
+  if (low < CONF_MIN) r.push(`Low classifier confidence (${Math.round(low*100)}%)`);
+  const top = Math.max(0, ...c.precedents.map(p => p.similarity));
+  if (top < SIM_MIN) r.push(`No close historical precedent (best match ${Math.round(top*100)}%)`);
+  if (INJECTION.test(text)) r.push("Possible prompt injection in the ticket");
+  if (RISKY.test(text) && !c.precedents.some(p => RISKY.test(p.answer_snippet))) r.push("Asks for a refund, legal or pricing commitment that past resolutions don't support");
+  return [...r, ...s.forced];
+}
+function outcome(c, s){
+  const r = reasons(c, s);
+  if (r.some(x => /High-priority incident|prompt injection/.test(x))) return "escalate";
+  if (openQ(c, s)) return "clarify";
+  return r.length ? "escalate" : c.draft.reply ? "draft" : "escalate";
+}
+const PR = {high:0, medium:1, low:2};
+const sorted = () => TICKETS.slice().sort((a,b) => PR[S[a.ticket_id].triage.priority] - PR[S[b.ticket_id].triage.priority] || a.received.localeCompare(b.received));
+
+/* ---------------- toasts ---------------- */
+function toast(msg, opts={}){
+  const el = document.createElement("div"); el.className = "toast" + (opts.error ? " err" : "");
+  el.innerHTML = `<div><div>${esc(msg)}</div>${opts.desc ? `<div class="d">${esc(opts.desc)}</div>` : ""}</div>${opts.undo ? '<button class="btn outline xs">Undo</button>' : ""}`;
+  if (opts.undo) el.querySelector("button").onclick = () => { opts.undo(); el.remove(); };
+  $("#toasts").appendChild(el); setTimeout(() => el.remove(), 5000);
+}
+
+/* ---------------- router (in memory) ---------------- */
+let route = {page:"inbox", status:"all", queue:null, category:null, id:null, sel:null};
+function go(r){ if (r.id && r.id !== route.id) { editing = expanded = showAllReasons = false; } route = {...route, ...r}; render(); scrollTo(0,0); }
+document.addEventListener("click", e => {
+  const n = e.target.closest("[data-nav]"); if (n) go({page:n.dataset.nav, status:"all", queue:null, category:null});
+});
+document.querySelectorAll("[data-th]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-th]").forEach(x => x.setAttribute("aria-pressed", x===b));
+  if (b.dataset.th === "system") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", b.dataset.th);
+  if (route.page === "dashboard") render();
+}));
+
+function render(){
+  document.querySelectorAll("[data-nav]").forEach(n => n.toggleAttribute("aria-current", n.dataset.nav === (route.page==="ticket" ? "inbox" : route.page)));
+  document.querySelectorAll(".nav[aria-current]").forEach(n => n.setAttribute("aria-current","page"));
+  $("#nav-open").textContent = TICKETS.filter(c => outcome(c, S[c.ticket_id]) !== "draft").length;
+  $("#citepop").hidden = true;
+  ({inbox:renderInbox, ticket:renderTicket, dashboard:renderDashboard})[route.page]();
+}
+
+/* ---------------- inbox ---------------- */
+function inboxRows(){
+  const scoped = sorted().filter(c => (!route.queue || S[c.ticket_id].triage.queue === route.queue) && (!route.category || c.category === route.category));
+  const all = scoped.map(c => ({c, s:S[c.ticket_id], o:outcome(c, S[c.ticket_id])}));
+  return {all, visible: all.filter(r => route.status === "all" || r.o === route.status)};
+}
+function renderInbox(){
+  const {all, visible} = inboxRows();
+  if (!visible.some(r => r.c.ticket_id === route.sel)) route.sel = visible[0]?.c.ticket_id ?? null;
+  const counts = s => s === "all" ? all.length : all.filter(r => r.o === s).length;
+  const filt = route.queue || route.category;
+  $("#view").innerHTML = pageHead("Inbox", `<button class="btn sm" data-act="new">${I.plus}New ticket</button>`) + `
+  <div class="page">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="tg" role="group" aria-label="Status">${[["all","All"],["clarify","Clarify"],["escalate","Escalate"],["draft","Draft ready"]].map(([v,l]) => `<button aria-pressed="${route.status===v}" data-status="${v}">${l} <span class="n">${counts(v)}</span></button>`).join("")}</div>
+      ${filt ? `<button class="chipf" data-act="clearf" aria-label="Clear filter ${esc(filt)}">${esc(filt)}${I.x}</button>` : ""}
+      <span style="margin-left:auto">${mock}</span>
+    </div>
+    ${visible.length ? `<div class="list"><table class="tbl"><thead><tr><th style="width:96px">Priority</th><th style="width:96px">Ticket</th><th>Subject</th><th class="hq" style="width:176px">Queue</th><th class="hc" style="width:144px">Confidence</th><th style="width:112px">Status</th><th class="hr" style="width:64px;text-align:right">Received</th></tr></thead><tbody>
+      ${visible.map(({c,s,o}) => { const un = FIELDS.filter(f => s.fields[f] === "suggested"), cf = Math.min(1, ...un.map(f => s.triage[f+"_conf"]));
+        return `<tr data-open="${c.ticket_id}" ${route.sel===c.ticket_id?'data-state="selected"':""}>
+        <td>${prioBadge(s.triage.priority)}</td><td><span class="tid muted">${c.ticket_id}</span></td>
+        <td class="subj"><a href="#" data-open="${c.ticket_id}" lang="${c.triage.language}" style="color:inherit;text-decoration:none">${esc(c.subject)}</a></td>
+        <td class="q hq">${esc(s.triage.queue)}</td><td class="hc">${un.length ? confMeter(cf) : '<span class="muted" style="font-size:12px">Accepted</span>'}</td>
+        <td>${outBadge(o)}</td><td class="mono muted hr" style="font-size:12px;text-align:right">${c.received}</td></tr>`; }).join("")}
+      </tbody></table></div>` : `<div class="empty"><span>No tickets match these filters.</span><button class="btn outline" data-act="clearall">Clear filters</button></div>`}
+    <div class="keys"><span><kbd>J</kbd> <kbd>K</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>A</kbd> accept triage</span><span><kbd>E</kbd> escalate</span></div>
+  </div>`;
+}
+document.addEventListener("click", e => {
+  if (route.page !== "inbox") return;
+  const st = e.target.closest("[data-status]"); if (st) { route.status = st.dataset.status; render(); return; }
+  const op = e.target.closest("[data-open]"); if (op) { e.preventDefault(); go({page:"ticket", id:op.dataset.open}); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  if (a.dataset.act === "clearf") { route.queue = route.category = null; render(); }
+  if (a.dataset.act === "clearall") { route.queue = route.category = null; route.status = "all"; render(); }
+  if (a.dataset.act === "new") openSheet();
+});
+document.addEventListener("mouseover", e => { if (route.page !== "inbox") return; const r = e.target.closest("tr[data-open]"); if (r && route.sel !== r.dataset.open) { route.sel = r.dataset.open; document.querySelectorAll("tr[data-open]").forEach(x => x.removeAttribute("data-state")); r.setAttribute("data-state","selected"); } });
+document.addEventListener("keydown", e => {
+  if (route.page !== "inbox" || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target.closest && e.target.closest("input,textarea,select,[contenteditable=true]")) return;
+  const {visible} = inboxRows(), id = route.sel; if (!id) return;
+  const i = visible.findIndex(r => r.c.ticket_id === id), s = S[id], before = clone(s), restore = () => { S[id] = before; render(); };
+  if (e.key === "j" || e.key === "k") { e.preventDefault(); const n = visible[Math.min(visible.length-1, Math.max(0, i + (e.key==="j"?1:-1)))]; if (n) { route.sel = n.c.ticket_id; render(); document.querySelector(`tr[data-open="${route.sel}"]`)?.scrollIntoView({block:"nearest"}); } }
+  else if (e.key === "Enter") { e.preventDefault(); go({page:"ticket", id}); }
+  else if (e.key === "a") { if (FIELDS.every(f => s.fields[f] !== "suggested")) return; FIELDS.forEach(f => s.fields[f] = "accepted"); render(); toast(`Accepted triage for ${id}`, {undo:restore}); }
+  else if (e.key === "e") { s.forced.push("Operator escalated from the inbox"); render(); toast(`Escalated ${id}`, {undo:restore}); }
+});
+function openSheet(){
+  const bg = document.createElement("div"); bg.className = "sheet-bg";
+  const sh = document.createElement("form"); sh.className = "sheet"; sh.setAttribute("aria-label","New ticket");
+  sh.innerHTML = `<h2>New ticket</h2><p class="muted" style="margin:-8px 0 0;font-size:13px">English or German.</p>
+    <div class="field"><label for="nt-s">Subject</label><input id="nt-s"></div>
+    <div class="field"><label for="nt-b">Message</label><textarea id="nt-b" rows="8" required></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:auto"><button class="btn" type="submit">Triage ticket</button><button class="btn outline" type="button" data-close>Cancel</button></div>`;
+  const close = () => { bg.remove(); sh.remove(); };
+  bg.onclick = close; sh.querySelector("[data-close]").onclick = close;
+  sh.onsubmit = e => { e.preventDefault(); close(); toast("Triage API not connected", {error:true, desc:"Start the backend, then submit again."}); };
+  document.body.append(bg, sh); sh.querySelector("#nt-s").focus();
+}
+
+/* ---------------- ticket detail ---------------- */
+const CITE = /\s*\[(TKT-\d{5}(?:\s*,\s*TKT-\d{5})*)\]/g;
+const OPTIONS = {type:["Incident","Request","Problem","Change"], queue:["Technical Support","Product Support","Customer Service","IT Support","Billing and Payments","Returns and Exchanges","Service Outages and Maintenance","Sales and Pre-Sales","Human Resources","General Inquiry","Other"], priority:["high","medium","low"]};
+const FL = {type:"Type", queue:"Queue", priority:"Priority", context:"Context"};
+const MODEL = "Gemma 4 (local)";
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function cited(text, c){
+  return esc(text).replace(CITE, (_, ids) => ids.split(",").map(x => x.trim()).map(id => {
+    const k = c.precedents.findIndex(p => p.ticket_id === id);
+    return k < 0 ? `<span class="inv"><span class="sr">Invalid citation </span>${id}</span>` : `<button class="cite" data-c="${id}" aria-label="Source ${k+1}: ${id}">${k+1}</button>`;
+  }).join(""));
+}
+const idsIn = t => new Set([...t.matchAll(CITE)].flatMap(m => m[1].split(",").map(x => x.trim())));
+function draftHTML(c){
+  let i = 0; const SS = c.draft.sentences;
+  return c.draft.reply.split("\n").map(raw => {
+    const line = raw.trim(); if (!line) return '<div style="height:12px"></div>';
+    const checks = []; while (i < SS.length && line.includes(SS[i].text)) checks.push(SS[i++]);
+    if (!checks.length) return `<p>${esc(line)}</p>`;
+    const m = line.match(/^\s*(\d{1,2}\.)\s+/);
+    return "<p>" + (m ? `<span style="margin-right:6px">${m[1]}</span>` : "") + checks.map(k =>
+      (k.supported && k.source_ticket_id === null) ? cited(k.text, c) : k.supported ? `<span class="sup"><span class="sr">Supported: </span>${cited(k.text, c)}</span>` : `<span class="uns">${I.warn} <span class="sr">Unsupported: </span>${cited(k.text, c)}</span>`).join(" ") + "</p>";
+  }).join("");
+}
+
+/* ---- simulated model: what the LLM layer looks like once it's wired ---- */
+// Per-ticket generation state. In the real app these come from streamed API responses.
+const G = {};
+const gen = id => G[id] ??= {read:false, draft:false, busy:false, chat:[], hint:null, draftMs:0};
+const skeleton = n => `<div class="skel" aria-hidden="true">${Array.from({length:n}, (_,i) => `<span style="width:${[92,78,85,64,88][i%5]}%"></span>`).join("")}</div>`;
+// Write text into an element word by word, rendering citations as they complete.
+function stream(elId, text, c, done, speed = 22){
+  const ticket = route.id;
+  if (REDUCED) { const el = document.getElementById(elId); if (el) el.innerHTML = cited(text, c); done(); return; }
+  const words = text.split(/(\s+)/); let i = 0;
+  (function tick(){
+    const el = document.getElementById(elId);
+    if (!el || route.id !== ticket) { done(); return; }
+    i = Math.min(words.length, i + 2);
+    el.innerHTML = cited(words.slice(0, i).join(""), c) + (i < words.length ? '<span class="caret" aria-hidden="true"></span>' : "");
+    if (i < words.length) setTimeout(tick, speed); else done();
+  })();
+}
+const wait = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+const firstSentence = t => (t.match(/^.*?[.!?](\s|$)/) || [t])[0].trim();
+const TRANSLATION = {
+  "TKT-15737": "Support team, a critical security vulnerability has been found in BioTrust's ResearchGate API. This breach poses a serious risk of unauthorized disclosure of patient data. We must act immediately to prevent unauthorized access.",
+  "TKT-55945": "We're having temporary problems with the loading function after the planned update. Server configuration changes may be the cause. The connection is up. Please clear the cache and restart the services. The problem still persists.",
+  "TKT-15072": "Dear customer service, I'd like to request an improved security protocol for protecting medical data and improvements to the clinic's IT infrastructure. Protecting sensitive patient data and preventing cyberattacks is important. I'd appreciate a reply describing how this will be handled and what further measures can be taken. Thank you for your support.",
+  "TKT-54875": "Unexpected problems occurred while syncing the project schedule. An incompatibility between the Express.js and MySQL versions may be the cause. I tried restarting the server, analyzing the logs and checking the database connections, but the error persists. I'd appreciate your help resolving it."
+};
+// Simulated answers to open questions, grounded only in the ticket and its precedents.
+function respond(c, s, q){
+  const t = q.toLowerCase(), o = outcome(c, s), r = reasons(c, s), P = c.precedents;
+  if (/translat|english|übersetz|what does it say/.test(t))
+    return TRANSLATION[c.ticket_id] ? `Here it is in English: "${TRANSLATION[c.ticket_id]}"` : "This ticket is already in English.";
+  if (/summar|tl;?dr|gist|what is this|what's this about/.test(t))
+    return `${c.triage.language === "de" ? "German" : "English"} ${s.triage.type.toLowerCase()} for ${s.triage.queue}, priority ${s.triage.priority}. ${c.note}`;
+  if (/why|reason|escalat|route|routed|team|queue/.test(t))
+    return o === "escalate" ? `It goes to a person because: ${r.join("; ").toLowerCase()}. ${s.route ? `Suggested owner: ${s.route.replace(" · ", ", ")}.` : ""}`
+      : `It's routed to ${s.triage.queue} because the closest past tickets were handled there [${P[0].ticket_id}]. ${o === "clarify" ? "I still need one answer before drafting." : "Nothing in the gate blocks a draft."}`;
+  if (/ask|customer|information|missing|need from|details/.test(t)){
+    const asks = P.flatMap(p => (p.answer_snippet.match(/[^.!?]*(could you|can you|please (provide|send|share|let)|bitte|könnten sie|teilen sie)[^.!?]*[.!?]/gi) || []).slice(0,1).map(x => `${x.trim()} [${p.ticket_id}]`)).slice(0,3);
+    return asks.length ? `Past replies asked for these details first:\n${asks.map(a => "• " + a).join("\n")}` : `The past replies don't ask for anything specific. I'd confirm the details in the ticket and offer a call [${P[0].ticket_id}].`;
+  }
+  if (/similar|past|before|last time|precedent|worked|history|fix|resolve/.test(t))
+    return `Here's what worked before:\n${P.slice(0,3).map(p => `• ${p.subject}: ${firstSentence(p.answer_snippet)} [${p.ticket_id}]`).join("\n")}`;
+  return "I can only answer from this ticket and its past tickets. Try asking why it was routed, what worked before, or what to ask the customer.";
+}
+// Map a typed clarification answer onto the closest option, like the model would.
+const SYN = {refund:/money back|reimburs|chargeback|credit|erstatt|geld zurück/, explanation:/explain|why|understand|breakdown|clarif|erklär/,
+  team:/everyone|whole|all of|colleagues|several|many|kolleg|alle/, user:/just (him|her|me|them)|only (him|her|me|them|one)|single|nur/, outlook:/outlook/, apple:/iphone|ios|apple/};
+function interpret(q, text){
+  const t = text.toLowerCase(), words = t.split(/\W+/).filter(w => w.length > 2);
+  const syn = q.options.findIndex(o => Object.entries(SYN).some(([k, re]) => o.label.toLowerCase().includes(k) && re.test(t)));
+  if (syn >= 0) return syn;
+  let best = -1, score = 0;
+  q.options.forEach((o, i) => {
+    const keys = o.label.toLowerCase().split(/\W+/).filter(w => w.length > 2 && !["the","and","only","from","not"].includes(w));
+    const sc = keys.filter(k => t.includes(k) || words.some(w => w.startsWith(k.slice(0,5)))).length;
+    if (sc > score) { score = sc; best = i; }
+  });
+  return best;
+}
+
+let editing = false, expanded = false, showAllReasons = false;
+function renderTicket(){
+  const c = byId(route.id), s = S[c.ticket_id], g = gen(c.ticket_id), o = outcome(c, s), r = reasons(c, s), q = openQ(c, s);
+  const urgent = r.some(x => x.startsWith("High-priority"));
+  const touched = s.answers.length || s.forced.length || FIELDS.some(f => s.fields[f] !== "suggested") || g.chat.length;
+  const citedSet = new Set([...idsIn(c.note), ...s.answers.flatMap(a => [...idsIn(a.reply)]), ...(o === "draft" ? c.draft.cited_ticket_ids : [])]);
+  const claims = c.draft.sentences.filter(k => !(k.supported && k.source_ticket_id === null)), sup = claims.filter(k => k.supported).length;
+  const lang = c.triage.language, t = c.timings_ms;
+  const showOutcome = g.read && !g.busy;
+  let outHTML = "";
+  if (!showOutcome) outHTML = "";
+  else if (o === "clarify") outHTML = `<section class="ai">${aiHead("Clarify before drafting", `<span class="mono muted" style="font-size:12px">${s.answers.length+1}/${s.answers.length+remaining(c,s).length}</span>`)}
+      <div class="qrow">${I.clarify.replace('width="12" height="12"','width="16" height="16"')}<div><p class="qlabel">${FL[q.field]} is ambiguous</p><p class="qtext">${esc(q.question)}</p></div></div>
+      <div class="opts">${q.options.map((op,i) => `<button class="btn outline" data-ans="${i}">${esc(op.label)}</button>`).join("")}</div>
+      ${g.hint ? `<p class="hint" id="hint"></p>` : ""}
+      <form class="free" id="freeform"><div style="flex:1;min-width:0"><label for="free">Other answer</label><input id="free" autocomplete="off" placeholder="Answer in your own words"></div><button class="btn secondary" type="submit">Answer</button></form>
+      <button class="btn link" data-act="askreq" style="align-self:flex-start">${I.send}Ask requester</button></section>`;
+  else if (o === "escalate") { const shown = showAllReasons ? r : r.slice(0,3);
+    outHTML = `<section class="panel" aria-label="Escalation"><div class="esc" role="status"><div style="display:flex;gap:8px;align-items:center;font-weight:500">${I.escalate.replace('width="12" height="12"','width="16" height="16"')}Escalate to on-call engineer</div>
+      <ul class="reasons">${shown.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      ${r.length > 3 ? `<button class="btn link" data-act="more" style="align-self:flex-start">${showAllReasons ? "Less" : `More (${r.length-3})`}</button>` : ""}
+      ${s.route ? `<p class="muted" style="margin:0;font-size:13px">${esc(s.route.replace(" · ", ": "))}</p>` : ""}
+      <div class="dact"><button class="btn" data-act="act" style="${urgent?"background:var(--critical);":""}">${urgent ? "Page on-call" : "Assign to me"}</button></div></section>`; }
+  else if (!g.draft) outHTML = `<section class="ai" data-generating="true" aria-busy="true">${aiHead(`Drafting reply in ${lang === "de" ? "German" : "English"}`, `<span class="mono muted" style="font-size:12px" id="draft-timer">0.0 s</span>`)}
+      <p class="muted" style="margin:0;font-size:13px" id="draft-phase">Reading ${c.precedents.length} past tickets</p>
+      <div class="reply" id="draft-body" style="white-space:pre-line">${skeleton(5)}</div></section>`;
+  else outHTML = `<section class="ai">${aiHead(`Draft reply in ${lang === "de" ? "German" : "English"}`, `${mock}<button class="btn ghost sm" data-act="regen">Regenerate</button><button class="btn ghost sm" data-act="edit">${editing ? "Done" : "Edit"}</button>`)}
+      <div class="ground"><span class="gbar" aria-hidden="true">${claims.map(k => k.supported ? "<i></i>" : '<i class="u"></i>').join("")}</span><b style="font-weight:500">${sup} of ${claims.length} grounded</b>${claims.length-sup ? `<span style="color:var(--warning-fg)">${I.warn} ${claims.length-sup} unsupported</span>` : ""}<span class="muted" style="margin-left:auto;font-size:12px">${MODEL}, ${(g.draftMs/1000).toFixed(1)} s</span></div>
+      <div class="reply" lang="${lang}" ${editing ? 'contenteditable="true"' : ""}>${draftHTML(c)}</div>
+      <div class="dact" style="display:flex;gap:8px;padding-top:8px"><button class="btn" data-act="send">Approve and send</button><button class="btn outline" data-act="esc">Escalate</button></div></section>`;
+
+  const last = s.answers.length - 1;
+  const chatSuggest = ["Why this route?", "What worked before?", "What should I ask the customer?", lang === "de" ? "Translate to English" : "Summarize"];
+  $("#view").innerHTML = pageHead(`<span class="tid" style="font-size:20px">${c.ticket_id}</span>`, `${touched ? `<button class="btn ghost sm" data-act="reset">${I.reset}Start over</button>` : ""}${showOutcome ? outBadge(o) : ""}`) + `
+  <div class="canvas">
+    <section class="panel" aria-label="Ticket">
+      <button class="back more" data-nav="inbox">${I.back}Inbox</button>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="muted" style="font-size:12px;display:flex;gap:8px"><span>${lang.toUpperCase()}</span><span class="mono">${c.received}</span><span>Dataset row ${c.dataset.row}</span></div>
+        <h2 lang="${lang}">${esc(c.subject)}</h2>
+        <p class="body" lang="${lang}" style="white-space:pre-line;${expanded ? "-webkit-line-clamp:unset;display:block" : ""}">${esc(c.body)}</p>
+        <button class="more" data-act="expand" aria-expanded="${expanded}">${expanded ? "Less" : "Full message"}</button>
+      </div>
+      <div class="tri"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Triage</h3>${mock}</div>
+        ${FIELDS.map(f => { const st = s.fields[f], v = s.triage[f], cf = s.triage[f+"_conf"], orig = c.triage[f];
+          return `<div class="trow"><label class="lb" for="sel-${f}">${FL[f]}</label><div>
+            <select id="sel-${f}" class="sel ${st==="suggested"?"sug":""}" data-field="${f}">${OPTIONS[f].map(op => `<option value="${esc(op)}" ${op===v?"selected":""}>${f==="priority" ? PRIO[op][1] : esc(op)}</option>`).join("")}</select>
+            <div class="under">${st === "suggested" ? `${confMeter(cf)}<button class="btn link xs" data-acc="${f}">${I.check}Accept</button>` : `<span class="muted" style="font-size:12px">${st === "changed" ? `Changed from ${f==="priority" ? PRIO[orig][1] : esc(orig)}` : "Accepted"}</span>`}</div></div></div>`; }).join("")}
+      </div>
+    </section>
+    <div class="center">
+      <section class="ai" aria-label="Copilot read" ${!g.read || g.busy ? 'data-generating="true" aria-busy="true"' : ""}>${aiHead("Copilot read", `<span class="muted" style="font-size:12px">${MODEL}</span>${mock}`)}
+        <p class="lead" id="note">${g.read ? cited(c.note, c) : skeleton(2)}</p>
+        ${s.answers.length ? `<div class="answered">${s.answers.map((a,i) => `<p class="qlabel">${esc(a.question)}</p><p class="chipa">${esc(a.label)}</p><p class="lead" ${i===last && g.busy ? 'id="ans-last"' : ""}>${i===last && g.busy ? skeleton(2) : cited(a.reply, c)}</p>`).join("")}</div>` : ""}
+      </section>
+      ${outHTML}
+      <section class="ai" aria-label="Ask the copilot">${aiHead("Ask the copilot", mock)}
+        ${g.chat.map((m,i) => `<div class="qa"><p class="chipa" style="align-self:flex-end">${esc(m.q)}</p><p class="lead" style="white-space:pre-line" ${!m.done ? `id="chat-${i}"` : ""}>${m.done ? cited(m.a, c) : skeleton(2)}</p></div>`).join("")}
+        <div class="opts">${chatSuggest.map(x => `<button class="btn outline sm" data-ask="${esc(x)}">${esc(x)}</button>`).join("")}</div>
+        <form class="free" id="askform"><div style="flex:1;min-width:0"><label for="askq">Question about this ticket</label><input id="askq" autocomplete="off"></div><button class="btn secondary" type="submit">Ask</button></form>
+      </section>
+      <footer class="lat" aria-label="Pipeline latency">${[["Triage","triage_ms"],["Retrieval","retrieval_ms"],["Gate","gate_ms"],["Draft","draft_ms"]].map(([l,k]) => `<span>${l} <b>${t[k] ? t[k]+" ms" : "skipped"}</b></span>`).join("")}<span>Total <b>${(t.total_ms/1000).toFixed(1)} s</b></span>${mock}</footer>
+    </div>
+    <aside class="ev" aria-labelledby="ev-t">
+      <div style="display:flex;gap:8px;align-items:center"><h2 id="ev-t">Evidence</h2><span class="mono muted" style="font-size:12px;margin-left:auto">${c.precedents.length} precedents</span>${mock}</div>
+      ${c.precedents.length ? c.precedents.map((p,i) => `<div class="evc" id="ev-${p.ticket_id}"><div class="top"><span class="rank ${citedSet.has(p.ticket_id)?"c":""}">${i+1}</span><span class="tid">${p.ticket_id}</span><span class="muted" style="font-size:12px">${p.language.toUpperCase()}</span><span class="mono muted" style="margin-left:auto;font-size:12px">${p.similarity.toFixed(2)}</span></div>
+        <p class="s">${esc(p.subject)}</p><p class="muted" style="font-size:12px;margin:0">${esc(p.queue)}</p><p class="a">${esc(p.answer_snippet)}</p><button class="more" data-ev="${p.ticket_id}" style="margin-top:4px">More</button></div>`).join("") : '<div class="empty">No similar past tickets found.</div>'}
+    </aside>
+  </div>
+  <div class="mbar">${!showOutcome ? "" : o === "draft" && g.draft ? '<button class="btn" data-act="send">Approve and send</button><button class="btn outline" data-act="esc">Escalate</button>' : o === "escalate" ? `<button class="btn" data-act="act" style="${urgent?"background:var(--critical);":""}">${urgent ? "Page on-call" : "Assign to me"}</button>` : ""}</div>`;
+
+  const ff = $("#freeform"); if (ff) ff.onsubmit = e => { e.preventDefault(); const v = $("#free").value.trim(); if (v) freeAnswer(c, v); };
+  const af = $("#askform"); if (af) af.onsubmit = e => { e.preventDefault(); const v = $("#askq").value.trim(); if (v) ask(c, v); };
+  runPending(c);
+}
+// Kick off whatever the "model" still owes this view: first read, then a draft.
+function runPending(c){
+  const g = gen(c.ticket_id), s = S[c.ticket_id];
+  if (!g.read && !g.reading){ g.reading = true;
+    wait(650).then(() => stream("note", c.note, c, () => { g.read = true; g.reading = false; if (route.id === c.ticket_id) render(); })); return; }
+  if (g.read && !g.busy && outcome(c, s) === "draft" && !g.draft && !g.drafting){ g.drafting = true; draft(c); }
+}
+async function draft(c){
+  const g = gen(c.ticket_id), t0 = performance.now();
+  const timer = setInterval(() => { const el = $("#draft-timer"); if (el) el.textContent = ((performance.now()-t0)/1000).toFixed(1) + " s"; }, 100);
+  await wait(900);
+  const ph = $("#draft-phase"); if (ph) ph.textContent = "Writing";
+  await new Promise(res => stream("draft-body", c.draft.reply, c, res, 14));
+  const ph2 = $("#draft-phase"); if (ph2) ph2.textContent = `Checking ${c.draft.sentences.length} sentences against ${c.precedents.length} past tickets`;
+  await wait(900);
+  clearInterval(timer);
+  g.draftMs = Math.round(performance.now() - t0); g.draft = true; g.drafting = false;
+  if (route.id === c.ticket_id) render();
+}
+function answerWith(c, idx, prefix, label){
+  const s = S[c.ticket_id], g = gen(c.ticket_id);
+  answer(c, s, idx); const a = s.answers[s.answers.length-1];
+  if (prefix) a.reply = prefix + a.reply;
+  if (label) a.label = label;
+  g.busy = true; g.hint = null; render();
+  wait(600).then(() => stream("ans-last", a.reply, c, () => { g.busy = false; if (route.id === c.ticket_id) render(); }));
+}
+function freeAnswer(c, text){
+  const s = S[c.ticket_id], q = openQ(c, s), g = gen(c.ticket_id), i = interpret(q, text);
+  if (i >= 0) { answerWith(c, i, `I read that as "${q.options[i].label}". `, text); return; }
+  g.hint = `I couldn't tell which of these "${text}" means. Pick one, or rephrase.`; render();
+  stream("hint", g.hint, c, () => {});
+}
+function ask(c, q){
+  const g = gen(c.ticket_id), m = {q, a: respond(c, S[c.ticket_id], q), done:false};
+  g.chat.push(m); render();
+  const i = g.chat.length - 1;
+  wait(500).then(() => stream(`chat-${i}`, m.a, c, () => { m.done = true; if (route.id === c.ticket_id) render(); }));
+}
+document.addEventListener("click", e => {
+  if (route.page !== "ticket") return;
+  const c = byId(route.id), s = S[c.ticket_id], g = gen(c.ticket_id);
+  const an = e.target.closest("[data-ans]"); if (an) { if (!g.busy) answerWith(c, +an.dataset.ans); return; }
+  const ak = e.target.closest("[data-ask]"); if (ak) { ask(c, ak.dataset.ask); return; }
+  const ac = e.target.closest("[data-acc]"); if (ac) { s.fields[ac.dataset.acc] = "accepted"; render(); return; }
+  const ev = e.target.closest("[data-ev]"); if (ev) { const a = ev.previousElementSibling; const open = a.style.display === "block"; a.style.display = open ? "" : "block"; a.style.webkitLineClamp = open ? "" : "unset"; ev.textContent = open ? "More" : "Less"; return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const urgent = reasons(c, s).some(x => x.startsWith("High-priority"));
+  ({ reset: () => { S[c.ticket_id] = init(c); G[c.ticket_id] = {read:true, draft:false, busy:false, chat:[], hint:null, draftMs:0}; editing = false; render(); },
+     expand: () => { expanded = !expanded; render(); },
+     more: () => { showAllReasons = !showAllReasons; render(); },
+     edit: () => { editing = !editing; render(); },
+     regen: () => { g.draft = false; editing = false; render(); },
+     send: () => toast(`Sent reply for ${c.ticket_id}`, {desc:"Demo data. Nothing was sent."}),
+     esc: () => { const before = clone(s); s.forced.push("Operator sent it for review"); render(); toast(`Escalated ${c.ticket_id}`, {undo: () => { S[c.ticket_id] = before; render(); }}); },
+     act: () => toast(urgent ? `Paged on-call for ${c.ticket_id}` : `Assigned ${c.ticket_id} to you`),
+     askreq: () => toast("Question sent to requester", {desc: openQ(c, s)?.ask_requester}),
+  })[b.dataset.act]?.();
+});
+document.addEventListener("change", e => {
+  const sel = e.target.closest("select[data-field]"); if (!sel || route.page !== "ticket") return;
+  const c = byId(route.id), s = S[c.ticket_id], f = sel.dataset.field;
+  s.triage[f] = sel.value; s.fields[f] = sel.value === c.triage[f] ? "accepted" : "changed"; render();
+});
+// citation hover: highlight the evidence card and show the source
+const pop = $("#citepop");
+document.addEventListener("pointerover", e => {
+  const ch = e.target.closest(".cite");
+  document.querySelectorAll(".evc").forEach(x => x.classList.toggle("on", !!ch && x.id === "ev-"+ch.dataset.c));
+  if (!ch || route.page !== "ticket") { pop.hidden = true; return; }
+  const p = byId(route.id).precedents.find(x => x.ticket_id === ch.dataset.c); if (!p) return;
+  pop.innerHTML = `<div class="h"><span class="tid">${p.ticket_id}</span><span class="muted" style="font-size:12px">${p.language.toUpperCase()}</span><span class="mono muted" style="margin-left:auto;font-size:12px">${p.similarity.toFixed(2)}</span></div><div class="b"><b style="font-weight:500">${esc(p.subject)}</b><blockquote>${esc(p.answer_snippet)}</blockquote></div>`;
+  pop.hidden = false; const rr = ch.getBoundingClientRect();
+  pop.style.left = Math.max(8, Math.min(rr.left, innerWidth - pop.offsetWidth - 8)) + "px"; pop.style.top = Math.max(8, rr.top - pop.offsetHeight - 8) + "px";
+});
+
+/* ---------------- dashboard ---------------- */
+const NS = "http://www.w3.org/2000/svg";
+const el = (n,a,p) => { const e = document.createElementNS(NS,n); for (const k in a) e.setAttribute(k,a[k]); p && p.appendChild(e); return e; };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tip = $("#tip");
+function hover(g, html){ g.addEventListener("pointermove", e => { tip.innerHTML = html; tip.hidden = false; tip.style.left = Math.min(e.clientX+12, innerWidth-tip.offsetWidth-8)+"px"; tip.style.top = (e.clientY+12)+"px"; }); g.addEventListener("pointerleave", () => tip.hidden = true); }
+let lang = "all", range = "24h";
+const TR = {open:[11,12,10,13,15,14,12,11,9,10,9,8], escalation:[.28,.3,.31,.29,.34,.38,.41,.44,.42,.4,.41,.4], clarify:[2,3,2,2,4,5,5,4,3,4,5,4], drafts:[4,3,5,4,3,2,3,3,2,3,2,2]};
+const VOL = {
+  "24h": Array.from({length:24}, (_,h) => { const b = h>=8&&h<=10 ? 14-Math.abs(9-h)*5 : 0; return {t:`${String(h).padStart(2,"0")}:00`, high:1+(h%5===0?2:0)+b, medium:6+((h*7)%5)+(h>7&&h<18?6:0), low:4+((h*3)%4)+(h>7&&h<18?5:0)}; }),
+  "1h": Array.from({length:12}, (_,i) => { const b = i>=2&&i<=5 ? 6-Math.abs(3.5-i)*2 : 0; return {t:`09:${String(i*5).padStart(2,"0")}`, high:Math.round(1+b), medium:2+((i*3)%3), low:1+((i*5)%3)}; }),
+  "7d": ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((t,i) => ({t, high:[22,18,25,61,24,9,7][i], medium:[148,152,160,171,149,52,41][i], low:[121,118,126,130,119,44,38][i]}))
+};
+const BURST = {"1h":["09:10","09:25"], "24h":["08:00","10:00"], "7d":["Thu","Thu"]};
+function renderDashboard(){
+  const outs = TICKETS.map(c => outcome(c, S[c.ticket_id])), n = k => outs.filter(o => o === k).length;
+  const kp = [["Open", TICKETS.length - n("draft"), "open", "--chart-1", {status:"all"}], ["Escalation rate", Math.round(n("escalate")/TICKETS.length*100)+"%", "escalation", "--critical", {status:"escalate"}], ["Clarify", n("clarify"), "clarify", "--warning", {status:"clarify"}], ["Drafts ready", n("draft"), "drafts", "--success", {status:"draft"}]];
+  $("#view").innerHTML = pageHead("Dashboard") + `<div class="page">
+    <div class="kpis">${kp.map(([l,v,k,c],i) => `<button class="kpi" data-kpi="${i}" style="text-align:left;cursor:pointer;font:inherit;color:inherit"><div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span class="muted" style="font-size:13px">${l}</span>${mock}</div><span class="v">${v}</span><div class="spark" data-k="${k}" data-c="${c}" style="width:100%"></div></button>`).join("")}</div>
+    <div class="card"><div class="card-h"><h2>Volume by priority</h2><div class="r">${mock}<div class="tg" role="group" aria-label="Time range">${["1h","24h","7d"].map(r => `<button aria-pressed="${range===r}" data-r="${r}">${r}</button>`).join("")}</div></div></div><div id="c-vol"></div>
+      <div class="legend"><span><i style="background:var(--critical)"></i>High</span><span><i style="background:var(--warning)"></i>Medium</span><span><i style="background:var(--success)"></i>Low</span></div></div>
+    <div class="card"><div class="card-h"><h2>Where incidents come from</h2><div class="r"><div class="tg" role="group" aria-label="Language">${[["all","All"],["en","EN"],["de","DE"]].map(([v,l]) => `<button aria-pressed="${lang===v}" data-l="${v}">${l}</button>`).join("")}</div></div></div>
+      <div class="legend" style="justify-content:flex-start;color:var(--muted-fg)"><span class="mono" id="c-total"></span><span><i style="width:6px;background:var(--info)"></i>Team</span><span><i style="width:6px;background:var(--critical)"></i>High</span><span><i style="width:6px;background:var(--warning)"></i>Medium</span><span><i style="width:6px;background:var(--success)"></i>Low</span></div>
+      <div id="c-net" style="overflow-x:auto"></div></div>
+  </div>`;
+  $("#view").querySelectorAll("[data-kpi]").forEach(b => b.onclick = () => go({page:"inbox", queue:null, category:null, ...kp[+b.dataset.kpi][4]}));
+  $("#view").querySelectorAll("[data-r]").forEach(b => b.onclick = () => { range = b.dataset.r; render(); });
+  $("#view").querySelectorAll("[data-l]").forEach(b => b.onclick = () => { lang = b.dataset.l; render(); });
+  drawSparks(); drawVolume(); drawFlow();
+}
+function drawSparks(){
+  document.querySelectorAll(".spark").forEach(sp => {
+    const v = TR[sp.dataset.k], w = sp.clientWidth || 240, h = 36, mn = Math.min(...v), mx = Math.max(...v);
+    const pts = v.map((y,i) => [i*w/(v.length-1), 2 + (h-4)*(1-(y-mn)/((mx-mn)||1))]);
+    const s = el("svg",{width:w,height:h,viewBox:`0 0 ${w} ${h}`,"aria-hidden":"true"},sp), col = css(sp.dataset.c);
+    el("path",{d:"M"+pts.map(p => p.join(",")).join("L")+`L${w},${h}L0,${h}Z`,fill:col,"fill-opacity":.14},s);
+    el("path",{d:"M"+pts.map(p => p.join(",")).join("L"),fill:"none",stroke:col,"stroke-width":1.25},s);
+  });
+}
+function drawVolume(){
+  const series = VOL[range], burst = BURST[range], box = $("#c-vol");
+  const n = series.length, W = box.clientWidth || 900, H = 232, L = 40, B = 22, T = 18, R = 24;
+  const peak = Math.max(...series.map(p => p.high+p.medium+p.low)), stepV = peak>200?100:peak>40?20:5, max = Math.ceil(peak/stepV)*stepV;
+  const svg = el("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Ticket volume by priority (mock)"},box);
+  const x = i => L + i*(W-L-R)/(n-1), y = v => T + (H-T-B)*(1-v/max);
+  for (let v=0; v<=max; v+=stepV){ el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),class:"gl"},svg); el("text",{x:L-8,y:y(v)+4,"text-anchor":"end"},svg).textContent = v; }
+  (n>12 ? [0,6,12,18,n-1] : series.map((_,i) => i).filter(i => n<=7 || i%3===0)).forEach(i => el("text",{x:x(i),y:H-4,"text-anchor":"middle"},svg).textContent = series[i].t);
+  const bi = burst.map(b => series.findIndex(p => p.t===b));
+  if (bi[0] >= 0){
+    const x0 = x(bi[0]), x1 = x(bi[1]);
+    if (bi[0] !== bi[1]) el("rect",{x:x0,y:T,width:x1-x0,height:H-T-B,fill:css("--critical"),"fill-opacity":.07,stroke:css("--critical"),"stroke-opacity":.45,"stroke-dasharray":"3 3"},svg);
+    else el("line",{x1:x0,x2:x0,y1:T,y2:H-B,stroke:css("--critical"),"stroke-dasharray":"3 3"},svg);
+    el("text",{x:x1-4,y:T-5,"text-anchor":"end",style:`fill:${css("--critical-fg")};font-size:10.5px`},svg).textContent = "Outage burst";
+  }
+  let base = series.map(() => 0);
+  [["high","--critical",.34],["medium","--warning",.18],["low","--success",.1]].forEach(([k,c,o]) => {
+    const top = series.map((p,i) => base[i]+p[k]);
+    el("path",{d:top.map((v,i) => `${i?"L":"M"}${x(i)},${y(v)}`).join("") + base.slice().reverse().map((v,j) => `L${x(n-1-j)},${y(v)}`).join("") + "Z",fill:css(c),"fill-opacity":o},svg);
+    el("path",{d:top.map((v,i) => `${i?"L":"M"}${x(i)},${y(v)}`).join(""),fill:"none",stroke:css(c),"stroke-width":1.5},svg);
+    base = top;
+  });
+  series.forEach((p,i) => { const r = el("rect",{x:x(i)-(W-L-R)/(2*(n-1)),y:T,width:(W-L-R)/(n-1),height:H-T-B,fill:"transparent"},svg); hover(r, `<b>${p.t}</b><div><span>High</span><em>${p.high}</em></div><div><span>Medium</span><em>${p.medium}</em></div><div><span>Low</span><em>${p.low}</em></div>`); });
+}
+function drawFlow(){
+  const teams = SOURCES.queues.slice(0,-1);
+  const cats = SOURCES.data[lang].map(r => ({...r, queues:r.queues.slice(0,-1)})).sort((a,b) => b.n-a.n);
+  $("#c-total").textContent = fmt(cats.reduce((a,r) => a+r.n,0)) + " incidents in dataset";
+  const tTot = teams.map((_,j) => cats.reduce((a,c) => a+c.queues[j],0));
+  const tOrd = teams.map((t,j) => ({t,j})).filter(x => tTot[x.j]>0).sort((a,b) => tTot[b.j]-tTot[a.j]);
+  const links = cats.flatMap((c,i) => tOrd.map(({j},k) => ({s:i, t:k, v:c.queues[j]})).filter(l => c.n>0 && l.v/c.n>=.03));
+  const box = $("#c-net");
+  const FW = Math.max(820, box.clientWidth || 1000), FH = 440, PAD = 18, NW = 10, X0 = 250, X1 = FW-260-NW;
+  const lv = cats.map((_,i) => links.filter(l => l.s===i).reduce((a,l) => a+l.v,0)), rv = tOrd.map((_,k) => links.filter(l => l.t===k).reduce((a,l) => a+l.v,0));
+  const tot = lv.reduce((a,b) => a+b,0), sc = Math.min((FH-16-PAD*(cats.length-1))/tot, (FH-16-PAD*(tOrd.length-1))/tot);
+  const stack = vals => { const h = vals.reduce((a,v) => a+v*sc,0) + PAD*(vals.length-1); let yy = (FH-h)/2; return vals.map(v => { const r = {y:yy, h:v*sc}; yy += v*sc + PAD; return r; }); };
+  const LN = stack(lv), RN = stack(rv);
+  const svg = el("svg",{viewBox:`0 0 ${FW} ${FH}`,width:FW,height:FH,role:"group","aria-label":"Flow of incidents from categories to the teams that receive them"},box);
+  const gl = el("g",{fill:"none"},svg), lo = LN.map(n => n.y), ro = RN.map(n => n.y);
+  const paths = links.slice().sort((a,b) => a.s-b.s || a.t-b.t).map(l => { const w = l.v*sc, sy = lo[l.s] + w/2; lo[l.s] += w; return {l, w, sy}; });
+  paths.sort((a,b) => a.l.t-b.l.t || a.l.s-b.l.s).forEach(o => { o.ty = ro[o.l.t] + o.w/2; ro[o.l.t] += o.w; });
+  const mid = (X0+NW+X1)/2;
+  paths.forEach(o => { o.p = el("path",{d:`M${X0+NW},${o.sy}C${mid},${o.sy} ${mid},${o.ty} ${X1},${o.ty}`,stroke:css("--muted-fg"),"stroke-opacity":.18,"stroke-width":Math.max(1,o.w),style:"transition:stroke-opacity .15s"},gl); });
+  const nodes = [];
+  const label = (g, x, yy, anchor, name, v) => { const tx = el("text",{x, y:yy, "text-anchor":anchor, class:"yl"}, g); tx.textContent = name + " "; const ts = el("tspan",{dx:4, style:`fill:${css("--muted-fg")};font-family:var(--mono);font-size:11px`}, tx); ts.textContent = fmt(v); };
+  cats.forEach((c,i) => {
+    const g = el("g",{tabindex:0, role:"button", "aria-label":`${c.name}: ${fmt(lv[i])} incidents. Open in inbox.`, style:"cursor:pointer;outline:none;transition:opacity .15s"}, svg);
+    let yy = LN[i].y; [["high","--critical"],["medium","--warning"],["low","--success"]].forEach(([k,col]) => { const h = LN[i].h*c[k]/c.n; el("rect",{x:X0,y:yy,width:NW,height:Math.max(0,h-1),fill:css(col)},g); yy += h; });
+    label(g, X0-10, LN[i].y+LN[i].h/2+4, "end", c.name, lv[i]);
+    nodes.push({g, key:"s"+i, name:c.name, kind:"category"});
+  });
+  tOrd.forEach(({t},k) => {
+    const g = el("g",{tabindex:0, role:"button", "aria-label":`${t}: ${fmt(rv[k])} incidents. Open in inbox.`, style:"cursor:pointer;outline:none;transition:opacity .15s"}, svg);
+    el("rect",{x:X1,y:RN[k].y,width:NW,height:RN[k].h,rx:2,fill:css("--info")},g);
+    label(g, X1+NW+10, RN[k].y+RN[k].h/2+4, "start", t, rv[k]);
+    nodes.push({g, key:"t"+k, name:t, kind:"team"});
+  });
+  const touch = (o,key) => ("s"+o.l.s)===key || ("t"+o.l.t)===key;
+  const focusNode = nd => { const conn = new Set([nd.key]); paths.forEach(o => { if (touch(o,nd.key)) { conn.add("s"+o.l.s); conn.add("t"+o.l.t); } });
+    nodes.forEach(n => n.g.style.opacity = conn.has(n.key) ? 1 : .3);
+    paths.forEach(o => { const on = touch(o,nd.key); o.p.setAttribute("stroke-opacity", on ? .45 : .04); o.p.setAttribute("stroke", css(on ? "--primary" : "--muted-fg")); }); };
+  const clear = () => { nodes.forEach(n => n.g.style.opacity = 1); paths.forEach(o => { o.p.setAttribute("stroke-opacity", .18); o.p.setAttribute("stroke", css("--muted-fg")); }); };
+  nodes.forEach(nd => {
+    nd.g.addEventListener("pointerenter", () => focusNode(nd)); nd.g.addEventListener("pointerleave", clear);
+    nd.g.addEventListener("focus", () => focusNode(nd)); nd.g.addEventListener("blur", clear);
+    const open = () => go({page:"inbox", status:"all", queue: nd.kind==="team" ? nd.name : null, category: nd.kind==="category" ? nd.name : null});
+    nd.g.addEventListener("click", open); nd.g.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" ") { e.preventDefault(); open(); } });
+  });
+}
+addEventListener("resize", () => { if (route.page === "dashboard") render(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (route.page === "dashboard") render(); });
+
+if (location.hash === "#dashboard") route.page = "dashboard";
+render();
+</script>
+</body></html>

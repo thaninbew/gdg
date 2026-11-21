@@ -10,6 +10,7 @@ export const escalatedOutage: PipelineResult = {
     priority: "high",
     priority_conf: 0.77,
     language: "en",
+    key_terms: [],
   },
   precedents: [
     {
@@ -20,6 +21,9 @@ export const escalatedOutage: PipelineResult = {
       answer_snippet:
         "The VPN gateway certificate had expired. We renewed it, restarted the gateway service and asked users to reconnect. Service was restored within 40 minutes.",
       language: "en",
+      type: "",
+      queue: "",
+      priority: "",
     },
     {
       ticket_id: "TKT-11902",
@@ -29,6 +33,9 @@ export const escalatedOutage: PipelineResult = {
       answer_snippet:
         "Wir haben die MTU auf dem Gateway angepasst und den Client auf die aktuelle Version aktualisiert.",
       language: "de",
+      type: "",
+      queue: "",
+      priority: "",
     },
     {
       ticket_id: "TKT-02256",
@@ -38,6 +45,9 @@ export const escalatedOutage: PipelineResult = {
       answer_snippet:
         "A firewall rule from the overnight change blocked the media ports. We rolled the rule back and confirmed sessions connect again.",
       language: "en",
+      type: "",
+      queue: "",
+      priority: "",
     },
   ],
   escalate: true,
@@ -51,6 +61,7 @@ export const escalatedOutage: PipelineResult = {
     cited_ticket_ids: ["TKT-04187"],
     grounded: true,
     issues: [],
+    sentences: [],
   },
   timings_ms: { triage_ms: 38, retrieval_ms: 112, gate_ms: 4, draft_ms: 1460, total_ms: 1614 },
   sources: { triage: "real", retrieve: "real", gate: "real", draft: "real" },
@@ -65,6 +76,7 @@ export const autoDraftBilling: PipelineResult = {
     priority: "medium",
     priority_conf: 0.64,
     language: "de",
+    key_terms: [],
   },
   precedents: [
     {
@@ -75,6 +87,9 @@ export const autoDraftBilling: PipelineResult = {
       answer_snippet:
         "Die doppelte Abbuchung wurde bestätigt und die Erstattung veranlasst. Sie erscheint innerhalb von 5–7 Werktagen auf Ihrem Konto.",
       language: "de",
+      type: "",
+      queue: "",
+      priority: "",
     },
     {
       ticket_id: "TKT-03318",
@@ -84,6 +99,9 @@ export const autoDraftBilling: PipelineResult = {
       answer_snippet:
         "We confirmed the duplicate charge and issued a refund for the second payment. Refunds usually appear within 5–7 business days.",
       language: "en",
+      type: "",
+      queue: "",
+      priority: "",
     },
   ],
   escalate: false,
@@ -94,6 +112,7 @@ export const autoDraftBilling: PipelineResult = {
     cited_ticket_ids: ["TKT-07731", "TKT-03318"],
     grounded: true,
     issues: [],
+    sentences: [],
   },
   timings_ms: { triage_ms: 35, retrieval_ms: 98, gate_ms: 3, draft_ms: 1210, total_ms: 1346 },
   sources: { triage: "real", retrieve: "real", gate: "real", draft: "mock" },

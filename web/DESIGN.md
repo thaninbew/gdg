@@ -154,6 +154,13 @@ Ours (`components/sentinel`):
 | `ConfidenceMeter` | Bar and Confident/Likely/Ambiguous tier (raw % only with `showValue`) |
 | `Logo`, `Wordmark` | Brand mark (see Brand) |
 | `AIMark`, `AISurface` | Marks AI output and frames it; `generating` animates the strip |
+| `OutcomeBadge` | Gate outcome: Clarify, Escalate or Draft ready, with icon |
+| `ClarifyingQuestion` | AI surface that asks one question when a field is Ambiguous; options, free answer, ask requester |
+| `GroundedReply`, `CitedText`, `CitationProvider` | Draft with per-sentence support and numbered citation chips (promoted from D) |
+| `EvidenceRail` | Retrieved precedents; cited ones marked, linked to citation hover |
+| `AppSidebar`, `PageHeader` | Console shell for `/tickets` and `/dashboard` |
+| `MockBadge` | Outline "Mock" badge for panels whose data isn't from the real pipeline |
+| `IncidentFlow` (`components/charts`) | Sankey flow map: incident categories to receiving teams; hover isolates a node, click opens the inbox filtered |
 
 Build a custom component only when shadcn has nothing that fits, and add it to this table.
 
@@ -172,6 +179,6 @@ own palette, invented copy and placeholder data, and some patterns there break t
 
 ## TODO
 
-- [ ] Promote C's charts into `components/charts` on the global tokens.
-- [ ] Promote D's grounded reply (sentence support + citation chips) into `components/sentinel`.
+- [ ] Promote C's charts into `components/charts` on the global tokens (`IncidentFlow` is there; volume and sparklines still live in the dashboard page).
+- [x] Promote D's grounded reply (sentence support + citation chips) into `components/sentinel`.
 - [ ] Delete a reference once its patterns live in shared components.
