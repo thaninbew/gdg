@@ -1,7 +1,7 @@
 import { useId } from "react"
 import { cn } from "@/lib/utils"
 
-// SentinelDesk logo: an architect desk lamp whose light carries the AI gradient.
+// SentinelDesk logo: an architect desk lamp whose light runs white to blue to violet.
 // Static files for slides and docs live in public/brand (logo-light.svg, logo-dark.svg, mark.svg).
 export function Logo({
   variant = "tile",
@@ -11,7 +11,7 @@ export function Logo({
 }: {
   /** Pixel size for the tile variant; defaults to 28px via className. */
   size?: number
-  /** "tile": square app icon that inverts with the theme. "mark": lamp only, in currentColor. */
+  /** "tile": white square app icon with a blue hairline, in both themes. "mark": lamp only, in currentColor. */
   variant?: "tile" | "mark"
   className?: string
   label?: string
@@ -20,7 +20,7 @@ export function Logo({
   const beam = `${id}-beam`
   const fadeG = `${id}-fade-g`
   const fade = `${id}-fade`
-  const ink = variant === "tile" ? "var(--background)" : "currentColor"
+  const ink = variant === "tile" ? "#15151c" : "currentColor"
 
   return (
     <svg
@@ -33,10 +33,10 @@ export function Logo({
     >
       <defs>
         <linearGradient id={beam} gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50">
-          <stop offset="0" stopColor="var(--ai-coral)" />
-          <stop offset="0.35" stopColor="var(--ai-rose)" />
-          <stop offset="0.7" stopColor="var(--ai-violet)" />
-          <stop offset="1" stopColor="var(--ai-blue)" />
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.3" stopColor="#b9d0ff" />
+          <stop offset="0.65" stopColor="#5b8eff" />
+          <stop offset="1" stopColor="#8a5cf5" />
         </linearGradient>
         <linearGradient id={fadeG} gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="0" y2="50">
           <stop offset="0" stopColor="#fff" />
@@ -46,7 +46,9 @@ export function Logo({
           <rect width="64" height="64" fill={`url(#${fadeG})`} />
         </mask>
       </defs>
-      {variant === "tile" ? <rect width="64" height="64" rx="14" fill="var(--foreground)" /> : null}
+      {variant === "tile" ? (
+        <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="#ffffff" stroke="#a9c6f2" strokeWidth="1.5" />
+      ) : null}
       <path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill={`url(#${beam})`} mask={`url(#${fade})`} />
       <path
         d="M20 47 L17 33 L33.5 22.5"

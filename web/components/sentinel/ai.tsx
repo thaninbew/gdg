@@ -1,7 +1,7 @@
 import { PenLineIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Our AI mark: a gradient squircle with a pen. Marks model-generated content only.
+// Our AI mark: a flat navy squircle with a pen. Marks model-generated content only.
 export function AIMark({ className, label }: { className?: string; label?: string }) {
   return (
     <span
@@ -9,7 +9,7 @@ export function AIMark({ className, label }: { className?: string; label?: strin
       aria-label={label}
       aria-hidden={label ? undefined : true}
       className={cn(
-        "inline-flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-(image:--ai-gradient)",
+        "inline-flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ai-mark",
         className
       )}
     >
