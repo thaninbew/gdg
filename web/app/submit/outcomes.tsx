@@ -16,7 +16,7 @@ export function Urgent({ reasons }: { reasons: string[] }) {
     <div className="rounded-lg bg-critical-tint p-4 text-critical-fg">
       <div className="flex flex-wrap items-center gap-2">
         <SirenIcon className="size-4 shrink-0" aria-hidden="true" />
-        <p className="text-sm font-semibold">Sent to on-call as urgent</p>
+        <p className="text-sm font-semibold">On-call will take it first</p>
         <Badge variant="outline" className="border-critical/40 text-critical-fg">
           Simulated
         </Badge>

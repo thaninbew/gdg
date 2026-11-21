@@ -76,6 +76,11 @@ export function RequestForm() {
   const [sending, setSending] = useState(false)
   const [mine, setMine] = useState<Mine[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
+  // When the result replaces the form, put focus on its headline instead of dropping it on <body>.
+  const resultHeading = useRef<HTMLHeadingElement | null>(null)
+  useEffect(() => {
+    if (done) resultHeading.current?.focus({ preventScroll: true })
+  }, [done])
   const lastRow = useRef<HTMLButtonElement | null>(null)
   const opened = mine.find((m) => m.id === openId) ?? null
   const [backend, setBackend] = useState<Backend>("checking")
@@ -96,14 +101,16 @@ export function RequestForm() {
   }, [])
 
   async function submit(person = false) {
-    if (!a) return
+    if (!a || sending) return
     const id = ticketId(full, accountId, sampleId)
     const ans = q && !person ? matchOption(a, answer) : null
+    setSending(true)
     let d: Done
     if (person) {
+      await localPause()
       d = { id, outcome: handoff(a.topic, "You asked for a person."), via: { kind: "person" }, cls: null }
+      setSending(false)
     } else if (backend === "online") {
-      setSending(true)
       // No clarification field in the contract: the answer travels as body context.
       const body = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
       try {
@@ -126,7 +133,9 @@ export function RequestForm() {
         setSending(false)
       }
     } else {
+      await localPause()
       d = { id, outcome: resolve(full, a, ans, accountId), via: { kind: "local", fallback: false }, cls: localClassification(a, topic) }
+      setSending(false)
     }
     setDone(d)
     const message = [text.trim(), ans ? `${q?.prompt} ${ans}` : ""].filter(Boolean).join("\n\n")
@@ -186,11 +195,34 @@ export function RequestForm() {
       <main className="mx-auto grid max-w-5xl gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="flex min-w-0 flex-col gap-4">
           <h1 className="text-xl font-semibold">New request</h1>
-          {done ? (
-            <section className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <CircleCheckIcon className="size-5 text-success" aria-hidden="true" />
-                <p className="text-base font-semibold">Request received</p>
+          {sending ? (
+            <section
+              aria-busy="true"
+              aria-live="polite"
+              className="flex flex-col gap-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+            >
+              <p className="text-base font-semibold">{backend === "online" ? "Checking your request…" : "Checking…"}</p>
+              <div
+                data-generating={backend === "online"}
+                className={cn("flex flex-col gap-3 p-4", backend === "online" ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
+              >
+                <Skeleton className="h-4 w-2/5" />
+                <Skeleton className="h-3.5 w-4/5" />
+                <Skeleton className="h-3.5 w-3/5" />
+              </div>
+            </section>
+          ) : done ? (
+            <section className="flex flex-col gap-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200">
+              <div className="flex flex-wrap items-center gap-2">
+                {isAutomatic(done.outcome) ? (
+                  <CircleCheckIcon className="size-5 text-success" aria-hidden="true" />
+                ) : (
+                  <UserRoundIcon className="size-5 text-muted-foreground" aria-hidden="true" />
+                )}
+                <h2 ref={resultHeading} tabIndex={-1} className="text-base font-semibold outline-none">
+                  {isAutomatic(done.outcome) ? "Answered automatically" : "An agent will take your request"}
+                </h2>
+                {done.outcome.kind === "urgent" ? <Badge variant="critical">Urgent</Badge> : null}
                 <TicketId id={done.id} className="ml-auto rounded-md border bg-card px-1.5 py-0.5" />
               </div>
               {done.via.kind === "local" && done.via.fallback ? (
@@ -201,17 +233,6 @@ export function RequestForm() {
               <div role="status">
                 <OutcomeCard outcome={done.outcome} />
               </div>
-              <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                {done.via.kind === "pipeline" ? (
-                  <>
-                    Decided by the pipeline
-                    {done.via.mock.length ? <Badge variant="outline">Mock: {done.via.mock.join(", ")}</Badge> : null}
-                  </>
-                ) : (
-                  <Badge variant="outline">{done.via.kind === "person" ? "Your choice" : "Local rules"}</Badge>
-                )}
-                <span>Demo: not saved, no one notified.</span>
-              </p>
               <div>
                 <Button
                   variant="outline"
@@ -331,20 +352,14 @@ export function RequestForm() {
               </div>
             </form>
           )}
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline">Demo</Badge>
-            {backend === "online"
-              ? "Sends to the local pipeline. Nothing is saved, paged or charged."
-              : "Local rules and sample data. Nothing is sent, paged or charged."}
-          </p>
         </div>
 
         <aside className="flex min-w-0 flex-col gap-4">
           <section
             aria-label="Classification"
             aria-busy={sending}
-            data-generating={sending}
-            className={cn("p-4", sending || done?.via.kind === "pipeline" ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
+            data-generating={sending && backend === "online"}
+            className={cn("p-4", (sending && backend === "online") || done?.via.kind === "pipeline" ? "ai-surface rounded-xl" : "rounded-lg border bg-card")}
           >
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold">Classification</h2>
@@ -460,6 +475,17 @@ function ClassRows({ type, typeConf, queue, queueConf, priority }: Classificatio
       </div>
     </dl>
   )
+}
+
+// Two outcomes for the customer: answered automatically, or an agent takes it (urgent included).
+function isAutomatic(o: Outcome) {
+  return o.kind === "answer" || o.kind === "action"
+}
+
+// Local rules answer instantly; a short pause keeps the result from flashing in. Skipped for reduced motion.
+function localPause() {
+  const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  return new Promise((done) => setTimeout(done, reduced ? 0 : 600))
 }
 
 function firstLine(text: string) {
