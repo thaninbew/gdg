@@ -2,25 +2,17 @@
  * Direction D · Copilot Canvas. Palette "Dusk Sweep".
  * Scoped to .dir-d so shadcn components re-theme without touching globals.css.
  * Status hues stay clear red / amber / green / blue. Only the AI gradient sweeps
- * coral -> rose -> violet -> blue, and it appears only on Gemini-produced surfaces.
+ * ice -> blue, and it appears only on Gemini-produced surfaces.
  */
 
 .dir-d {
   --font-google-sans: var(--font-jakarta);
   font-family: var(--font-jakarta), system-ui, sans-serif;
 
-  --ai-coral: #f0644a;
-  --ai-rose: #d9468f;
-  --ai-violet: #8a5cf5;
+  --ai-ice: #cfe0ff;
   --ai-blue: #3478f6;
-  --ai-gradient: linear-gradient(
-    100deg,
-    var(--ai-coral) 0%,
-    var(--ai-rose) 30%,
-    var(--ai-violet) 62%,
-    var(--ai-blue) 100%
-  );
-  --ai-glow-opacity: 0.09;
+  --ai-gradient: linear-gradient(100deg, var(--ai-ice) 0%, var(--ai-blue) 100%);
+  --ai-mark: #1e2f73;
 
   /* Keep the shared Gemini utilities consistent with this direction. */
   --gemini-red: #e5544b;
@@ -72,11 +64,9 @@
 
 .dark .dir-d,
 .dir-d.dark {
-  --ai-coral: #ff7a5c;
-  --ai-rose: #e862a8;
-  --ai-violet: #a07bff;
+  --ai-ice: #c9dcff;
   --ai-blue: #5b8eff;
-  --ai-glow-opacity: 0.13;
+  --ai-mark: #3b52b5;
 
   --gemini-red: #f0605c;
   --gemini-yellow: #f4be4f;
@@ -122,7 +112,7 @@
   --chart-5: #6f7286;
 }
 
-/* The one AI surface: a 3px sweep on top and a soft wash that fades into the card. */
+/* The one AI surface: a 3px ice-to-blue line on top of a plain card. */
 .dir-d .ai-surface {
   position: relative;
   isolation: isolate;
@@ -137,23 +127,12 @@
   height: 3px;
   background: var(--ai-gradient);
 }
-.dir-d .ai-surface::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 180px;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--ai-gradient);
-  opacity: var(--ai-glow-opacity);
-  mask-image: linear-gradient(to bottom, black, transparent);
-}
 
-/* Original AI mark: a gradient squircle. Not a star or sparkle. */
+/* Original AI mark: a flat navy squircle. Not a star or sparkle. */
 .dir-d .ai-mark {
-  background: var(--ai-gradient);
+  background: var(--ai-mark);
 }
 
 .dir-d .latency-draft {
-  background-color: var(--ai-violet);
+  background-color: var(--ai-blue);
 }

@@ -14,7 +14,7 @@
   --canvas:#f6f6fa;--card:#fff;--fg:#16161f;--muted:#f1f1f6;--mfg:#5b5e70;--line:#e3e3ec;
   --pri:#3550e0;--pri-hover:#2a43c7;--info-t:#eceffe;--info-f:#2e45c4;
   --crit:#d93a3a;--crit-t:#fdecec;--crit-f:#b42323;--ok:#1f9254;--ok-t:#e5f4eb;--ok-f:#146c3c;--warn-t:#fef4da;--warn-f:#8a5000;
-  --ai:linear-gradient(90deg,#f0644a,#d9468f 35%,#8a5cf5 70%,#3478f6);
+  --ai:linear-gradient(90deg,#cfe0ff,#3478f6);
   --ease:cubic-bezier(.2,0,0,1);
   --mono:"Google Sans Code",ui-monospace,SFMono-Regular,Menlo,monospace;
   color-scheme:light;
@@ -84,12 +84,11 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
 .prec:first-of-type{border-top:0}
 .prec span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 
-/* AI surface: 3px gradient strip + soft glow, AI content only */
+/* AI surface: 3px ice-to-blue line, AI content only */
 .ai{position:relative;overflow:hidden;border-radius:14px;padding:18px 18px 16px}
 .ai:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai)}
-.ai:after{content:"";position:absolute;inset:-40% -10% auto;height:70%;background:var(--ai);opacity:.06;filter:blur(40px);pointer-events:none}
 .aihead{display:flex;align-items:center;gap:8px;margin:0 0 12px}
-.aimark{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--ai);color:#fff}
+.aimark{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:#1e2f73;color:#fff}
 .aimark svg{width:13px;height:13px}
 .aihead h2{font-size:14px;font-weight:600;margin:0}
 .aihead .tid{margin-left:auto;font-size:12px;color:var(--mfg)}
@@ -143,10 +142,9 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
 .sv-ask{margin:0;background:var(--muted);border-radius:14px 14px 14px 4px;padding:14px 16px;font-size:17px;line-height:1.5}
 .sv-lbl{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--mfg)}
 
-/* AI surface: 3px gradient strip and soft glow; sd-motion.css sweeps the strip while generating */
+/* AI surface: 3px ice-to-blue line; sd-motion.css sweeps the strip while generating */
 .sv-ai{position:relative;overflow:hidden;border-radius:16px;padding:20px 22px}
 .sv-ai:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ai)}
-.sv-ai:after{content:"";position:absolute;inset:-50% -10% auto;height:70%;background:var(--ai);opacity:.06;filter:blur(40px);pointer-events:none}
 .sv-aihead{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:14px;font-weight:600}
 .sv-stack{display:grid}
 .sv-stack>*{grid-area:1/1}
@@ -225,7 +223,7 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <linearGradient id="beam" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="#f0644a"/><stop offset=".35" stop-color="#d9468f"/><stop offset=".7" stop-color="#8a5cf5"/><stop offset="1" stop-color="#3478f6"/></linearGradient>
+    <linearGradient id="beam" gradientUnits="userSpaceOnUse" x1="42" y1="26" x2="44" y2="50"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#b9d0ff"/><stop offset=".65" stop-color="#5b8eff"/><stop offset="1" stop-color="#8a5cf5"/></linearGradient>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
     <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></symbol>
@@ -242,7 +240,7 @@ h1{margin:0;color:#fff;text-shadow:0 2px 24px rgba(3,5,26,.45);font-size:clamp(3
 
   <nav class="nav" aria-label="Main">
     <a class="brand" href="#overview" aria-label="SentinelDesk home">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#fff"/><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#beam)" opacity=".9"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="#15151c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="#15151c"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="#15151c" stroke="#15151c" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="#15151c"/><path d="M10 51.5 H54" stroke="#15151c" stroke-width="3.6" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".75" y=".75" width="62.5" height="62.5" rx="13.25" fill="#fff" stroke="#a9c6f2" stroke-width="1.5"/><path d="M39 32.5 L47 23.5 L56 50 H30 Z" fill="url(#beam)" opacity=".9"/><path d="M20 47 L17 33 L33.5 22.5" fill="none" stroke="#15151c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.7" fill="#15151c"/><path d="M36.6 19.1 L47 23.5 L39 32.5 L33.4 22.9 Z" fill="#15151c" stroke="#15151c" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="46" width="14" height="4" rx="2" fill="#15151c"/><path d="M10 51.5 H54" stroke="#15151c" stroke-width="3.6" stroke-linecap="round"/></svg>
       SentinelDesk
     </a>
     <div class="pill">
