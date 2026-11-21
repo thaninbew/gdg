@@ -103,35 +103,34 @@ svg.i{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-widt
 /* Full-height product view above a quiet presenter bar */
 html,body{height:100%}
 body{background:var(--canvas);overflow:hidden}
-/* One fixed-height demo toolbar on top. Back, label and Next sit in fixed slots so nothing moves between steps. */
-.bar{position:relative;z-index:1;height:49px;display:grid;grid-template-columns:minmax(0,1fr) 92px 360px 92px minmax(0,1fr);align-items:center;column-gap:8px;padding:0 24px;border-bottom:1px solid var(--line);background:var(--card);font-size:13px}
-#stage{position:relative;height:calc(100svh - 49px);overflow:hidden}
+/* One header row: the product fills the screen and the guide controls sit in the empty center of its own
+   header (fixed slots, so nothing moves between steps). Only the buttons take pointer input. */
+#stage{position:relative;height:100svh;overflow:hidden}
 #stage>[data-pane]{position:absolute;inset:0;overflow:auto}
 #stage iframe{display:block;width:100%;height:100%;border:0;background:var(--canvas)}
 #app.app{border:0;border-radius:0;display:flex;flex-direction:column;height:100%}
 #app .body{flex:1;min-height:0}
-.bar .home{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--fg);text-decoration:none;padding:4px 6px;border-radius:6px;justify-self:start}
-.bar .home:hover{background:var(--muted)}
-.bar .home span{display:inline-flex;width:18px;height:18px}
-.bar .nav{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:92px;height:32px;padding:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;font-size:13px;transition:background-color .15s,border-color .15s}
+#app .chrome{height:56px;padding:0 24px}
+.bar{position:fixed;z-index:10;top:12px;left:50%;transform:translateX(-50%);width:500px;height:32px;display:grid;grid-template-columns:92px 300px 92px;column-gap:8px;align-items:center;pointer-events:none;font-size:13px}
+.bar .nav{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;gap:4px;width:92px;height:32px;padding:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;font-size:13px;transition:background-color .15s,border-color .15s}
 .bar .nav:hover:not(:disabled){background:var(--muted)}
 .bar .nav:disabled{color:var(--mfg);opacity:.55;cursor:default}
 .bar .nav:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
-.bar .lab{display:flex;align-items:baseline;justify-content:center;gap:8px;width:360px;min-width:0;overflow:hidden;white-space:nowrap;color:var(--fg)}
+.bar .lab{display:flex;align-items:baseline;justify-content:center;gap:8px;width:300px;min-width:0;overflow:hidden;white-space:nowrap;color:var(--fg)}
 .bar .lab b{font-weight:600;overflow:hidden;text-overflow:ellipsis}
 .bar .lab .mono{flex:none;color:var(--mfg);font-size:12px}
-.bar .side-r{justify-self:end;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;white-space:nowrap}
-.bar .simtag{font-size:10px}
+.note{position:fixed;z-index:10;right:16px;bottom:12px;display:flex;align-items:center;gap:8px;pointer-events:none;font-size:12px}
+.note:empty{display:none}
+.note .simtag{font-size:10px}
 </style>
 </head>
 <body>
 <nav class="bar" aria-label="Demo steps">
-  <a class="home" href="index.html" aria-label="SentinelDesk home"><span id="homelogo"></span>SentinelDesk</a>
   <button class="nav" id="back" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Back</span></button>
   <span class="lab" id="lab" aria-live="polite"><span class="mono" id="num"></span><b id="loc"></b></span>
   <button class="nav" id="next" type="button"><span>Next</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
-  <div class="side-r" id="foot"></div>
 </nav>
+<div class="note" id="foot"></div>
 <main id="stage">
   <div class="app" id="app" data-pane="app"></div>
   <div data-pane="support" hidden></div>
@@ -160,8 +159,8 @@ var STEPS=[
   {k:"mine",   role:"c",loc:"Customer · My requests"},
   {k:"inbox",  role:"e",loc:"Engineer · Inbox"},
   {k:"detail", role:"e",loc:"Engineer · Ticket detail"},
-  {k:"run",    role:"e",loc:"Software Factory · separate example SD-4182",pane:"factory"},
-  {k:"finding",role:"e",loc:"Software Factory · SD-4182 finding",pane:"factory"}
+  {k:"run",    role:"e",loc:"Factory · SD-4182, separate example",pane:"factory"},
+  {k:"finding",role:"e",loc:"Factory · SD-4182 finding",pane:"factory"}
 ];
 // Real pages from the web app, shown when it answers on APP. They are separate runs, never the same ticket.
 var LIVE_STEPS=[
@@ -330,7 +329,6 @@ document.addEventListener("click",function(e){
 });
 document.getElementById("next").onclick=next;
 document.getElementById("back").onclick=back;
-document.getElementById("homelogo").innerHTML=LOGO;
 document.addEventListener("keydown",function(e){
   if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
   var t=e.target,tag=t&&t.tagName;
