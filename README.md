@@ -1,5 +1,5 @@
-# 🥇 Google GDG Boston Hackathon · 1st Place Winner · Team 15
-
+# 🥇 Google GDG Boston Hackathon · Team 15
+**1st Place Winner**
 ![Every answer, grounded in a case you already solved. SentinelDesk shows a sample invoice reply, its citations, and the past cases behind them.](docs/readme/team-15-banner.png)
 
 SentinelDesk is a multilingual (English and German) IT support copilot. It triages each incoming ticket by type, queue and priority, runs it through a deterministic safety gate that escalates risky or uncertain cases with a human-readable reason, and drafts a reply grounded only in similar past tickets, with every sentence checked against that evidence before anyone sees it. Everything runs locally: a scikit-learn classifier, a multilingual sentence-transformer index in Chroma, and Gemma via Ollama. No ticket text leaves the machine.
