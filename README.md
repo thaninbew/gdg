@@ -1,4 +1,6 @@
-# SentinelDesk
+# 🥇 Google GDG Boston Hackathon · 1st Place Winner · Team 15
+
+![Every answer, grounded in a case you already solved. SentinelDesk shows a sample invoice reply, its citations, and the past cases behind them.](docs/readme/team-15-banner.png)
 
 SentinelDesk is a multilingual (English and German) IT support copilot. It triages each incoming ticket by type, queue and priority, runs it through a deterministic safety gate that escalates risky or uncertain cases with a human-readable reason, and drafts a reply grounded only in similar past tickets, with every sentence checked against that evidence before anyone sees it. Everything runs locally: a scikit-learn classifier, a multilingual sentence-transformer index in Chroma, and Gemma via Ollama. No ticket text leaves the machine.
 
@@ -74,11 +76,6 @@ The high recall comes at a cost: 53% of tickets are flagged high priority. The g
 - Test labels are read only to score predictions. Every system call sees subject and body only.
 - Only English and German tickets are used; tickets in other languages are escalated.
 
-## Team responsibilities
-
-- **Interface:** Thanin Kongkiatsophon and Toffy own the SentinelDesk UI.
-- **Data:** Puran is cleaning the data and evaluating the veracity of the synthetic labels.
-
 ## What we don't claim
 
 - **Not production-ready.** This is a hackathon prototype tested on one public dataset whose labels are partly synthetic.
@@ -88,3 +85,10 @@ The high recall comes at a cost: 53% of tickets are flagged high priority. The g
 - **Not fact-checked against the world.** Grounding checks that a reply matches past resolutions, not that those resolutions were correct.
 - **Not multilingual beyond English and German.** Other languages are detected and escalated, not handled.
 - **Not proof of generalization.** Holdout scores come from the same data distribution as training.
+
+## Team 15
+
+- **Thanin Kongkiatsophon** · Interface · [@thaninbew](https://github.com/thaninbew) · [LinkedIn](https://www.linkedin.com/in/thaninbew)
+- **Oluwatofunmi (Toffy) Soyege** · Interface · [@toffysoyege](https://github.com/toffysoyege) · [LinkedIn](https://www.linkedin.com/in/toffysoyege)
+- **Aayush Rai** · Backend integration and grounding · [@aayush24rai](https://github.com/aayush24rai) · [LinkedIn](https://www.linkedin.com/in/aayush24rai)
+- **Puran Singh** · Data and evaluation · [@Piranha315](https://github.com/Piranha315)
