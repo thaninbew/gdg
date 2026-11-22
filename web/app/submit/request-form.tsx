@@ -26,6 +26,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PRESENTER_CONSOLE, PRESENTER_SUBMIT, usePresenterTicket, type PresenterTicket } from "@/lib/presenter-ticket"
+import { CustomerUpdate } from "@/components/sentinel/customer-update"
+import { useCustomerUpdates } from "@/lib/customer-updates"
+import { customerView } from "@/lib/customer-view"
+
+// Language of the customer's message, for the updates an operator sends back.
+const langOf = (text: string) => (/[äöüß]|\b(und|der|die|das|ist|nicht|bitte|wir|ich)\b/i.test(text) ? "de" : "en")
 import type { Priority } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -69,6 +75,7 @@ function status(o: Outcome) {
 }
 
 export function RequestForm() {
+  const updates = useCustomerUpdates()
   const search = useSearchParams()
   const presenter = search.get("presenter") === "1"
   // Opt-in prefill for links such as the landing page: /submit?sample=<id>. Fills the form only; never sends.
@@ -444,7 +451,8 @@ export function RequestForm() {
             {mine.length ? (
               <ul className="mt-2 flex flex-col">
                 {mine.map((m) => {
-                  const v = status(m.outcome)
+                  const sent = updates.posts(m.id)
+                  const v = sent.length ? { variant: "outline" as const, label: customerView(sent, langOf(m.message)).label } : status(m.outcome)
                   return (
                     <li key={m.id} className="border-t first:border-t-0">
                       <button
@@ -605,6 +613,7 @@ function OutcomeCard({ outcome, checked = false }: { outcome: Outcome; checked?:
 // Customer-facing detail for one saved request: what they sent and what they were told.
 function RequestDetail({ request: r }: { request: Mine }) {
   const v = status(r.outcome)
+  const sent = useCustomerUpdates().posts(r.id)
   return (
     <>
       <SheetHeader className="border-b pr-12">
@@ -625,6 +634,12 @@ function RequestDetail({ request: r }: { request: Mine }) {
           <h3 className="text-xs text-muted-foreground">Your message</h3>
           <p className="rounded-lg border bg-card px-3 py-2.5 text-[0.8125rem] whitespace-pre-wrap">{r.message}</p>
         </section>
+        {sent.length ? (
+          <section className="flex flex-col gap-1.5">
+            <h3 className="text-xs text-muted-foreground">From support</h3>
+            <CustomerUpdate posts={sent} lang={langOf(r.message)} />
+          </section>
+        ) : null}
         <section className="flex flex-col gap-1.5">
           <h3 className="text-xs text-muted-foreground">Update</h3>
           <OutcomeCard outcome={r.outcome} checked={preTriaged(r.via)} />

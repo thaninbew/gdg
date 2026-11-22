@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import { CustomerUpdatesProvider } from "@/lib/customer-updates"
 import { PresenterTicketProvider } from "@/lib/presenter-ticket"
 import "./globals.css"
 
@@ -28,10 +29,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable} antialiased`}>
-      <body className="min-h-svh">
+      {/* Browser extensions (Grammarly, ColorZilla) add attributes to <body> before React loads; ignore them. */}
+      <body className="min-h-svh" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <TooltipProvider delayDuration={300}>
-            <PresenterTicketProvider>{children}</PresenterTicketProvider>
+            <PresenterTicketProvider>
+              <CustomerUpdatesProvider>{children}</CustomerUpdatesProvider>
+            </PresenterTicketProvider>
           </TooltipProvider>
           <Toaster />
         </ThemeProvider>

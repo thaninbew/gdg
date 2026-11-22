@@ -66,3 +66,70 @@ export interface PipelineResult {
   }
   sources: Record<"triage" | "retrieve" | "gate" | "draft", StageSource>
 }
+
+// ---- Console-only shapes (not in shared/contracts.py yet) ------------------------------------
+// Clarifying questions are a proposed contract addition: when a triage field is Ambiguous (<0.70)
+// the model returns a question instead of a draft. Raise with the team before the API adds it.
+
+export type ClarifyField = "type" | "queue" | "priority" | "context"
+
+export interface ClarifyOption {
+  label: string
+  /** What the copilot says after this answer; may cite [TKT-xxxxx]. */
+  reply: string
+  effect?: {
+    /** New confidence for the field that was asked about. */
+    conf?: number
+    set?: Partial<Pick<TriageResult, "type" | "queue" | "priority">>
+    /** Forces escalation with this one-line reason. */
+    reason?: string
+    /** Extra text the gate should scan, e.g. "refund". */
+    adds_text?: string
+  }
+}
+
+export interface Clarification {
+  field: ClarifyField
+  question: string
+  /** The same question in the requester's language. */
+  ask_requester: string
+  options: ClarifyOption[]
+}
+
+export type CasePrecedent = Precedent
+
+export interface TicketCase {
+  ticket_id: string
+  subject: string
+  body: string
+  /** Demo arrival time; the dataset has no timestamps. */
+  received: string
+  dataset: { row: number; type: string | null; queue: string; priority: string }
+  category: string
+  /** The copilot's first read of the ticket; may cite [TKT-xxxxx]. */
+  note: string
+  route: string | null
+  triage: TriageResult
+  precedents: CasePrecedent[]
+  draft: Draft
+  clarifications: Clarification[]
+  timings_ms: PipelineResult["timings_ms"]
+  sources: PipelineResult["sources"]
+  /** The real gate's decision when the ticket came from the pipeline (e.g. a customer's /submit). */
+  gate?: { escalate: boolean; reasons: string[] }
+}
+
+export interface ClarifyAnswer {
+  field: ClarifyField
+  question: string
+  label: string
+  reply: string
+  /** true when typed by the operator instead of picked. */
+  free: boolean
+}
+
+export type CaseOutcome = "clarify" | "escalate" | "draft"
+
+export type TriageField = "type" | "queue" | "priority"
+/** suggested = model's value, untouched; accepted = operator confirmed it; changed = operator overrode it. */
+export type FieldStatus = "suggested" | "accepted" | "changed"

@@ -196,6 +196,54 @@
   --sidebar-ring: #8c9eff;
 }
 
+/* Lime: Material 3 tonal palettes from seed #77CC07 (accent #E8FF0B, success on teal), opt-in from the top bar. */
+:root.palette-lime:not(.dark) {
+  --primary: #3b6a01;
+  --primary-foreground: #ffffff;
+  --ring: #3b6a01;
+  --background: #f7faf3;
+  --canvas: #eff2ea;
+  --card: #ffffff;
+  --foreground: #1a1c17;
+  --muted: #ecefe7;
+  --secondary: #e6e9e2;
+  --muted-foreground: #43483c;
+  --border: #dfe5d6;
+  --input: #74796c;
+  --info: #3b6a01;
+  --info-fg: #2b5000;
+  --info-tint: #ceeda6;
+  --chart-1: #4b8501;
+  --sidebar: #f2f5ed;
+  --sidebar-accent: #e5e79d;
+  --success: #056a60;
+  --success-fg: #035048;
+  --success-tint: #83f6e5;
+}
+:root.palette-lime.dark {
+  --primary: #88dc26;
+  --primary-foreground: #1e3701;
+  --ring: #88dc26;
+  --background: #12140d;
+  --canvas: #0c0f07;
+  --card: #1e201b;
+  --foreground: #e1e3dc;
+  --muted: #282b25;
+  --secondary: #333630;
+  --muted-foreground: #c3c9ba;
+  --border: #43483c;
+  --input: #8d9385;
+  --info: #88dc26;
+  --info-fg: #88dc26;
+  --info-tint: #2b5000;
+  --chart-1: #6ebf01;
+  --sidebar: #0c0f07;
+  --sidebar-accent: #434b00;
+  --success: #46bdae;
+  --success-fg: #65d9c9;
+  --success-tint: #035048;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
